@@ -94,18 +94,32 @@ private class RegularSafety(length: Int) {
 }
 
 class RegularSudoku internal constructor(
-    val length: Int,
-    val boxRows: Int,
-    val boxCols: Int,
+    override val length: Int,
+    override val boxRows: Int,
+    override val boxCols: Int,
     internal val legal: List<Int>,
-    val difficulty: String,
+    override val difficulty: String,
     internal val lowerBoundOfInitialGivens: Int,
     internal val upperBoundOfInitialGivens: Int,
     internal val lowerBoundOfInitialGivensPerUnit: Int
-) {
-    val rowBoxCount: Int = this.length / this.boxRows
-    val colBoxCount: Int = this.length / this.boxCols
-    internal val table: List<Cell> = List(this.length) { Cell(this.length) }
+) : SudokuPuzzle {
+    companion object {
+        fun make(info: RegularInfo): RegularSudoku {
+            val puzzle = RegularSudoku(info)
+
+            initializeValues(puzzle)
+            adjustForDifficulty(puzzle)
+            shuffleBoard(puzzle)
+
+            puzzle.finishInitialization()
+
+            return puzzle
+        }
+    }
+
+    internal val rowBoxCount: Int = this.length / this.boxRows
+    internal val colBoxCount: Int = this.length / this.boxCols
+    private val table: List<Cell> = List(this.length) { Cell(this.length) }
     private val safety: RegularSafety = RegularSafety(this.length)
 
     internal constructor(info: RegularInfo) :
@@ -113,9 +127,9 @@ class RegularSudoku internal constructor(
                 info.difficulty.title, info.difficulty.lowerBoundOfInitialGivens,
                 info.difficulty.upperBoundOfInitialGivens, info.difficulty.lowerBoundOfInitialGivensPerUnit)
 
-    fun isLegal(value: Int?): Boolean = null === value || value in this.legal
+    override fun isLegal(value: Int?): Boolean = null === value || value in this.legal
 
-    fun isSafe(rowIndex: Int, colIndex: Int, value: Int): Boolean {
+    override fun isSafe(rowIndex: Int, colIndex: Int, value: Int): Boolean {
         this.checkBounds(rowIndex, colIndex)
 
         val boxIndex = this.boxIndex(rowIndex, colIndex)
@@ -148,12 +162,9 @@ class RegularSudoku internal constructor(
 
     private fun boxIndex(rowIndex: Int, colIndex: Int): Int = rowIndex / this.boxRows * this.boxRows + colIndex / this.boxCols
 
-    fun getValue(rowIndex: Int, colIndex: Int): Int? = this.getCell(rowIndex, colIndex).value
+    override fun getValue(rowIndex: Int, colIndex: Int): Int? = this.getCell(rowIndex, colIndex).value
 
-    fun getTentative(rowIndex: Int, colIndex: Int, tentativeIndex: Int): String =
-        this.getCell(rowIndex, colIndex).tentative[tentativeIndex]
-
-    fun setValue(rowIndex: Int, colIndex: Int, newValue: Int?) {
+    override fun setValue(rowIndex: Int, colIndex: Int, newValue: Int?) {
         val cell = this.getCell(rowIndex, colIndex)
 
         val oldValue = cell.value
@@ -167,9 +178,8 @@ class RegularSudoku internal constructor(
         }
     }
 
-    fun setTentative(rowIndex: Int, colIndex: Int, tentativeIndex: Int, newTentative: String) {
-        this.getCell(rowIndex, colIndex).tentative[tentativeIndex] = newTentative
-    }
+    override fun getTentative(rowIndex: Int, colIndex: Int): TentativeList =
+        this.getCell(rowIndex, colIndex).tentative
 
     private fun getCell(rowIndex: Int, colIndex: Int): Cell {
         this.checkBounds(rowIndex, colIndex)
@@ -177,15 +187,13 @@ class RegularSudoku internal constructor(
         return this.table[rowIndex * this.length + colIndex]
     }
 
-    fun deleteValue(rowIndex: Int, colIndex: Int) = this.setValue(rowIndex, colIndex, null)
-
     private fun checkBounds(rowIndex: Int, colIndex: Int) {
         if (rowIndex < 0 || rowIndex >= this.length || colIndex < 0 || colIndex >= this.length) {
             throw IndexOutOfBoundsException("Indices out of bounds: (Row Index = $rowIndex), (Column Index = $colIndex)")
         }
     }
 
-    val complete: Boolean
+    override val complete: Boolean
         get() {
             for (cell in this.table) {
                 if (null === cell.value) {
@@ -196,7 +204,7 @@ class RegularSudoku internal constructor(
             return true
         }
 
-    val valid: Boolean
+    override val valid: Boolean
         get() {
             val length = this.length
 
@@ -233,6 +241,11 @@ class RegularSudoku internal constructor(
             return true
         }
 
-    val solved: Boolean
-        get() = this.complete && this.valid
+    private fun finishInitialization() {
+        for (cell in this.table) {
+            if (null === cell.value) {
+                cell.editable = false
+            }
+        }
+    }
 }
