@@ -7,7 +7,6 @@ import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.server.application.*
 
 fun Application.configureSecurity() {
-
     authentication {
         jwt {
             val jwtAudience = this@configureSecurity.environment.config.property("jwt.audience").getString()

@@ -1,8 +1,8 @@
 package com.alexh.game
 
-import kotlin.math.floor
+import kotlin.math.round
 
-internal fun adjustForDifficulty(puzzle: RegularSudoku) {
+internal fun adjustForDifficultyForRegular(puzzle: RegularSudoku) {
     val amountOfGivens = decideAmountOfGivens(puzzle)
     val lowerBoundOfGivensPerUnit = decideLowerBoundOfGivensPerUnit(puzzle)
 
@@ -15,11 +15,11 @@ private fun decideAmountOfGivens(puzzle: RegularSudoku): Int {
     val upperBound = puzzle.upperBoundOfInitialGivens
     val percent = (lowerBound..upperBound).random()
 
-    return floor(total * percent / 100.0).toInt()
+    return round(total * (percent / 100.0)).toInt()
 }
 
 private fun decideLowerBoundOfGivensPerUnit(puzzle: RegularSudoku): Int =
-    floor(puzzle.length * puzzle.lowerBoundOfInitialGivensPerUnit / 100.0).toInt()
+    round(puzzle.length * (puzzle.lowerBoundOfInitialGivensPerUnit / 100.0)).toInt()
 
 private fun doAdjustment(puzzle: RegularSudoku, amountOfGivens: Int, lowerBoundOfGivensPerUnit: Int) {
     val length = puzzle.length

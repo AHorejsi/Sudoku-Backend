@@ -68,6 +68,7 @@ fun Application.configureDatabases() {
  * */
 fun Application.connectToPostgres(embedded: Boolean): Connection {
     Class.forName("org.postgresql.Driver")
+
     if (embedded) {
         return DriverManager.getConnection("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1", "root", "")
     } else {

@@ -10,8 +10,8 @@ fun main() {
 }
 
 fun Application.module() {
-    configureSecurity()
-    configureSerialization()
-    configureDatabases()
-    configureRouting()
+    //configureSecurity()
+    this.configureSerialization()
+    this.configureDatabases()
+    this.configureRouting()
 }

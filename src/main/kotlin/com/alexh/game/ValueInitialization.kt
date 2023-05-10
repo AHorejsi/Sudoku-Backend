@@ -1,6 +1,6 @@
 package com.alexh.game
 
-internal fun initializeValues(puzzle: RegularSudoku) {
+internal fun initializeValuesForRegular(puzzle: RegularSudoku) {
     val legal = puzzle.legal.toMutableList()
 
     initializeValuesHelper1(puzzle, legal)
@@ -9,24 +9,25 @@ internal fun initializeValues(puzzle: RegularSudoku) {
     val initial = Position(0, 0)
 
     initializeValuesHelper2(puzzle, valueMap, initial)
-
-    assert(puzzle.solved)
 }
 
 private fun initializeValuesHelper1(puzzle: RegularSudoku, legal: MutableList<Int>) {
     val length = puzzle.length
     val boxRows = puzzle.boxRows
     val boxCols = puzzle.boxCols
+    var startRowIndex = 0
+    var startColIndex = 0
 
-    for (startRowIndex in 0 until length step boxRows) {
-        for (startColIndex in 0 until length step boxCols) {
-            val endRowIndex = startRowIndex + boxRows
-            val endColIndex = startColIndex + boxCols
+    while (startRowIndex < length && startColIndex < length) {
+        val endRowIndex = startRowIndex + boxRows
+        val endColIndex = startColIndex + boxCols
 
-            legal.shuffle()
+        legal.shuffle()
 
-            assignValuesToBox(puzzle, legal, startRowIndex, startColIndex, endRowIndex, endColIndex)
-        }
+        assignValuesToBox(puzzle, legal, startRowIndex, startColIndex, endRowIndex, endColIndex)
+
+        startRowIndex += boxRows
+        startColIndex += boxCols
     }
 }
 
@@ -96,8 +97,10 @@ private fun initializeValuesHelper2(
 }
 
 private fun nextPosition(prev: Position, puzzle: RegularSudoku): Position {
+    val length = puzzle.length
     var rowIndex = prev.rowIndex
     var colIndex = prev.colIndex
+
 
     while (null !== puzzle.getValue(rowIndex, colIndex)) {
         ++colIndex
@@ -105,6 +108,10 @@ private fun nextPosition(prev: Position, puzzle: RegularSudoku): Position {
         if (colIndex == puzzle.length) {
             ++rowIndex
             colIndex = 0
+
+            if (rowIndex == length) {
+                break
+            }
         }
     }
 

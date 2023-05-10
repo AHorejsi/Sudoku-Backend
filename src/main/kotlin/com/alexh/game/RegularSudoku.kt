@@ -1,5 +1,10 @@
 package com.alexh.game
 
+import com.alexh.utils.actualIndex
+import com.alexh.utils.boxIndex
+import com.alexh.utils.to
+import kotlinx.serialization.Serializable
+
 enum class RegularDimension(
     val length: Int,
     val boxRows: Int,
@@ -77,62 +82,56 @@ private class RegularSafety(length: Int) {
     }
 
     fun weight(rowIndex: Int, colIndex: Int, boxIndex: Int): Triple<Int, Int, Int> {
-        val rowWeight = this.hammingWeight(this.rowSafety[rowIndex])
-        val colWeight = this.hammingWeight(this.colSafety[colIndex])
-        val boxWeight = this.hammingWeight(this.boxSafety[boxIndex])
+        val rowWeight = this.rowSafety[rowIndex].countOneBits()
+        val colWeight = this.colSafety[colIndex].countOneBits()
+        val boxWeight = this.boxSafety[boxIndex].countOneBits()
 
-        return Triple(rowWeight, colWeight, boxWeight)
-    }
-
-    private fun hammingWeight(bits: Int): Int {
-        var value = bits - ((bits shl 1) and 0x55555555)
-        value = (value and 0x33333333) + ((value shr 2) and 0x33333333)
-        value = (((value + (value shr 4)) and 0x0f0f0f0f) * 0x1010101) shr 24
-
-        return value
+        return rowWeight to colWeight to boxWeight
     }
 }
 
 class RegularSudoku internal constructor(
-    override val length: Int,
-    override val boxRows: Int,
-    override val boxCols: Int,
+    val length: Int,
+    val boxRows: Int,
+    val boxCols: Int,
     internal val legal: List<Int>,
-    override val difficulty: String,
+    private val difficulty: String,
     internal val lowerBoundOfInitialGivens: Int,
     internal val upperBoundOfInitialGivens: Int,
     internal val lowerBoundOfInitialGivensPerUnit: Int
-) : SudokuPuzzle {
+) {
     companion object {
-        fun make(info: RegularInfo): RegularSudoku {
-            val puzzle = RegularSudoku(info)
+        fun make(info: RegularInfo): RegularJson {
+            val dimension = info.dimension
+            val difficulty = info.difficulty
 
-            initializeValues(puzzle)
-            adjustForDifficulty(puzzle)
-            shuffleBoard(puzzle)
+            val puzzle = RegularSudoku(
+                dimension.length,
+                dimension.boxRows,
+                dimension.boxCols,
+                dimension.legal,
+                difficulty.title,
+                difficulty.lowerBoundOfInitialGivens,
+                difficulty.upperBoundOfInitialGivens,
+                difficulty.lowerBoundOfInitialGivensPerUnit
+            )
 
-            puzzle.finishInitialization()
+            initializeValuesForRegular(puzzle)
+            adjustForDifficultyForRegular(puzzle)
+            shuffleBoardOfRegular(puzzle)
 
-            return puzzle
+            return puzzle.toJson()
         }
     }
 
-    internal val rowBoxCount: Int = this.length / this.boxRows
-    internal val colBoxCount: Int = this.length / this.boxCols
-    private val table: List<Cell> = List(this.length) { Cell(this.length) }
+    private val table: Array<Int?> = Array(this.length * this.length) { null }
     private val safety: RegularSafety = RegularSafety(this.length)
 
-    internal constructor(info: RegularInfo) :
-            this(info.dimension.length, info.dimension.boxRows, info.dimension.boxCols, info.dimension.legal,
-                info.difficulty.title, info.difficulty.lowerBoundOfInitialGivens,
-                info.difficulty.upperBoundOfInitialGivens, info.difficulty.lowerBoundOfInitialGivensPerUnit)
-
-    override fun isLegal(value: Int?): Boolean = null === value || value in this.legal
-
-    override fun isSafe(rowIndex: Int, colIndex: Int, value: Int): Boolean {
+    fun isSafe(rowIndex: Int, colIndex: Int, value: Int): Boolean {
+        this.checkLegal(value)
         this.checkBounds(rowIndex, colIndex)
 
-        val boxIndex = this.boxIndex(rowIndex, colIndex)
+        val boxIndex = boxIndex(rowIndex, colIndex, this.boxRows, this.boxCols)
 
         return this.safety.isSafe(rowIndex, colIndex, boxIndex, value)
     }
@@ -140,7 +139,7 @@ class RegularSudoku internal constructor(
     private fun setUnsafe(rowIndex: Int, colIndex: Int, value: Int) {
         this.checkBounds(rowIndex, colIndex)
 
-        val boxIndex = this.boxIndex(rowIndex, colIndex)
+        val boxIndex = boxIndex(rowIndex, colIndex, this.boxRows, this.boxCols)
 
         return this.safety.setUnsafe(rowIndex, colIndex, boxIndex, value)
     }
@@ -148,27 +147,27 @@ class RegularSudoku internal constructor(
     private fun setSafe(rowIndex: Int, colIndex: Int, value: Int) {
         this.checkBounds(rowIndex, colIndex)
 
-        val boxIndex = this.boxIndex(rowIndex, colIndex)
+        val boxIndex = boxIndex(rowIndex, colIndex, this.boxRows, this.boxCols)
 
         return this.safety.setSafe(rowIndex, colIndex, boxIndex, value)
     }
 
     internal fun givens(rowIndex: Int, colIndex: Int): Triple<Int, Int, Int> {
-        val boxIndex = this.boxIndex(rowIndex, colIndex)
+        val boxIndex = boxIndex(rowIndex, colIndex, this.boxRows, this.boxCols)
         val (rowEmptyCount, colEmptyCount, boxEmptyCount) = this.safety.weight(rowIndex, colIndex, boxIndex)
 
-        return Triple(this.length - rowEmptyCount, this.length - colEmptyCount, this.length - boxEmptyCount)
+        return (this.length - rowEmptyCount) to (this.length - colEmptyCount) to (this.length - boxEmptyCount)
     }
 
-    private fun boxIndex(rowIndex: Int, colIndex: Int): Int = rowIndex / this.boxRows * this.boxRows + colIndex / this.boxCols
+    fun getValue(rowIndex: Int, colIndex: Int): Int? = this.table[actualIndex(rowIndex, colIndex, this.length)]
 
-    override fun getValue(rowIndex: Int, colIndex: Int): Int? = this.getCell(rowIndex, colIndex).value
+    fun setValue(rowIndex: Int, colIndex: Int, newValue: Int?) {
+        this.checkLegal(newValue)
 
-    override fun setValue(rowIndex: Int, colIndex: Int, newValue: Int?) {
-        val cell = this.getCell(rowIndex, colIndex)
+        val index = actualIndex(rowIndex, colIndex, this.length)
 
-        val oldValue = cell.value
-        cell.value = newValue
+        val oldValue = this.table[index]
+        this.table[index] = newValue
 
         if (null !== oldValue) {
             this.setSafe(rowIndex, colIndex, oldValue)
@@ -178,74 +177,31 @@ class RegularSudoku internal constructor(
         }
     }
 
-    override fun getTentative(rowIndex: Int, colIndex: Int): TentativeList =
-        this.getCell(rowIndex, colIndex).tentative
+    fun deleteValue(rowIndex: Int, colIndex: Int) = this.setValue(rowIndex, colIndex, null)
 
-    private fun getCell(rowIndex: Int, colIndex: Int): Cell {
-        this.checkBounds(rowIndex, colIndex)
-
-        return this.table[rowIndex * this.length + colIndex]
+    private fun checkLegal(value: Int?) {
+        if (!this.isLegal(value)) {
+            throw IllegalArgumentException("Illegal value: $value")
+        }
     }
+
+    private fun isLegal(value: Int?): Boolean = null === value || value in this.legal
 
     private fun checkBounds(rowIndex: Int, colIndex: Int) {
         if (rowIndex < 0 || rowIndex >= this.length || colIndex < 0 || colIndex >= this.length) {
-            throw IndexOutOfBoundsException("Indices out of bounds: (Row Index = $rowIndex), (Column Index = $colIndex)")
+            throw IndexOutOfBoundsException("Indices out of bounds: (Row Index = $rowIndex), (Column Index = $colIndex), (Length = ${this.length})")
         }
     }
 
-    override val complete: Boolean
-        get() {
-            for (cell in this.table) {
-                if (null === cell.value) {
-                    return false
-                }
-            }
-
-            return true
-        }
-
-    override val valid: Boolean
-        get() {
-            val length = this.length
-
-            val rowSeen = MutableList(length) { 0 }
-            val colSeen = MutableList(length) { 0 }
-            val boxSeen = MutableList(length) { 0 }
-
-            for (rowIndex in 1 until length) {
-                for (colIndex in 1 until length) {
-                    val value = this.getValue(rowIndex, colIndex)
-
-                    if (null !== value) {
-                        val boxIndex = this.boxIndex(rowIndex, colIndex)
-                        val mask = 1 shl value
-
-                        if (0 != rowSeen[rowIndex] and mask)
-                            return false
-                        else
-                            rowSeen[rowIndex] = rowSeen[rowIndex] or mask
-
-                        if (0 != colSeen[colIndex] and mask)
-                            return false
-                        else
-                            colSeen[colIndex] = colSeen[colIndex] or mask
-
-                        if (0 != boxSeen[boxIndex] and mask)
-                            return false
-                        else
-                            boxSeen[boxIndex] = boxSeen[boxIndex] or mask
-                    }
-                }
-            }
-
-            return true
-        }
-
-    private fun finishInitialization() {
-        for (cell in this.table) {
-            if (null === cell.value) {
-                cell.editable = false
-            }
-        }
-    }
+    private fun toJson(): RegularJson =
+        RegularJson(this.table, this.length, this.boxRows, this.boxCols, this.difficulty)
 }
+
+@Serializable
+class RegularJson(
+    val table: Array<Int?>,
+    val length: Int,
+    val boxRows: Int,
+    val boxCols: Int,
+    val difficulty: String
+)
