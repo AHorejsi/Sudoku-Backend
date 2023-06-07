@@ -1,18 +1,18 @@
 package com.alexh.game
 
-import kotlin.math.floor
-import kotlin.math.pow
-import kotlin.math.sqrt
 import kotlin.random.Random
 
-fun shuffleBoardOfRegular(puzzle: RegularSudoku) {
-    val rand = Random.Default
+private typealias Shuffler = (RegularSudoku, Random) -> Unit
+
+fun shuffleBoardOfRegular(puzzle: RegularSudoku, rand: Random) {
+    val shuffleTypes = mutableListOf<Shuffler>(::inner, ::flip, ::flipBox, ::rotate)
 
     for (count in 0 until 5) {
-        inner(puzzle, rand)
-        flip(puzzle, rand)
-        flipBox(puzzle, rand)
-        rotate(puzzle, rand)
+        shuffleTypes.shuffle(rand)
+
+        for (shuffler in shuffleTypes) {
+            shuffler(puzzle, rand)
+        }
     }
 }
 
@@ -180,7 +180,7 @@ private fun verticalFlip(puzzle: RegularSudoku, length: Int) {
 }
 
 private fun rotate(puzzle: RegularSudoku, rand: Random) {
-    if (isPerfectSquare(puzzle.length)) {
+    if (puzzle.boxRows == puzzle.boxCols) {
         when (rand.nextInt(4)) {
             0 -> rotate90(puzzle)
             1 -> rotate180(puzzle)
@@ -192,13 +192,8 @@ private fun rotate(puzzle: RegularSudoku, rand: Random) {
         if (rand.nextBoolean()) {
             rotate180(puzzle)
         }
-        else {
-            return
-        }
     }
 }
-
-private fun isPerfectSquare(value: Int): Boolean = value == floor(sqrt(value.toDouble()) + 0.5).pow(2).toInt()
 
 private fun rotate90(puzzle: RegularSudoku) {
     val length = puzzle.length

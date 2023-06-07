@@ -1,19 +1,20 @@
 package com.alexh.game
 
 import kotlin.math.round
+import kotlin.random.Random
 
-internal fun adjustForDifficultyForRegular(puzzle: RegularSudoku) {
-    val amountOfGivens = decideAmountOfGivens(puzzle)
+internal fun adjustForDifficultyForRegular(puzzle: RegularSudoku, rand: Random) {
+    val amountOfGivens = decideAmountOfGivens(puzzle, rand)
     val lowerBoundOfGivensPerUnit = decideLowerBoundOfGivensPerUnit(puzzle)
 
-    doAdjustment(puzzle, amountOfGivens, lowerBoundOfGivensPerUnit)
+    doAdjustment(puzzle, amountOfGivens, lowerBoundOfGivensPerUnit, rand)
 }
 
-private fun decideAmountOfGivens(puzzle: RegularSudoku): Int {
+private fun decideAmountOfGivens(puzzle: RegularSudoku, rand: Random): Int {
     val total = puzzle.length * puzzle.length
     val lowerBound = puzzle.lowerBoundOfInitialGivens
     val upperBound = puzzle.upperBoundOfInitialGivens
-    val percent = (lowerBound..upperBound).random()
+    val percent = (lowerBound..upperBound).random(rand)
 
     return round(total * (percent / 100.0)).toInt()
 }
@@ -21,7 +22,7 @@ private fun decideAmountOfGivens(puzzle: RegularSudoku): Int {
 private fun decideLowerBoundOfGivensPerUnit(puzzle: RegularSudoku): Int =
     round(puzzle.length * (puzzle.lowerBoundOfInitialGivensPerUnit / 100.0)).toInt()
 
-private fun doAdjustment(puzzle: RegularSudoku, amountOfGivens: Int, lowerBoundOfGivensPerUnit: Int) {
+private fun doAdjustment(puzzle: RegularSudoku, amountOfGivens: Int, lowerBoundOfGivensPerUnit: Int, rand: Random) {
     val length = puzzle.length
     var valueCount = length * length
     val range = 0 until length
@@ -47,8 +48,8 @@ private fun doAdjustment(puzzle: RegularSudoku, amountOfGivens: Int, lowerBoundO
                 }
             }
 
-            val rowIndex3 = range.random()
-            val colIndex3 = range.random()
+            val rowIndex3 = range.random(rand)
+            val colIndex3 = range.random(rand)
 
             if (checkLowerBound(puzzle, rowIndex3, colIndex3, lowerBoundOfGivensPerUnit)) {
                 valueCount = tryRemove(puzzle, rowIndex3, colIndex3, valueCount)
@@ -74,14 +75,16 @@ private fun checkLowerBound(puzzle: RegularSudoku, rowIndex: Int, colIndex: Int,
 private fun tryRemove(puzzle: RegularSudoku, rowIndex: Int, colIndex: Int, valueCount: Int): Int {
     val value = puzzle.getValue(rowIndex, colIndex)
 
-    puzzle.deleteValue(rowIndex, colIndex)
+    if (null !== value) {
+        puzzle.deleteValue(rowIndex, colIndex)
 
-    if (hasUniqueSolution(puzzle)) {
-        return valueCount - 1
+        if (hasUniqueSolution(puzzle)) {
+            return valueCount - 1
+        }
+        else {
+            puzzle.setValue(rowIndex, colIndex, value)
+        }
     }
-    else {
-        puzzle.setValue(rowIndex, colIndex, value)
 
-        return valueCount
-    }
+    return valueCount
 }
