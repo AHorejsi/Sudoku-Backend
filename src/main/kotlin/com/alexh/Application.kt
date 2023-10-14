@@ -13,13 +13,9 @@ fun main() {
 }
 
 fun Application.module() {
-    val database = connect(true, this)
-
     //configureSecurity(this)
     configureSerialization(this)
     configureRoutingForGeneratingPuzzles(this)
-    configureUserService(this, database)
-    configurePuzzleService(this, database)
-
-    Runtime.getRuntime().addShutdownHook(Thread { database.close() })
+    configureUserService(this)
+    configurePuzzleService(this)
 }

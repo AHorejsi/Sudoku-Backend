@@ -1,7 +1,7 @@
 package com.alexh.utils
 
-data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
-data class Quint<A, B, C, D, E>(val first: A, val second: B, val third: C, val fourth: D, val fifth: E)
+data class Quad<out A, out B, out C, out D>(val first: A, val second: B, val third: C, val fourth: D)
+data class Quint<out A, out B, out C, out D, out E>(val first: A, val second: B, val third: C, val fourth: D, val fifth: E)
 
 infix fun <A, B, C> Pair<A, B>.to(that: C): Triple<A, B, C> =
     Triple(this.first, this.second, that)

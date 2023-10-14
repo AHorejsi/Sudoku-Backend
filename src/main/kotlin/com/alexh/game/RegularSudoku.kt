@@ -2,6 +2,7 @@ package com.alexh.game
 
 import com.alexh.utils.*
 import kotlinx.serialization.Serializable
+import java.lang.IllegalArgumentException
 import kotlin.random.Random
 
 enum class RegularDimension(
@@ -10,7 +11,15 @@ enum class RegularDimension(
     val boxCols: Int
 ) {
     NINE(9, 3, 3),
-    SIXTEEN(16, 4, 4)
+    TEN(10, 2, 5),
+    TWELVE(12, 3, 4),
+    SIXTEEN(16, 4, 4),
+    FIFTEEN(15, 5, 3),
+    EIGHTEEN(18, 3, 6),
+    TWENTY(20, 4, 5),
+    TWENTY_TWO(22, 2, 11),
+    TWENTY_FOUR(24, 6, 4),
+    TWENTY_FIVE(25, 5, 5)
 }
 
 enum class RegularDifficulty(
@@ -78,17 +87,17 @@ private class RegularSafety(length: Int) {
     }
 }
 
-class RegularSudoku private constructor(
-    internal val length: Int,
-    internal val boxRows: Int,
-    internal val boxCols: Int,
-    private val difficulty: String,
-    internal val lowerBoundOfInitialGivens: Int,
-    internal val upperBoundOfInitialGivens: Int,
-    internal val lowerBoundOfInitialGivensPerUnit: Int
+class RegularSudoku internal constructor(
+    val length: Int,
+    val boxRows: Int,
+    val boxCols: Int,
+    val difficulty: String,
+    val lowerBoundOfInitialGivens: Int,
+    val upperBoundOfInitialGivens: Int,
+    val lowerBoundOfInitialGivensPerUnit: Int
 ) {
     companion object {
-        fun make(info: RegularInfo, rand: Random): RegularJson {
+        fun make(info: RegularInfo, rand: Random): RegularSudoku {
             val dimension = info.dimension
             val difficulty = info.difficulty
 
@@ -106,16 +115,26 @@ class RegularSudoku private constructor(
             adjustForDifficultyForRegular(puzzle, rand)
             shuffleBoardOfRegular(puzzle, rand)
 
-            return puzzle.toJson()
+            return puzzle
         }
     }
 
     private val table: Array<Int?> = arrayOfNulls(this.length * this.length)
+    private val complete: Array<Int> = Array(this.length * this.length) { -1 }
     private val safety: RegularSafety = RegularSafety(this.length)
 
-    val legal: List<Int> = (1 .. this.length).toList()
+    val solved: Boolean
+        get() {
+            for ((inputVal, correctVal) in this.table.zip(this.complete)) {
+                if (inputVal != correctVal) {
+                    return false
+                }
+            }
 
-    fun isSafe(rowIndex: Int, colIndex: Int, value: Int): Boolean {
+            return true
+        }
+
+    internal fun isSafe(rowIndex: Int, colIndex: Int, value: Int): Boolean {
         checkBounds(rowIndex, colIndex, this.length, this.length)
         checkLegal(value, this.length)
 
@@ -131,13 +150,13 @@ class RegularSudoku private constructor(
         return (this.length - rowEmptyCount) to (this.length - colEmptyCount) to (this.length - boxEmptyCount)
     }
 
-    fun getValue(rowIndex: Int, colIndex: Int): Int? {
+    internal fun getValue(rowIndex: Int, colIndex: Int): Int? {
         checkBounds(rowIndex, colIndex, this.length, this.length)
 
         return this.table[actualIndex(rowIndex, colIndex, this.length)]
     }
 
-    fun setValue(rowIndex: Int, colIndex: Int, newValue: Int?) {
+    internal fun setValue(rowIndex: Int, colIndex: Int, newValue: Int?) {
         checkBounds(rowIndex, colIndex, this.length, this.length)
         checkLegal(newValue, this.length)
 
@@ -145,6 +164,10 @@ class RegularSudoku private constructor(
 
         val oldValue = this.table[index]
         this.table[index] = newValue
+
+        if (null !== newValue) {
+            this.complete[index] = newValue
+        }
 
         val boxIndex = boxIndex(rowIndex, colIndex, this.boxRows, this.boxCols)
 
@@ -156,63 +179,20 @@ class RegularSudoku private constructor(
         }
     }
 
-    fun deleteValue(rowIndex: Int, colIndex: Int) = this.setValue(rowIndex, colIndex, null)
+    internal fun deleteValue(rowIndex: Int, colIndex: Int) = this.setValue(rowIndex, colIndex, null)
 
-    private fun toJson(): RegularJson =
-        RegularJson(this.table, this.length, this.boxRows, this.boxCols, this.difficulty)
+    fun toJson(): RegularJson =
+        RegularJson(this.table, this.complete, this.length, this.boxRows, this.boxCols, this.difficulty)
 }
 
 @Serializable
 class RegularJson(
     private val table: Array<Int?>,
+    private val complete: Array<Int>,
     private val length: Int,
     private val boxRows: Int,
     private val boxCols: Int,
     private val difficulty: String
 ) {
     private val kind: SudokuGame = SudokuGame.REGULAR
-
-    val solved: Boolean
-        get() {
-            val rows = Array(this.length) { 0 }
-            val cols = Array(this.length) { 0 }
-            val boxes = Array(this.length) { 0 }
-
-            for (rowIndex in 0 until this.length) {
-                for (colIndex in 0 until this.length) {
-                    val current = this.table[actualIndex(rowIndex, colIndex, this.length)]
-
-                    if (null === current || current < 1 || current > this.length) {
-                        return false
-                    }
-
-                    val mask = 1 shl current
-
-                    if (0 == rows[rowIndex] and mask) {
-                        rows[rowIndex] = rows[rowIndex] or mask
-                    }
-                    else {
-                        return false
-                    }
-
-                    if (0 == cols[colIndex] and mask) {
-                        cols[colIndex] = cols[colIndex] or mask
-                    }
-                    else {
-                        return false
-                    }
-
-                    val boxIndex = boxIndex(rowIndex, colIndex, this.boxRows, this.boxCols)
-
-                    if (0 == boxes[boxIndex] and mask) {
-                        boxes[boxIndex] = boxes[boxIndex] or mask
-                    }
-                    else {
-                        return false
-                    }
-                }
-            }
-
-            return true
-        }
 }

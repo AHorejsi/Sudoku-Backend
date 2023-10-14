@@ -224,12 +224,10 @@ private fun traverseBox(
 }
 
 private fun placeInitialValues(matrix: Array<Array<Boolean>>, puzzle: RegularSudoku, range: IntRange, length: Int) {
-    val legal = puzzle.legal
-
     for (rowIndex in range) {
         for (colIndex in range) {
             puzzle.getValue(rowIndex, colIndex)?.let {
-                placeValue(it, rowIndex, colIndex, range, length, matrix, legal)
+                placeValue(it, rowIndex, colIndex, range, length, matrix)
             }
         }
     }
@@ -241,11 +239,10 @@ private fun placeValue(
     colIndex: Int,
     range: IntRange,
     length: Int,
-    matrix: Array<Array<Boolean>>,
-    legal: List<Int>
+    matrix: Array<Array<Boolean>>
 ) {
     for (valueIndex in range) {
-        if (value != legal[valueIndex]) {
+        if (value - 1 != valueIndex) {
             val index = index(rowIndex, colIndex, valueIndex, length)
 
             matrix[index].fill(false)

@@ -1,115 +1,69 @@
 package com.alexh.route
 
 import com.alexh.database.UserService
-import java.sql.Connection
+import com.alexh.plugins.connect
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-fun configureUserService(app: Application, connection: Connection) {
-    val service = UserService(connection)
-
+fun configureUserService(app: Application) {
     app.routing {
         this.put("/createUser") {
-            createUser(this.call, service)
+            createUser(this.call, app)
         }
         this.get("/getUser") {
-            getUser(this.call, service)
-        }
-        this.post("/updateUsername") {
-            updateUsername(this.call, service)
-        }
-        this.post("/updatePassword") {
-            updatePassword(this.call, service)
-        }
-        this.delete("/deleteUser") {
-            deleteUser(this.call, service)
+            getUser(this.call, app)
         }
     }
 }
 
-private suspend fun createUser(call: ApplicationCall, service: UserService) {
-    val cookies = call.request.cookies
+private suspend fun createUser(call: ApplicationCall, app: Application) {
+    val connection = connect(false, app)
 
-    val username = cookies["username"]
-    val password = cookies["password"]
+    connection.use {
+        val params = call.receiveParameters()
 
-    if (null === username || null === password) {
-        call.respond(HttpStatusCode.BadRequest)
-    }
-    else {
-        service.createUser(username, password)
+        val username = params["username"]
+        val password = params["password"]
 
-        call.respond(HttpStatusCode.OK)
-    }
-}
-
-private suspend fun getUser(call: ApplicationCall, service: UserService) {
-    val cookies = call.request.cookies
-
-    val username = cookies["username"]
-    val password = cookies["password"]
-
-    if (null === username || null === password) {
-        call.respond(HttpStatusCode.BadRequest)
-    }
-    else {
-        val user = service.getUserByLogin(username, password)
-
-        if (null === user) {
-            call.respond(HttpStatusCode.Unauthorized)
+        if (null === username || null === password) {
+            call.respond(HttpStatusCode.BadRequest)
         }
         else {
-            call.respond(HttpStatusCode.OK, user)
+            val service = UserService(it)
+
+            service.createUser(username, password)
+
+            call.respond(HttpStatusCode.OK)
         }
     }
 }
 
-private suspend fun updateUsername(call: ApplicationCall, service: UserService) {
-    val cookies = call.request.cookies
+private suspend fun getUser(call: ApplicationCall, app: Application) {
+    val connection = connect(false, app)
 
-    val userId = cookies["userId"]
-    val newUsername = cookies["newUsername"]
+    connection.use {
+        val params = call.receiveParameters()
 
-    if (null === userId || null === newUsername) {
-        call.respond(HttpStatusCode.BadRequest)
-    }
-    else {
-        val intUserId = userId.toInt()
+        val username = params["username"]
+        val password = params["password"]
 
-        service.updateUsername(intUserId, newUsername)
-    }
-}
+        if (null === username || null === password) {
+            call.respond(HttpStatusCode.BadRequest)
+        }
+        else {
+            val service = UserService(it)
 
-private suspend fun updatePassword(call: ApplicationCall, service: UserService) {
-    val cookies = call.request.cookies
+            val user = service.getUserByLogin(username, password)
 
-    val userId = cookies["userId"]
-    val newPassword = cookies["newPassword"]
-
-    if (null === userId || null === newPassword) {
-        call.respond(HttpStatusCode.BadRequest)
-    }
-    else {
-        val intUserId = userId.toInt()
-
-        service.updatePassword(intUserId, newPassword)
+            if (null === user) {
+                call.respond(HttpStatusCode.Unauthorized)
+            }
+            else {
+                call.respond(HttpStatusCode.OK, user)
+            }
+        }
     }
 }
-
-private suspend fun deleteUser(call: ApplicationCall, service: UserService) {
-    val cookies = call.request.cookies
-
-    val userId = cookies["userId"]
-
-    if (null === userId) {
-        call.respond(HttpStatusCode.BadRequest)
-    }
-    else {
-        val intUserId = userId.toInt()
-
-        service.deleteUser(intUserId)
-    }
-}
-

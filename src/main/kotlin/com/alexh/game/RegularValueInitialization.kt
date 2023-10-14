@@ -4,7 +4,7 @@ import com.alexh.utils.Position
 import kotlin.random.Random
 
 internal fun initializeValuesForRegular(puzzle: RegularSudoku, rand: Random) {
-    val legal = puzzle.legal.toMutableList()
+    val legal = (1 .. puzzle.length).toMutableList()
 
     initializeValuesHelper1(puzzle, legal, rand)
 
@@ -12,6 +12,10 @@ internal fun initializeValuesForRegular(puzzle: RegularSudoku, rand: Random) {
     val initial = Position(0, 0)
 
     initializeValuesHelper2(puzzle, valueMap, initial)
+
+    if (!puzzle.solved) {
+        throw IllegalStateException("Table should be solved by this point")
+    }
 }
 
 private fun initializeValuesHelper1(puzzle: RegularSudoku, legal: MutableList<Int>, rand: Random) {
