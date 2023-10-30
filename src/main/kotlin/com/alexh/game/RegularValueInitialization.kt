@@ -14,7 +14,7 @@ internal fun initializeValuesForRegular(puzzle: RegularSudoku, rand: Random) {
     initializeValuesHelper2(puzzle, valueMap, initial)
 
     if (!puzzle.solved) {
-        throw IllegalStateException("Table should be solved by this point")
+        throw InternalError("Puzzle must be solved by this point\n\n$puzzle")
     }
 }
 

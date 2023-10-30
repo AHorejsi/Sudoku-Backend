@@ -8,6 +8,14 @@ internal fun adjustForDifficultyForRegular(puzzle: RegularSudoku, rand: Random) 
     val lowerBoundOfGivensPerUnit = decideLowerBoundOfGivensPerUnit(puzzle)
 
     doAdjustment(puzzle, amountOfGivens, lowerBoundOfGivensPerUnit, rand)
+
+    if (puzzle.completed) {
+        throw InternalError("Puzzle must not be completed by this point\n\n$puzzle")
+    }
+
+    if (!puzzle.valid) {
+        throw InternalError("Puzzle must still be valid by this point\n\n$puzzle")
+    }
 }
 
 private fun decideAmountOfGivens(puzzle: RegularSudoku, rand: Random): Int {

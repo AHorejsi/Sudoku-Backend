@@ -88,13 +88,13 @@ private class RegularSafety(length: Int) {
 }
 
 class RegularSudoku internal constructor(
-    val length: Int,
-    val boxRows: Int,
-    val boxCols: Int,
-    val difficulty: String,
-    val lowerBoundOfInitialGivens: Int,
-    val upperBoundOfInitialGivens: Int,
-    val lowerBoundOfInitialGivensPerUnit: Int
+    internal val length: Int,
+    internal val boxRows: Int,
+    internal val boxCols: Int,
+    internal val difficulty: String,
+    internal val lowerBoundOfInitialGivens: Int,
+    internal val upperBoundOfInitialGivens: Int,
+    internal val lowerBoundOfInitialGivensPerUnit: Int
 ) {
     companion object {
         fun make(info: RegularInfo, rand: Random): RegularSudoku {
@@ -120,19 +120,59 @@ class RegularSudoku internal constructor(
     }
 
     private val table: Array<Int?> = arrayOfNulls(this.length * this.length)
-    private val complete: Array<Int> = Array(this.length * this.length) { -1 }
     private val safety: RegularSafety = RegularSafety(this.length)
+    private val type: String = SudokuGame.REGULAR.toString()
 
-    val solved: Boolean
+    internal val completed: Boolean
+        get() = null !in this.table
+
+    internal val valid: Boolean
         get() {
-            for ((inputVal, correctVal) in this.table.zip(this.complete)) {
-                if (inputVal != correctVal) {
-                    return false
+            val rows = Array(this.length + 1) { 0 }
+            val cols = Array(this.length + 1) { 0 }
+            val boxes = Array(this.length + 1) { 0 }
+
+            val range = 0 until this.length
+
+            for (rowIndex in range) {
+                for (colIndex in range) {
+                    val current = this.getValue(rowIndex, colIndex)
+
+                    if (null !== current) {
+                        val mask = 1 shl current
+
+                        if (!unitSafe(rows, rowIndex, mask)) {
+                            return false
+                        }
+                        if (!unitSafe(cols, colIndex, mask)) {
+                            return false
+                        }
+
+                        val boxIndex = boxIndex(rowIndex, colIndex, this.boxRows, this.boxCols)
+
+                        if (!unitSafe(boxes, boxIndex, mask)) {
+                            return false
+                        }
+                    }
                 }
             }
 
             return true
         }
+
+    private fun unitSafe(bits: Array<Int>, index: Int, mask: Int): Boolean {
+        if (0 == bits[index] and mask) {
+            bits[index] = bits[index] or mask
+
+            return true
+        }
+        else {
+            return false
+        }
+    }
+
+    internal val solved: Boolean
+        get() = this.completed && this.valid
 
     internal fun isSafe(rowIndex: Int, colIndex: Int, value: Int): Boolean {
         checkBounds(rowIndex, colIndex, this.length, this.length)
@@ -165,10 +205,6 @@ class RegularSudoku internal constructor(
         val oldValue = this.table[index]
         this.table[index] = newValue
 
-        if (null !== newValue) {
-            this.complete[index] = newValue
-        }
-
         val boxIndex = boxIndex(rowIndex, colIndex, this.boxRows, this.boxCols)
 
         if (null !== oldValue) {
@@ -181,18 +217,36 @@ class RegularSudoku internal constructor(
 
     internal fun deleteValue(rowIndex: Int, colIndex: Int) = this.setValue(rowIndex, colIndex, null)
 
-    fun toJson(): RegularJson =
-        RegularJson(this.table, this.complete, this.length, this.boxRows, this.boxCols, this.difficulty)
-}
+    fun toJson(): SudokuJson =
+        SudokuJson(
+            this.table,
+            this.length,
+            this.boxRows,
+            this.boxCols,
+            this.difficulty,
+            SudokuGame.REGULAR.toString()
+        )
 
-@Serializable
-class RegularJson(
-    private val table: Array<Int?>,
-    private val complete: Array<Int>,
-    private val length: Int,
-    private val boxRows: Int,
-    private val boxCols: Int,
-    private val difficulty: String
-) {
-    private val kind: SudokuGame = SudokuGame.REGULAR
+    override fun toString(): String {
+        val builder = StringBuilder()
+
+        builder.append("Type: ${this.type}\n")
+        builder.append("Dimensions: ${this.length}\n")
+        builder.append("Boxes: ${this.boxRows}x${this.boxCols}\n")
+        builder.append("Difficulty: ${this.difficulty}\n")
+
+        val range = 0 until this.length
+
+        for (rowIndex in range) {
+            for (colIndex in range) {
+                val value = this.getValue(rowIndex, colIndex)
+
+                builder.append(value ?: '.')
+            }
+
+            builder.append('\n')
+        }
+
+        return builder.toString()
+    }
 }
