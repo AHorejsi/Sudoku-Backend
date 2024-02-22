@@ -1,10 +1,5 @@
 package com.alexh.utils
 
-import kotlinx.serialization.Serializable
-
-@Serializable
-data class Position(val rowIndex: Int, val colIndex: Int)
-
 fun boxIndex(rowIndex: Int, colIndex: Int, boxRows: Int, boxCols: Int): Int =
     rowIndex / boxRows * boxRows + colIndex / boxCols
 
@@ -15,3 +10,5 @@ fun checkBounds(rowIndex: Int, colIndex: Int, rows: Int, cols: Int) {
         throw IndexOutOfBoundsException("RowIndex = $rowIndex, Rows = $rows, ColIndex = $colIndex, Cols = $cols")
     }
 }
+
+infix fun Int.up(amount: Int): IntRange = this until (this + amount)

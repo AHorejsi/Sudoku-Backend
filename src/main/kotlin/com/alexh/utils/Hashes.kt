@@ -1,6 +1,6 @@
 package com.alexh.utils
 
-fun <T> Collection<T>.combineHashCodes(): Int {
+fun Collection<*>.combineHashCodes(): Int {
     var hashValue = 0
 
     for (value in this) {

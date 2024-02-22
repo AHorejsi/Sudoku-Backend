@@ -1,6 +1,6 @@
 package com.alexh.route
 
-import com.alexh.game.*
+import com.alexh.early.*
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
@@ -9,7 +9,7 @@ import kotlin.random.Random
 
 fun configureRoutingForGeneratingPuzzles(app: Application) {
     app.routing {
-        this.get("/generate/{dimension}/{difficulty}/{kind}") {
+        this.get("/generate/{dimension}/{difficulty}/{game}") {
             generatePuzzle(this.call)
         }
     }
@@ -21,7 +21,7 @@ private suspend fun generatePuzzle(call: ApplicationCall) {
 
     val dimensionString = params["dimension"]
     val difficultyString = params["difficulty"]
-    val kindString = params["kind"]
+    val kindString = params["game"]
 
     if (null === dimensionString || null === difficultyString || null === kindString) {
         call.respond(HttpStatusCode.BadRequest)
