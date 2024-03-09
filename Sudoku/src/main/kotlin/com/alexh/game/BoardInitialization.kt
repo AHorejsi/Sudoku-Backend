@@ -166,26 +166,5 @@ private fun makeRegularHyperNeighborhoods(
     boxRows: Int,
     boxCols: Int
 ) {
-    val rowGap = sqrt(boxRows.toFloat()).toInt()
-    val colGap = sqrt(boxCols.toFloat()).toInt()
-
-    val rowRange = rowGap until length step (boxRows + rowGap)
-    val colRange = colGap until length step (boxCols + colGap)
-
-    for (boxRowStart in rowRange) {
-        for (boxColStart in colRange) {
-            makeHyperBox(neighborhoods, length, boxRowStart, boxRows, boxColStart, boxCols)
-        }
-    }
-}
-
-private fun makeHyperBox(
-    neighborhoods: List<NeighborNode>,
-    length: Int,
-    boxRowStart: Int,
-    boxRows: Int,
-    boxColStart: Int,
-    boxCols: Int
-) {
 
 }
