@@ -26,7 +26,7 @@ enum class Dimension(
     TWENTY(20, 4, 5),
     TWENTY_TWO(22, 11, 2),
     TWENTY_FOUR(24, 6, 4),
-    TWENTY_FIVE(25, 5, 5)
+    TWENTY_FIVE(25, 5, 5);
 }
 
 enum class Difficulty(
@@ -57,14 +57,14 @@ class SudokuCreator private constructor(
     companion object {
         fun make(info: MakeSudokuCommand): SudokuJson {
             val neighborhoods = initializeBoard(info)
-            val init = SudokuCreator(info, neighborhoods)
+            val maker = SudokuCreator(info, neighborhoods)
 
             // initializeValues(this)
             // initializeCages(this)
             // adjustForDifficulty(this)
             // shuffleBoard(this)
 
-            return init.toJson()
+            return maker.toJson()
         }
     }
 
@@ -111,7 +111,7 @@ class SudokuCreator private constructor(
 
     internal fun deleteValue(rowIndex: Int, colIndex: Int) = this.setValue(rowIndex, colIndex, null)
 
-    fun toJson(): SudokuJson {
+    private fun toJson(): SudokuJson {
         val table = this.makeTable()
         val length = this.length
         val games = this.info.games.map{ it.toString() }.toSet()
@@ -143,13 +143,8 @@ class SudokuCreator private constructor(
 
 @Serializable
 class SudokuJson(
-    val table: List<List<Int?>>,
-    val length: Int,
-    val games: Set<String>,
-    val difficulty: String
-) {
-    val solved: Boolean
-        get() {
-            throw NotImplementedError()
-        }
-}
+    private val table: List<List<Int?>>,
+    private val length: Int,
+    private val games: Set<String>,
+    private val difficulty: String
+)

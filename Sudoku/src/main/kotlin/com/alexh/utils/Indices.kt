@@ -1,5 +1,7 @@
 package com.alexh.utils
 
+data class Position(val rowIndex: Int, val colIndex: Int)
+
 fun boxIndex(rowIndex: Int, colIndex: Int, boxRows: Int, boxCols: Int): Int =
     rowIndex / boxRows * boxRows + colIndex / boxCols
 

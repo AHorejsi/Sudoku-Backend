@@ -1,45 +1,64 @@
 package com.alexh.route
 
-import com.alexh.early.*
+import com.alexh.game.*
+import com.alexh.utils.Endpoints
+import com.alexh.utils.Cookies
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import kotlin.random.Random
 
 fun configureRoutingForGeneratingPuzzles(app: Application) {
     app.routing {
-        this.get("/generate/{dimension}/{difficulty}/{game}") {
+        this.get(Endpoints.GENERATION) {
             generatePuzzle(this.call)
         }
     }
 }
 
 private suspend fun generatePuzzle(call: ApplicationCall) {
-    val params = call.parameters
-    val rand = Random.Default
+    val cookies = call.request.cookies
 
-    val dimensionString = params["dimension"]
-    val difficultyString = params["difficulty"]
-    val kindString = params["game"]
+    val dimension = getDimension(cookies)
+    val difficulty = getDifficulty(cookies)
+    val games = getGames(cookies)
 
-    if (null === dimensionString || null === difficultyString || null === kindString) {
-        call.respond(HttpStatusCode.BadRequest)
+    val info = MakeSudokuCommand(dimension, difficulty, games)
+    val sudoku = SudokuCreator.make(info)
+
+    call.respond(HttpStatusCode.OK, sudoku)
+}
+
+private fun getDimension(cookies: RequestCookies): Dimension {
+    val dimensionName = cookies[Cookies.DIMENSION]
+
+    if (null === dimensionName) {
+        throw InternalError("Cookie named '${Cookies.DIMENSION}' must be supplied")
     }
     else {
-        val game = SudokuGame.valueOf(kindString)
+        return Dimension.valueOf(dimensionName)
+    }
+}
 
-        when (game) {
-            SudokuGame.REGULAR -> {
-                val dimension = RegularDimension.valueOf(dimensionString)
-                val difficulty = RegularDifficulty.valueOf(difficultyString)
-                val info = RegularInfo(dimension, difficulty)
+private fun getDifficulty(cookies: RequestCookies): Difficulty {
+    val difficultyName = cookies[Cookies.DIFFICULTY]
 
-                val puzzle = RegularSudoku.make(info, rand).toJson()
+    if (null === difficultyName) {
+        throw InternalError("Cookie named '${Cookies.DIFFICULTY}' must be supplied")
+    }
+    else {
+        return Difficulty.valueOf(difficultyName)
+    }
+}
 
-                call.respond(HttpStatusCode.OK, puzzle)
-            }
-            else -> TODO()
-        }
+private fun getGames(cookies: RequestCookies): Set<Game> {
+    val gameNames = cookies[Cookies.GAMES]
+
+    return if (null === gameNames) {
+        setOf()
+    }
+    else {
+        gameNames.split(",").map{ Game.valueOf(it) }.toSet()
     }
 }

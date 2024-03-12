@@ -2,7 +2,6 @@ package com.alexh.game
 
 import com.alexh.utils.actualIndex
 import com.alexh.utils.up
-import kotlin.math.sqrt
 import kotlin.random.Random
 
 internal fun initializeBoard(info: MakeSudokuCommand): MutableList<NeighborNode> {
@@ -166,5 +165,55 @@ private fun makeRegularHyperNeighborhoods(
     boxRows: Int,
     boxCols: Int
 ) {
+    val rowStartPoints = 1 until (length - 1) step (boxRows + 1)
+    val colStartPoints = 1 until (length - 1) step (boxCols + 1)
 
+    for (startRowIndex in rowStartPoints) {
+        for (startColIndex in colStartPoints) {
+            val endRowIndex = startRowIndex + boxRows
+            val endColIndex = startColIndex + boxCols
+
+            makeHyperBoxes(neighborhoods, length, startRowIndex, endRowIndex, startColIndex, endColIndex)
+        }
+    }
+}
+
+private fun makeHyperBoxes(
+    neighborhoods: List<NeighborNode>,
+    length: Int,
+    startRowIndex: Int,
+    endRowIndex: Int,
+    startColIndex: Int,
+    endColIndex: Int
+) {
+    val rowRange = startRowIndex until endRowIndex
+    val colRange = startColIndex until endColIndex
+
+    for (rowIndex in rowRange) {
+        for (colIndex in colRange) {
+            val actualIndex = actualIndex(rowIndex, colIndex, length)
+            val node = neighborhoods[actualIndex]
+
+            makeIndividualHyperBox(node, neighborhoods, length, rowRange, colRange)
+        }
+    }
+}
+
+private fun makeIndividualHyperBox(
+    current: NeighborNode,
+    neighborhoods: List<NeighborNode>,
+    length: Int,
+    rowRange: IntRange,
+    colRange: IntRange
+) {
+    for (rowIndex in rowRange) {
+        for (colIndex in colRange) {
+            val actualIndex = actualIndex(rowIndex, colIndex, length)
+            val other = neighborhoods[actualIndex]
+
+            if (current !== other) {
+                current.neighbors.add(other)
+            }
+        }
+    }
 }
