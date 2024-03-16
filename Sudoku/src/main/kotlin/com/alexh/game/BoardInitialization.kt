@@ -13,19 +13,7 @@ internal fun initializeBoard(info: MakeSudokuCommand): List<SudokuCellNode> {
 
     initializeBoardHelper(info, length, neighborhoods, rand)
 
-    printPositions(neighborhoods)
-
     return neighborhoods
-}
-
-private fun printPositions(neighborhoods: List<SudokuCellNode>) {
-    for (node in neighborhoods) {
-        println(node.index)
-
-        for (neighbor in node.neighbors) {
-            println("\t${neighbor.index}")
-        }
-    }
 }
 
 private fun initializeBoardHelper(
@@ -63,15 +51,15 @@ private fun makeRegularNeighborhoods(
 ) {
     val range = 0 until length
 
-    makeNodes(neighborhoods, range)
+    makeNodes(neighborhoods, range, length)
     makeRegularConnections(neighborhoods, range, length, boxRows, boxCols)
 }
 
-private fun makeNodes(neighborhoods: MutableList<MutableSudokuCellNode>, range: IntRange) {
+private fun makeNodes(neighborhoods: MutableList<MutableSudokuCellNode>, range: IntRange, length: Int) {
     for (rowIndex in range) {
         for (colIndex in range) {
             val position = Position(rowIndex, colIndex)
-            val neighbors = mutableSetOf<MutableSudokuCellNode>()
+            val neighbors = HashSet<MutableSudokuCellNode>(length)
             val node = MutableSudokuCellNode(position, neighbors)
 
             neighborhoods.add(node)
