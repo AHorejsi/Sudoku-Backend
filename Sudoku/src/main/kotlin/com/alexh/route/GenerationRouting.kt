@@ -25,7 +25,7 @@ private suspend fun generatePuzzle(call: ApplicationCall) {
     val games = getGames(cookies)
 
     val info = MakeSudokuCommand(dimension, difficulty, games)
-    val sudoku = SudokuCreator.make(info)
+    val sudoku = makeSudoku(info)
 
     call.respond(HttpStatusCode.OK, sudoku)
 }
@@ -34,7 +34,7 @@ private fun getDimension(cookies: RequestCookies): Dimension {
     val dimensionName = cookies[Cookies.DIMENSION]
 
     if (null === dimensionName) {
-        throw InternalError("Cookie named '${Cookies.DIMENSION}' must be supplied")
+        cookieError(Cookies.DIMENSION)
     }
     else {
         return Dimension.valueOf(dimensionName)
@@ -45,7 +45,7 @@ private fun getDifficulty(cookies: RequestCookies): Difficulty {
     val difficultyName = cookies[Cookies.DIFFICULTY]
 
     if (null === difficultyName) {
-        throw InternalError("Cookie named '${Cookies.DIFFICULTY}' must be supplied")
+        cookieError(Cookies.DIFFICULTY)
     }
     else {
         return Difficulty.valueOf(difficultyName)
@@ -61,4 +61,8 @@ private fun getGames(cookies: RequestCookies): Set<Game> {
     else {
         gameNames.split(",").map{ Game.valueOf(it) }.toSet()
     }
+}
+
+private fun cookieError(cookieName: String): Nothing {
+    throw InternalError("Cookie named '$cookieName' must be supplied")
 }

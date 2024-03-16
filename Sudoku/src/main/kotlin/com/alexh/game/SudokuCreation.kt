@@ -1,8 +1,7 @@
 package com.alexh.game
 
-import com.alexh.utils.actualIndex
-import com.alexh.utils.checkBounds
-import com.alexh.utils.checkLegal
+import com.alexh.utils.Position
+import com.alexh.utils.get2d
 import kotlinx.serialization.Serializable
 import kotlin.random.Random
 
@@ -48,98 +47,16 @@ data class MakeSudokuCommand(
     val random: Random = Random.Default
 )
 
-internal class NeighborNode(var value: Int?, val neighbors: MutableSet<NeighborNode>)
-
-class SudokuCreator private constructor(
-    private val info: MakeSudokuCommand,
-    private val neighborhoods: MutableList<NeighborNode>
-) {
-    companion object {
-        fun make(info: MakeSudokuCommand): SudokuJson {
-            val neighborhoods = initializeBoard(info)
-            val maker = SudokuCreator(info, neighborhoods)
-
-            // initializeValues(this)
-            // initializeCages(this)
-            // adjustForDifficulty(this)
-            // shuffleBoard(this)
-
-            return maker.toJson()
-        }
-    }
-
-    private val length: Int = this.info.dimension.length
-
-    internal fun isSafe(rowIndex: Int, colIndex: Int, value: Int): Boolean {
-        val length = this.length
-
-        checkBounds(rowIndex, colIndex, length, length)
-        checkLegal(value, length)
-
-        val actualIndex = actualIndex(rowIndex, colIndex, length)
-        val node = this.neighborhoods[actualIndex]
-
-        for (neighbor in node.neighbors) {
-            if (neighbor.value == value) {
-                return false
-            }
-        }
-
-        return true
-    }
-
-    internal fun getValue(rowIndex: Int, colIndex: Int): Int? {
-        val length = this.length
-
-        checkBounds(rowIndex, colIndex, length, length)
-
-        val actualIndex = actualIndex(rowIndex, colIndex, length)
-
-        return this.neighborhoods[actualIndex].value
-    }
-
-    internal fun setValue(rowIndex: Int, colIndex: Int, newValue: Int?) {
-        val length = this.length
-
-        checkBounds(rowIndex, colIndex, length, length)
-        checkLegal(newValue, length)
-
-        val actualIndex = actualIndex(rowIndex, colIndex, length)
-
-        this.neighborhoods[actualIndex].value = newValue
-    }
-
-    internal fun deleteValue(rowIndex: Int, colIndex: Int) = this.setValue(rowIndex, colIndex, null)
-
-    private fun toJson(): SudokuJson {
-        val table = this.makeTable()
-        val length = this.length
-        val games = this.info.games.map{ it.toString() }.toSet()
-        val difficulty = this.info.difficulty.toString()
-
-        return SudokuJson(table, length, games, difficulty)
-    }
-
-    private fun makeTable(): List<List<Int?>> {
-        val range = 0 until this.length
-
-        val table = mutableListOf<List<Int?>>()
-
-        for (rowIndex in range) {
-            val row = mutableListOf<Int?>()
-
-            for (colIndex in range) {
-                val value = this.getValue(rowIndex, colIndex)
-
-                row.add(value)
-            }
-
-            table.add(row)
-        }
-
-        return table
-    }
-}
+internal open class SudokuCellNode(
+    open val index: Position,
+    open val neighbors: Set<SudokuCellNode>,
+    open var value: Int? = null
+)
+internal class MutableSudokuCellNode(
+    override val index: Position,
+    override val neighbors: MutableSet<MutableSudokuCellNode>,
+    override var value: Int? = null
+) : SudokuCellNode(index, neighbors, value)
 
 @Serializable
 class SudokuJson(
@@ -147,4 +64,45 @@ class SudokuJson(
     private val length: Int,
     private val games: Set<String>,
     private val difficulty: String
-)
+) {
+    companion object {
+        internal fun from(info: MakeSudokuCommand, neighborhoods: List<SudokuCellNode>): SudokuJson {
+            val length = info.dimension.length
+            val difficulty = info.difficulty.name
+            val games = info.games.map{ it.toString() }.toSet()
+            val table = SudokuJson.makeTable(length, neighborhoods)
+
+            return SudokuJson(table, length, games, difficulty)
+        }
+
+        private fun makeTable(length: Int, neighborhoods: List<SudokuCellNode>): List<List<Int?>> {
+            val table = mutableListOf<List<Int?>>()
+            val range = 0 until length
+
+            for (rowIndex in range) {
+                val row = mutableListOf<Int?>()
+
+                for (colIndex in range) {
+                    val value = get2d(rowIndex, colIndex, length, neighborhoods).value
+
+                    row.add(value)
+                }
+
+                table.add(row)
+            }
+
+            return table
+        }
+    }
+}
+
+fun makeSudoku(info: MakeSudokuCommand): SudokuJson {
+    val neighborhoods = initializeBoard(info)
+
+    //initializeValues(neighborhoods, info)
+    // initializeCages(maker)
+    // adjustForDifficulty(maker)
+    // shuffleBoard(maker)
+
+    return SudokuJson.from(info, neighborhoods)
+}

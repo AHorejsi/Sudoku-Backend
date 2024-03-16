@@ -10,60 +10,6 @@ import io.ktor.server.routing.*
 
 fun configureUserService(app: Application) {
     app.routing {
-        this.put("/createUser") {
-            createUser(this.call, app)
-        }
-        this.get("/getUser") {
-            getUser(this.call, app)
-        }
-    }
-}
 
-private suspend fun createUser(call: ApplicationCall, app: Application) {
-    val connection = connect(false, app)
-
-    connection.use {
-        val params = call.receiveParameters()
-
-        val username = params["username"]
-        val password = params["password"]
-
-        if (null === username || null === password) {
-            call.respond(HttpStatusCode.BadRequest)
-        }
-        else {
-            val service = UserService(it)
-
-            service.createUser(username, password)
-
-            call.respond(HttpStatusCode.OK)
-        }
-    }
-}
-
-private suspend fun getUser(call: ApplicationCall, app: Application) {
-    val connection = connect(false, app)
-
-    connection.use {
-        val params = call.receiveParameters()
-
-        val username = params["username"]
-        val password = params["password"]
-
-        if (null === username || null === password) {
-            call.respond(HttpStatusCode.BadRequest)
-        }
-        else {
-            val service = UserService(it)
-
-            val user = service.getUserByLogin(username, password)
-
-            if (null === user) {
-                call.respond(HttpStatusCode.Unauthorized)
-            }
-            else {
-                call.respond(HttpStatusCode.OK, user)
-            }
-        }
     }
 }

@@ -1,11 +1,10 @@
 package com.alexh.utils
 
-data class Position(val rowIndex: Int, val colIndex: Int)
-
-fun boxIndex(rowIndex: Int, colIndex: Int, boxRows: Int, boxCols: Int): Int =
-    rowIndex / boxRows * boxRows + colIndex / boxCols
-
-fun actualIndex(rowIndex: Int, colIndex: Int, cols: Int): Int = rowIndex * cols + colIndex
+data class Position(val rowIndex: Int, val colIndex: Int) {
+    companion object {
+        val INVALID = Position(-1, -1)
+    }
+}
 
 fun checkBounds(rowIndex: Int, colIndex: Int, rows: Int, cols: Int) {
     if (rowIndex < 0 || rowIndex >= rows || colIndex < 0 || colIndex >= cols) {
