@@ -17,6 +17,7 @@ enum class Dimension(
     val boxCols: Int
 ) {
     FOUR(4, 2, 2),
+    SIX(6, 2, 3),
     EIGHT(8, 4, 2),
     NINE(9, 3, 3),
     TEN(10, 2, 5),

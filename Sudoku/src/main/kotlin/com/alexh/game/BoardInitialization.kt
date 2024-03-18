@@ -128,8 +128,8 @@ private fun includeBox(
     boxRows: Int,
     boxCols: Int
 ) {
-    val startRowIndex = findStartOfBox(currentRowIndex, range, boxCols)
-    val startColIndex = findStartOfBox(currentColIndex, range, boxRows)
+    val startRowIndex = findStartOfBox(currentRowIndex, range, boxRows)
+    val startColIndex = findStartOfBox(currentColIndex, range, boxCols)
     val node = get2d(currentRowIndex, currentColIndex, length, neighborhoods)
 
     for (neighborRowIndex in startRowIndex up boxRows) {
