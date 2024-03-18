@@ -14,6 +14,9 @@ fun configureRoutingForGeneratingPuzzles(app: Application) {
         this.get(Endpoints.GENERATION) {
             generatePuzzle(this.call)
         }
+        this.get(Endpoints.SOLVED) {
+            checkSolved(this.call)
+        }
     }
 }
 
@@ -28,6 +31,10 @@ private suspend fun generatePuzzle(call: ApplicationCall) {
     val sudoku = makeSudoku(info)
 
     call.respond(HttpStatusCode.OK, sudoku)
+}
+
+private suspend fun checkSolved(call: ApplicationCall) {
+    throw InternalError()
 }
 
 private fun getDimension(cookies: RequestCookies): Dimension {

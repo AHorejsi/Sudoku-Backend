@@ -16,16 +16,13 @@ enum class Dimension(
     val boxRows: Int,
     val boxCols: Int
 ) {
+    FOUR(4, 2, 2),
+    EIGHT(8, 4, 2),
     NINE(9, 3, 3),
     TEN(10, 2, 5),
     TWELVE(12, 3, 4),
     FIFTEEN(15, 5, 3),
-    SIXTEEN(16, 4, 4),
-    EIGHTEEN(18, 3, 6),
-    TWENTY(20, 4, 5),
-    TWENTY_TWO(22, 11, 2),
-    TWENTY_FOUR(24, 6, 4),
-    TWENTY_FIVE(25, 5, 5);
+    SIXTEEN(16, 4, 4)
 }
 
 enum class Difficulty(
@@ -47,16 +44,18 @@ data class MakeSudokuCommand(
     val random: Random = Random.Default
 )
 
-internal open class SudokuCellNode(
-    open val index: Position,
-    open val neighbors: Set<SudokuCellNode>,
-    open var value: Int? = null
-)
+internal interface SudokuCellNode {
+    val index: Position
+
+    val neighbors: Set<SudokuCellNode>
+
+    var value: Int?
+}
 internal class MutableSudokuCellNode(
     override val index: Position,
     override val neighbors: MutableSet<MutableSudokuCellNode>,
     override var value: Int? = null
-) : SudokuCellNode(index, neighbors, value)
+) : SudokuCellNode
 
 @Serializable
 class SudokuJson(
@@ -99,10 +98,10 @@ class SudokuJson(
 fun makeSudoku(info: MakeSudokuCommand): SudokuJson {
     val neighborhoods = initializeBoard(info)
 
-    //initializeValues(neighborhoods, info)
-    // initializeCages(maker)
-    // adjustForDifficulty(maker)
-    // shuffleBoard(maker)
+    initializeValues(neighborhoods, info)
+    // initializeCages()
+    // adjustForDifficulty()
+    // shuffleBoard()
 
     return SudokuJson.from(info, neighborhoods)
 }

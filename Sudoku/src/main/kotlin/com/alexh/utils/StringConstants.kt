@@ -21,6 +21,7 @@ class Endpoints private constructor() {
 
     companion object {
         const val GENERATION = "/generate"
+        const val SOLVED = "/solved"
     }
 }
 
