@@ -5,11 +5,13 @@ import com.alexh.utils.get2d
 import com.alexh.utils.up
 import kotlin.random.Random
 
-internal fun initializeBoard(info: MakeSudokuCommand): List<SudokuCellNode> {
+internal fun initializeBoard(
+    info: MakeSudokuCommand
+): List<SudokuNode> {
     val length = info.dimension.length
     val rand = info.random
 
-    val neighborhoods = mutableListOf<MutableSudokuCellNode>()
+    val neighborhoods = mutableListOf<MutableSudokuNode>()
 
     initializeBoardHelper(info, length, neighborhoods, rand)
 
@@ -19,7 +21,7 @@ internal fun initializeBoard(info: MakeSudokuCommand): List<SudokuCellNode> {
 private fun initializeBoardHelper(
     info: MakeSudokuCommand,
     length: Int,
-    neighborhoods: MutableList<MutableSudokuCellNode>,
+    neighborhoods: MutableList<MutableSudokuNode>,
     rand: Random
 ) {
     val games = info.games
@@ -44,7 +46,7 @@ private fun initializeBoardHelper(
 }
 
 private fun makeRegularNeighborhoods(
-    neighborhoods: MutableList<MutableSudokuCellNode>,
+    neighborhoods: MutableList<MutableSudokuNode>,
     length: Int,
     boxRows: Int,
     boxCols: Int
@@ -55,12 +57,16 @@ private fun makeRegularNeighborhoods(
     makeRegularConnections(neighborhoods, range, length, boxRows, boxCols)
 }
 
-private fun makeNodes(neighborhoods: MutableList<MutableSudokuCellNode>, range: IntRange, length: Int) {
+private fun makeNodes(
+    neighborhoods: MutableList<MutableSudokuNode>,
+    range: IntRange,
+    length: Int
+) {
     for (rowIndex in range) {
         for (colIndex in range) {
-            val position = Position(rowIndex, colIndex)
-            val neighbors = HashSet<MutableSudokuCellNode>(length)
-            val node = MutableSudokuCellNode(position, neighbors)
+            val neighbors = HashSet<MutableSudokuNode>(length)
+            val place = Position(rowIndex, colIndex)
+            val node = MutableSudokuNode(neighbors, place)
 
             neighborhoods.add(node)
         }
@@ -68,7 +74,7 @@ private fun makeNodes(neighborhoods: MutableList<MutableSudokuCellNode>, range: 
 }
 
 private fun makeRegularConnections(
-    neighborhoods: MutableList<MutableSudokuCellNode>,
+    neighborhoods: List<MutableSudokuNode>,
     range: IntRange,
     length: Int,
     boxRows: Int,
@@ -87,13 +93,13 @@ private fun includeRow(
     currentRowIndex: Int,
     currentColIndex: Int,
     range: IntRange,
-    neighborhoods: MutableList<MutableSudokuCellNode>,
+    neighborhoods: List<MutableSudokuNode>,
     length: Int
 ) {
-    val node = get2d(currentRowIndex, currentColIndex, length, neighborhoods)
+    val node = neighborhoods.get2d(currentRowIndex, currentColIndex, length)
 
     for (neighborColIndex in range) {
-        val neighborNode = get2d(currentRowIndex, neighborColIndex, length, neighborhoods)
+        val neighborNode = neighborhoods.get2d(currentRowIndex, neighborColIndex, length)
 
         if (neighborNode !== node) {
             node.neighbors.add(neighborNode)
@@ -105,13 +111,13 @@ private fun includeColumn(
     currentRowIndex: Int,
     currentColIndex: Int,
     range: IntRange,
-    neighborhoods: MutableList<MutableSudokuCellNode>,
+    neighborhoods: List<MutableSudokuNode>,
     length: Int
 ) {
-    val node = get2d(currentRowIndex, currentColIndex, length, neighborhoods)
+    val node = neighborhoods.get2d(currentRowIndex, currentColIndex, length)
 
     for (neighborRowIndex in range) {
-        val neighborNode = get2d(neighborRowIndex, currentColIndex, length, neighborhoods)
+        val neighborNode = neighborhoods.get2d(neighborRowIndex, currentColIndex, length)
 
         if (neighborNode !== node) {
             node.neighbors.add(neighborNode)
@@ -123,18 +129,18 @@ private fun includeBox(
     currentRowIndex: Int,
     currentColIndex: Int,
     range: IntRange,
-    neighborhoods: MutableList<MutableSudokuCellNode>,
+    neighborhoods: List<MutableSudokuNode>,
     length: Int,
     boxRows: Int,
     boxCols: Int
 ) {
     val startRowIndex = findStartOfBox(currentRowIndex, range, boxRows)
     val startColIndex = findStartOfBox(currentColIndex, range, boxCols)
-    val node = get2d(currentRowIndex, currentColIndex, length, neighborhoods)
+    val node = neighborhoods.get2d(currentRowIndex, currentColIndex, length)
 
     for (neighborRowIndex in startRowIndex up boxRows) {
         for (neighborColIndex in startColIndex up boxCols) {
-            val neighborNode = get2d(neighborRowIndex, neighborColIndex, length, neighborhoods)
+            val neighborNode = neighborhoods.get2d(neighborRowIndex, neighborColIndex, length)
 
             if (neighborNode !== node) {
                 node.neighbors.add(neighborNode)
@@ -163,7 +169,7 @@ private fun findStartOfBox(
 }
 
 private fun makeRegularHyperNeighborhoods(
-    neighborhoods: List<MutableSudokuCellNode>,
+    neighborhoods: List<MutableSudokuNode>,
     length: Int,
     boxRows: Int,
     boxCols: Int
@@ -182,7 +188,7 @@ private fun makeRegularHyperNeighborhoods(
 }
 
 private fun makeHyperBoxes(
-    neighborhoods: List<MutableSudokuCellNode>,
+    neighborhoods: List<MutableSudokuNode>,
     length: Int,
     startRowIndex: Int,
     endRowIndex: Int,
@@ -194,7 +200,7 @@ private fun makeHyperBoxes(
 
     for (rowIndex in rowRange) {
         for (colIndex in colRange) {
-            val node = get2d(rowIndex, colIndex, length, neighborhoods)
+            val node = neighborhoods.get2d(rowIndex, colIndex, length)
 
             makeIndividualHyperBox(node, neighborhoods, length, rowRange, colRange)
         }
@@ -202,15 +208,15 @@ private fun makeHyperBoxes(
 }
 
 private fun makeIndividualHyperBox(
-    current: MutableSudokuCellNode,
-    neighborhoods: List<MutableSudokuCellNode>,
+    current: MutableSudokuNode,
+    neighborhoods: List<MutableSudokuNode>,
     length: Int,
     rowRange: IntRange,
     colRange: IntRange
 ) {
     for (rowIndex in rowRange) {
         for (colIndex in colRange) {
-            val other = get2d(rowIndex, colIndex, length, neighborhoods)
+            val other = neighborhoods.get2d(rowIndex, colIndex, length)
 
             if (current !== other) {
                 current.neighbors.add(other)

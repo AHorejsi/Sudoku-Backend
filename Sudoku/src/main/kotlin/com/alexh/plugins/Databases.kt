@@ -29,7 +29,10 @@ import io.ktor.server.routing.*
  * @return [Connection] that represent connection to the database. Please, don't forget to close this connection when
  * your application shuts down by calling [Connection.close]
  * */
-fun connect(embedded: Boolean, app: Application): Connection {
+fun connect(
+    embedded: Boolean,
+    app: Application
+): Connection {
     Class.forName("org.postgresql.Driver")
 
     if (embedded) {
@@ -45,12 +48,16 @@ fun connect(embedded: Boolean, app: Application): Connection {
     }
 }
 
-fun checkConnection(connection: Connection) {
+fun checkConnection(
+    connection: Connection
+) {
+    val timeout = 1000
+
     if (connection.isClosed) {
         throw SQLException("Database connection is closed")
     }
 
-    if (!connection.isValid(1000)) {
+    if (!connection.isValid(timeout)) {
         throw SQLException("Database connection is invalid")
     }
 }

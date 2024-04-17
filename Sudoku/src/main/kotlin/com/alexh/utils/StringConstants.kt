@@ -4,7 +4,7 @@ import kotlin.reflect.KClass
 
 class Cookies private constructor() {
     init {
-        noInstanceError(Cookies::class)
+        noInstances(Cookies::class)
     }
 
     companion object {
@@ -16,15 +16,15 @@ class Cookies private constructor() {
 
 class Endpoints private constructor() {
     init {
-        noInstanceError(Endpoints::class)
+        noInstances(Endpoints::class)
     }
 
     companion object {
         const val GENERATION = "/generate"
-        const val SOLVED = "/solved"
+        const val SOLVED = "/checkSolved"
     }
 }
 
-private fun <T : Any> noInstanceError(cls: KClass<T>): Nothing {
-    throw InternalError("No instances of ${cls.java.name}")
+private fun <T : Any> noInstances(cls: KClass<T>): Nothing {
+    throw Exception("No instances of ${cls.java.name}")
 }
