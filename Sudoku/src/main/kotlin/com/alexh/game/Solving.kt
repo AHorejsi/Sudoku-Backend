@@ -7,7 +7,7 @@ internal fun hasUniqueSolution(
     val unvisited = neighborhoods.asSequence().filter{ null === it.value }.toMutableList()
     val range = 1 .. length
 
-    return countSolutions(unvisited, range) >= 1
+    return 1 == countSolutions(unvisited, range)
 }
 
 private fun countSolutions(
@@ -21,27 +21,20 @@ private fun countSolutions(
     var found = 0
     val node = unvisited.removeLast()
 
+    outer@
     for (value in range) {
-        var safe = true
-
         for (neighbor in node.neighbors) {
             if (value == neighbor.value) {
-                safe = false
-
-                break
+                continue@outer
             }
         }
 
-        if (safe) {
-            node.value = value
+        node.value = value
+        found += countSolutions(unvisited, range)
+        node.value = null
 
-            found += countSolutions(unvisited, range)
-
-            if (found > 1) {
-                break
-            }
-
-            node.value = null
+        if (found > 1) {
+            break
         }
     }
 

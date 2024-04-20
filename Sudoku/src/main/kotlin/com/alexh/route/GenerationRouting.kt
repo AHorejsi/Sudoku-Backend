@@ -16,9 +16,6 @@ fun configureRoutingForGeneratingPuzzles(
         this.get(Endpoints.GENERATION) {
             generatePuzzle(this.call)
         }
-        this.get(Endpoints.SOLVED) {
-            //checkSolved(this.call)
-        }
     }
 }
 
