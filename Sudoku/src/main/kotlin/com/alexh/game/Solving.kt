@@ -4,33 +4,48 @@ internal fun hasUniqueSolution(
     neighborhoods: List<SudokuNode>,
     length: Int
 ): Boolean {
-    val unvisited = neighborhoods.asSequence().filter{ null === it.value }.toMutableList()
+    val unassigned = neighborhoods.asSequence().filter{ null === it.value }.toMutableList()
     val range = 1 .. length
+    val valid = findValidValues(unassigned, range)
 
-    return 1 == countSolutions(unvisited, range)
+    return 1 == countSolutions(unassigned, valid)
+}
+
+private fun findValidValues(
+    unassigned: MutableList<SudokuNode>,
+    range: IntRange
+): MutableMap<SudokuNode, MutableSet<Int>> {
+    val valid = mutableMapOf<SudokuNode, MutableSet<Int>>()
+
+    for (node in unassigned) {
+        val values = range.toHashSet()
+
+        for (neighbor in node.neighbors) {
+            neighbor.value?.let {
+                values.remove(it)
+            }
+        }
+
+        valid[node] = values
+    }
+
+    return valid
 }
 
 private fun countSolutions(
-    unvisited: MutableList<SudokuNode>,
-    range: IntRange
+    unassigned: MutableList<SudokuNode>,
+    valid: MutableMap<SudokuNode, MutableSet<Int>>
 ): Int {
-    if (unvisited.isEmpty()) {
+    if (unassigned.isEmpty()) {
         return 1
     }
 
     var found = 0
-    val node = unvisited.removeLast()
+    val node = unassigned.removeLast()
 
-    outer@
-    for (value in range) {
-        for (neighbor in node.neighbors) {
-            if (value == neighbor.value) {
-                continue@outer
-            }
-        }
-
+    for (value in valid.getValue(node)) {
         node.value = value
-        found += countSolutions(unvisited, range)
+        found += countSolutions(unassigned, valid)
         node.value = null
 
         if (found > 1) {
@@ -38,7 +53,7 @@ private fun countSolutions(
         }
     }
 
-    unvisited.add(node)
+    unassigned.add(node)
 
     return found
 }

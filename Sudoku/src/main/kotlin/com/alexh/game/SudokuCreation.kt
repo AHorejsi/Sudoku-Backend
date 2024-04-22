@@ -25,11 +25,11 @@ enum class Difficulty(
     val upperBoundOfInitialGivens: Float,
     val lowerBoundOfInitialGivensPerNeighborhood: Float
 ) {
-    BEGINNER(0.40f, 0.47f, 0.44f),
-    EASY(0.36f, 0.39f, 0.33f),
-    MEDIUM(0.22f, 0.35f, 0.22f),
-    HARD(0.13f, 0.21f, 0.11f),
-    MASTER(0.05f, 0.12f, 0.0f)
+    BEGINNER(0.58f, 0.68f, 0.55f),
+    EASY(0.44f, 0.57f, 0.44f),
+    MEDIUM(0.40f, 0.43f, 0.33f),
+    HARD(0.35f, 0.38f, 0.22f),
+    MASTER(0.21f, 0.33f, 0.0f)
 }
 
 data class MakeSudokuCommand(

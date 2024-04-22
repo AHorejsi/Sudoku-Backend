@@ -122,7 +122,9 @@ private fun checkRow(
     val rowIndex = pos.rowIndex
 
     for (colIndex in range) {
-        if (null !== neighborhoods.get2d(rowIndex, colIndex, length).value) {
+        val node = neighborhoods.get2d(rowIndex, colIndex, length)
+
+        if (null !== node.value) {
             ++count
         }
     }
@@ -142,7 +144,9 @@ private fun checkCol(
     val colIndex = pos.colIndex
 
     for (rowIndex in range) {
-        if (null !== neighborhoods.get2d(rowIndex, colIndex, length).value) {
+        val node = neighborhoods.get2d(rowIndex, colIndex, length)
+
+        if (null !== node.value) {
             ++count
         }
     }
@@ -164,7 +168,9 @@ private fun checkBox(
 
     for (rowIndex in rowRange) {
         for (colIndex in colRange) {
-            if (null !== neighborhoods.get2d(rowIndex, colIndex, length).value) {
+            val node = neighborhoods.get2d(rowIndex, colIndex, length)
+
+            if (null !== node.value) {
                 ++count
             }
         }
@@ -182,11 +188,11 @@ private fun tryRemove(
 
     node.value = null
 
-    if (!hasUniqueSolution(neighborhoods, length)) {
-        node.value = temp
-
-        return false
+    if (hasUniqueSolution(neighborhoods, length)) {
+        return true
     }
 
-    return true
+    node.value = temp
+
+    return false
 }
