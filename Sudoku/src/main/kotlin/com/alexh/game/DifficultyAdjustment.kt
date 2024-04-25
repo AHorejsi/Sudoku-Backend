@@ -13,11 +13,13 @@ internal fun adjustForDifficulty(
     val rand = info.random
     val length = info.dimension.length
 
-    val targetGivenCount = determineAmountOfGivens(difficulty, length, rand)
+    val givenCount = length * length
+    val targetGivenCount = determineAmountOfGivens(difficulty, givenCount, rand)
     val lowerBound = determineLowerBound(difficulty, length)
 
     adjustForDifficultyHelper1(
         neighborhoods,
+        givenCount,
         targetGivenCount,
         lowerBound,
         rand,
@@ -27,14 +29,13 @@ internal fun adjustForDifficulty(
 
 private fun determineAmountOfGivens(
     difficulty: Difficulty,
-    length: Int,
+    givenCount: Int,
     rand: Random
 ): Int {
-    val count = length * length
-    val minCount = (count * difficulty.lowerBoundOfInitialGivens).toInt()
-    val maxCount = (count * difficulty.upperBoundOfInitialGivens).toInt()
+    val minCount = (givenCount * difficulty.lowerBoundOfInitialGivens).toInt()
+    val maxCount = (givenCount * difficulty.upperBoundOfInitialGivens).toInt()
 
-    return rand.nextInt(minCount, maxCount)
+    return rand.nextInt(minCount, maxCount + 1)
 }
 
 private fun determineLowerBound(
@@ -44,53 +45,38 @@ private fun determineLowerBound(
 
 private fun adjustForDifficultyHelper1(
     neighborhoods: List<SudokuNode>,
+    givenCount: Int,
     targetGivenCount: Int,
     lowerBound: Int,
     rand: Random,
     dimension: Dimension
 ) {
-    val length = dimension.length
-
-    var givenCount = length * length
+    var newGivenCount = givenCount
 
     for (node in neighborhoods.asSequence().shuffled(rand)) {
-        val topLeft = node.place
-        val bottomRight = Position(length - topLeft.rowIndex - 1, length - topLeft.colIndex - 1)
-        val rand1 = Position(rand.nextInt(length), rand.nextInt(length))
-        val rand2 = Position(rand.nextInt(length), rand.nextInt(length))
+        if (adjustForDifficultyHelper2(node, lowerBound, neighborhoods, dimension)) {
+            --newGivenCount
 
-        val positions = listOf(topLeft, bottomRight, rand1, rand2).asSequence().shuffled(rand).iterator()
-
-        givenCount -= adjustForDifficultyHelper2(positions, lowerBound, neighborhoods, length, dimension)
-
-        if (givenCount < targetGivenCount) {
-            break
+            if (newGivenCount <= targetGivenCount) {
+                break
+            }
         }
     }
 }
 
 private fun adjustForDifficultyHelper2(
-    positions: Iterator<Position>,
+    node: SudokuNode,
     lowerBound: Int,
     neighborhoods: List<SudokuNode>,
-    length: Int,
     dimension: Dimension
-): Int {
-    var amountRemoved = 0
-
-    while (positions.hasNext()) {
-        val pos = positions.next()
-
-        if (checkLowerBound(pos, lowerBound, neighborhoods, dimension)) {
-            val node = neighborhoods.get2d(pos.rowIndex, pos.colIndex, length)
-
-            if (null !== node.value && tryRemove(neighborhoods, length, node)) {
-                ++amountRemoved
-            }
+): Boolean {
+    if (checkLowerBound(node.place, lowerBound, neighborhoods, dimension)) {
+        if (tryRemove(neighborhoods, dimension.length, node)) {
+            return true
         }
     }
 
-    return amountRemoved
+    return false
 }
 
 private fun checkLowerBound(
@@ -184,7 +170,7 @@ private fun tryRemove(
     length: Int,
     node: SudokuNode
 ): Boolean {
-    val temp = node.value
+    val temp = node.value!!
 
     node.value = null
 

@@ -16,8 +16,7 @@ enum class Dimension(
     val boxRows: Int,
     val boxCols: Int
 ) {
-    NINE(9, 3, 3),
-    SIXTEEN(16, 4, 4)
+    NINE(9, 3, 3)
 }
 
 enum class Difficulty(
@@ -39,16 +38,14 @@ data class MakeSudokuCommand(
     val random: Random = Random.Default
 )
 
-open class SudokuNode(
-    open val neighbors: Set<SudokuNode>,
-    open val place: Position,
-    open var value: Int? = null
+@Serializable
+internal class Cage(val sum: Int, val positions: MutableSet<Position>)
+
+internal class SudokuNode(
+    val neighbors: MutableSet<SudokuNode>,
+    val place: Position,
+    var value: Int? = null
 )
-class MutableSudokuNode(
-    override val neighbors: MutableSet<MutableSudokuNode>,
-    override val place: Position,
-    override var value: Int? = null
-) : SudokuNode(neighbors, place, value)
 
 @Serializable
 class SudokuJson private constructor(
@@ -58,7 +55,7 @@ class SudokuJson private constructor(
     private val games: Set<Game>,
     private val difficulty: String
 ) {
-    constructor(
+    internal constructor(
         info: MakeSudokuCommand,
         neighborhoods: List<SudokuNode>,
         solved: List<Int>

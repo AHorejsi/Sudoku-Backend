@@ -11,7 +11,7 @@ internal fun initializeBoard(
     val length = info.dimension.length
     val rand = info.random
 
-    val neighborhoods = mutableListOf<MutableSudokuNode>()
+    val neighborhoods = mutableListOf<SudokuNode>()
 
     initializeBoardHelper(info, length, neighborhoods, rand)
 
@@ -21,7 +21,7 @@ internal fun initializeBoard(
 private fun initializeBoardHelper(
     info: MakeSudokuCommand,
     length: Int,
-    neighborhoods: MutableList<MutableSudokuNode>,
+    neighborhoods: MutableList<SudokuNode>,
     rand: Random
 ) {
     val games = info.games
@@ -46,7 +46,7 @@ private fun initializeBoardHelper(
 }
 
 private fun makeRegularNeighborhoods(
-    neighborhoods: MutableList<MutableSudokuNode>,
+    neighborhoods: MutableList<SudokuNode>,
     length: Int,
     boxRows: Int,
     boxCols: Int
@@ -58,15 +58,15 @@ private fun makeRegularNeighborhoods(
 }
 
 private fun makeNodes(
-    neighborhoods: MutableList<MutableSudokuNode>,
+    neighborhoods: MutableList<SudokuNode>,
     range: IntRange,
     length: Int
 ) {
     for (rowIndex in range) {
         for (colIndex in range) {
-            val neighbors = HashSet<MutableSudokuNode>(length)
+            val neighbors = HashSet<SudokuNode>(length)
             val place = Position(rowIndex, colIndex)
-            val node = MutableSudokuNode(neighbors, place)
+            val node = SudokuNode(neighbors, place)
 
             neighborhoods.add(node)
         }
@@ -74,7 +74,7 @@ private fun makeNodes(
 }
 
 private fun makeRegularConnections(
-    neighborhoods: List<MutableSudokuNode>,
+    neighborhoods: List<SudokuNode>,
     range: IntRange,
     length: Int,
     boxRows: Int,
@@ -93,7 +93,7 @@ private fun includeRow(
     currentRowIndex: Int,
     currentColIndex: Int,
     range: IntRange,
-    neighborhoods: List<MutableSudokuNode>,
+    neighborhoods: List<SudokuNode>,
     length: Int
 ) {
     val node = neighborhoods.get2d(currentRowIndex, currentColIndex, length)
@@ -111,7 +111,7 @@ private fun includeColumn(
     currentRowIndex: Int,
     currentColIndex: Int,
     range: IntRange,
-    neighborhoods: List<MutableSudokuNode>,
+    neighborhoods: List<SudokuNode>,
     length: Int
 ) {
     val node = neighborhoods.get2d(currentRowIndex, currentColIndex, length)
@@ -129,7 +129,7 @@ private fun includeBox(
     currentRowIndex: Int,
     currentColIndex: Int,
     range: IntRange,
-    neighborhoods: List<MutableSudokuNode>,
+    neighborhoods: List<SudokuNode>,
     length: Int,
     boxRows: Int,
     boxCols: Int
@@ -169,7 +169,7 @@ private fun findStartOfBox(
 }
 
 private fun makeRegularHyperNeighborhoods(
-    neighborhoods: List<MutableSudokuNode>,
+    neighborhoods: List<SudokuNode>,
     length: Int,
     boxRows: Int,
     boxCols: Int
@@ -188,7 +188,7 @@ private fun makeRegularHyperNeighborhoods(
 }
 
 private fun makeHyperBoxes(
-    neighborhoods: List<MutableSudokuNode>,
+    neighborhoods: List<SudokuNode>,
     length: Int,
     startRowIndex: Int,
     endRowIndex: Int,
@@ -208,8 +208,8 @@ private fun makeHyperBoxes(
 }
 
 private fun makeIndividualHyperBox(
-    current: MutableSudokuNode,
-    neighborhoods: List<MutableSudokuNode>,
+    current: SudokuNode,
+    neighborhoods: List<SudokuNode>,
     length: Int,
     rowRange: IntRange,
     colRange: IntRange

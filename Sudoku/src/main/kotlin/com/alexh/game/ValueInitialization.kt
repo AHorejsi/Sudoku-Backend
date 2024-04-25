@@ -35,7 +35,7 @@ private fun initializeValuesHelper1(
 
     }
     else if (Game.HYPER in games) {
-        fillHyperBoxes(neighborhoods, dimension, rand, legal)
+        fillBox(neighborhoods, dimension.length, 1 up dimension.boxRows, 1 up dimension.boxCols, legal, rand)
     }
     else {
         fillRegularDiagonal(neighborhoods, dimension, rand, legal)
@@ -54,27 +54,6 @@ private fun fillRegularDiagonal(
 
     val rowRange = (0 until length step boxRows).asSequence()
     val colRange = (0 until length step boxCols).asSequence()
-
-    for ((startRowIndex, startColIndex) in rowRange.zip(colRange)) {
-        val rows = startRowIndex up boxRows
-        val cols = startColIndex up boxCols
-
-        fillBox(neighborhoods, length, rows, cols, legal, rand)
-    }
-}
-
-private fun fillHyperBoxes(
-    neighborhoods: List<SudokuNode>,
-    dimension: Dimension,
-    rand: Random,
-    legal: Sequence<Int>
-) {
-    val length = dimension.length
-    val boxRows = dimension.boxRows
-    val boxCols = dimension.boxCols
-
-    val rowRange = (1 until length - 1 step 2 * boxRows + 1).asSequence()
-    val colRange = (1 until length - 1 step 2 * boxCols + 1).asSequence()
 
     for ((startRowIndex, startColIndex) in rowRange.zip(colRange)) {
         val rows = startRowIndex up boxRows
