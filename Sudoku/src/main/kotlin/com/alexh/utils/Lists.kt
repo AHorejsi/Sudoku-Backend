@@ -11,7 +11,7 @@ fun <T> List<T>.get2d(
 }
 
 fun <T> List<T>.unflatten(
-    rowLength: Int
+    rowLength: Int,
 ): List<List<T>> {
     val matrix = mutableListOf<MutableList<T>>()
     val iter = this.iterator()

@@ -32,8 +32,8 @@ private fun determineAmountOfGivens(
     givenCount: Int,
     rand: Random
 ): Int {
-    val minCount = (givenCount * difficulty.lowerBoundOfInitialGivens).toInt()
-    val maxCount = (givenCount * difficulty.upperBoundOfInitialGivens).toInt()
+    val minCount = (givenCount * difficulty.initialGivenLowerBound).toInt()
+    val maxCount = (givenCount * difficulty.initialGivenUpperBound).toInt()
 
     return rand.nextInt(minCount, maxCount + 1)
 }
@@ -41,7 +41,7 @@ private fun determineAmountOfGivens(
 private fun determineLowerBound(
     difficulty: Difficulty,
     length: Int
-): Int = (length * difficulty.lowerBoundOfInitialGivensPerNeighborhood).toInt()
+): Int = (length * difficulty.initialGivensPerNeighborhood).toInt()
 
 private fun adjustForDifficultyHelper1(
     neighborhoods: List<SudokuNode>,
@@ -58,7 +58,7 @@ private fun adjustForDifficultyHelper1(
             --newGivenCount
 
             if (newGivenCount <= targetGivenCount) {
-                break
+                return
             }
         }
     }
@@ -110,12 +110,16 @@ private fun checkRow(
     for (colIndex in range) {
         val node = neighborhoods.get2d(rowIndex, colIndex, length)
 
-        if (null !== node.value) {
+        node.value?.let {
             ++count
+
+            if (count >= lowerBound) {
+                return true
+            }
         }
     }
 
-    return count >= lowerBound
+    return false
 }
 
 private fun checkCol(
@@ -132,12 +136,16 @@ private fun checkCol(
     for (rowIndex in range) {
         val node = neighborhoods.get2d(rowIndex, colIndex, length)
 
-        if (null !== node.value) {
+        node.value?.let {
             ++count
+
+            if (count >= lowerBound) {
+                return true
+            }
         }
     }
 
-    return count >= lowerBound
+    return false
 }
 
 private fun checkBox(
@@ -149,20 +157,24 @@ private fun checkBox(
 ): Boolean {
     var count = 0
 
-    val rowRange = pos.rowIndex - pos.rowIndex % dimension.boxRows up dimension.boxRows
-    val colRange = pos.colIndex - pos.colIndex % dimension.boxCols up dimension.boxCols
+    val rowRange = (pos.rowIndex - pos.rowIndex % dimension.boxRows) up dimension.boxRows
+    val colRange = (pos.colIndex - pos.colIndex % dimension.boxCols) up dimension.boxCols
 
     for (rowIndex in rowRange) {
         for (colIndex in colRange) {
             val node = neighborhoods.get2d(rowIndex, colIndex, length)
 
-            if (null !== node.value) {
+            node.value?.let {
                 ++count
+
+                if (count >= lowerBound) {
+                    return true
+                }
             }
         }
     }
 
-    return count >= lowerBound
+    return false
 }
 
 private fun tryRemove(

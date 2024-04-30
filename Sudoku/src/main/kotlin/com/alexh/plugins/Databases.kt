@@ -37,7 +37,8 @@ fun connect(
 
     if (embedded) {
         return DriverManager.getConnection("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1", "root", "")
-    } else {
+    }
+    else {
         val config = app.environment.config
 
         val url = config.property("postgres.url").getString()
@@ -51,13 +52,11 @@ fun connect(
 fun checkConnection(
     connection: Connection
 ) {
-    val timeout = 1000
-
     if (connection.isClosed) {
         throw SQLException("Database connection is closed")
     }
 
-    if (!connection.isValid(timeout)) {
+    if (!connection.isValid(1000)) {
         throw SQLException("Database connection is invalid")
     }
 }

@@ -7,16 +7,22 @@ data class Position(
     val rowIndex: Int,
     val colIndex: Int
 ) {
-    fun up(): Position = Position(this.rowIndex - 1, this.colIndex)
+    val up: Position
+        get() = Position(this.rowIndex - 1, this.colIndex)
 
-    fun down(): Position = Position(this.rowIndex + 1, this.colIndex)
+    val down: Position
+        get() = Position(this.rowIndex + 1, this.colIndex)
 
-    fun left(): Position = Position(this.rowIndex, this.colIndex - 1)
+    val left: Position
+        get() = Position(this.rowIndex, this.colIndex - 1)
 
-    fun right(): Position = Position(this.rowIndex, this.colIndex + 1)
+    val right: Position
+        get() = Position(this.rowIndex, this.colIndex + 1)
+
+    fun outOfBounds(length: Int): Boolean =
+        this.rowIndex < 0 || this.colIndex < 0 || this.rowIndex >= length || this.colIndex >= length
 }
 
 infix fun Int.up(
     amount: Int
-): IntRange =
-    this until (this + amount)
+): IntRange = this until (this + amount)
