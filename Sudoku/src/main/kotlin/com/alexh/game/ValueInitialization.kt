@@ -1,6 +1,5 @@
 package com.alexh.game
 
-import com.alexh.utils.Position
 import com.alexh.utils.get2d
 import com.alexh.utils.up
 import kotlin.random.Random
@@ -18,10 +17,10 @@ internal fun initializeValues(
 
     initializeValuesHelper1(neighborhoods, dimension, rand, legal, games)
 
+    val unassigned = neighborhoods.asSequence().filter{ null === it.value }.toMutableList()
     val legalMap = shuffleValues(neighborhoods, length, rand, legal)
-    val initial = Position(0, 0)
 
-    initializeValuesHelper2(neighborhoods, length, legalMap, initial)
+    initializeValuesHelper2(unassigned, legalMap)
 }
 
 private fun initializeValuesHelper1(
@@ -87,19 +86,18 @@ private fun shuffleValues(
     length: Int,
     rand: Random,
     legal: Sequence<Int>
-): Map<Position, Sequence<Int>> {
+): Map<SudokuNode, Sequence<Int>> {
     val range = 0 until length
-    val legalMap = HashMap<Position, Sequence<Int>>()
+    val legalMap = HashMap<SudokuNode, Sequence<Int>>()
 
     for (rowIndex in range) {
         for (colIndex in range) {
             val node = neighborhoods.get2d(rowIndex, colIndex, length)
 
             if (null === node.value) {
-                val pos = Position(rowIndex, colIndex)
                 val shuffled = legal.shuffled(rand)
 
-                legalMap[pos] = shuffled
+                legalMap[node] = shuffled
             }
         }
     }
@@ -108,32 +106,28 @@ private fun shuffleValues(
 }
 
 private fun initializeValuesHelper2(
-    neighborhoods: List<SudokuNode>,
-    length: Int,
-    legalMap: Map<Position, Sequence<Int>>,
-    prev: Position
+    unassigned: MutableList<SudokuNode>,
+    legalMap: Map<SudokuNode, Sequence<Int>>
 ): Boolean {
-    val next = nextPosition(prev, length, neighborhoods)
-
-    if (length == next.rowIndex) {
+    if (unassigned.isEmpty()) {
         return true
     }
 
-    val rowIndex = next.rowIndex
-    val colIndex = next.colIndex
-    val node = neighborhoods.get2d(rowIndex, colIndex, length)
+    val node = unassigned.removeLast()
 
-    for (value in legalMap.getValue(next)) {
+    for (value in legalMap.getValue(node)) {
         if (isSafe(value, node)) {
             node.value = value
 
-            if (initializeValuesHelper2(neighborhoods, length, legalMap, next)) {
+            if (initializeValuesHelper2(unassigned, legalMap)) {
                 return true
             }
 
             node.value = null
         }
     }
+
+    unassigned.add(node)
 
     return false
 }
@@ -149,30 +143,4 @@ private fun isSafe(
     }
 
     return true
-}
-
-private fun nextPosition(
-    prev: Position,
-    length: Int,
-    neighborhoods: List<SudokuNode>
-): Position {
-    var nextRowIndex = prev.rowIndex
-    var nextColIndex = prev.colIndex
-
-    while (length != nextRowIndex) {
-        val node = neighborhoods.get2d(nextRowIndex, nextColIndex, length)
-
-        if (null === node.value) {
-            break
-        }
-
-        ++nextColIndex
-
-        if (length == nextColIndex) {
-            ++nextRowIndex
-            nextColIndex = 0
-        }
-    }
-
-    return Position(nextRowIndex, nextColIndex)
 }

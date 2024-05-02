@@ -6,12 +6,10 @@ internal fun makeCages(
     solved: List<List<Int>>,
     info: MakeSudokuCommand
 ): Set<Cage>? =
-    if (Game.KILLER in info.games) {
+    if (Game.KILLER in info.games)
         makeCagesHelper1(solved, info)
-    }
-    else {
+    else
         null
-    }
 
 private fun makeCagesHelper1(
     solved: List<List<Int>>,
@@ -40,7 +38,7 @@ private fun makeCagesHelper2(
     info: MakeSudokuCommand,
     cageCountRange: IntRange
 ) {
-    if (current in seen || current.outOfBounds(info.dimension.length)) {
+    if (current in seen) {
         return
     }
 
@@ -48,11 +46,10 @@ private fun makeCagesHelper2(
     cagePos.add(current)
 
     var newCagePos = cagePos
-    val mustStartNewCage = newCagePos.size >= cageCountRange.first || newCagePos.size <= cageCountRange.last && info.random.nextBoolean()
+    val mustStartNewCage = cageCountRange.contains(cagePos.size) && info.random.nextBoolean()
 
     if (mustStartNewCage) {
         val sum = cagePos.sumOf{ solved[it.rowIndex][it.colIndex] }
-
         val newCage = Cage(sum, cagePos)
         cages.add(newCage)
 
@@ -62,6 +59,8 @@ private fun makeCagesHelper2(
     val positions = listOf(current.up, current.down, current.left, current.right).shuffled(info.random)
 
     for (pos in positions) {
-        makeCagesHelper2(cages, solved, pos, newCagePos, seen, info, cageCountRange)
+        if (!pos.outOfBounds(info.dimension.length)) {
+            makeCagesHelper2(cages, solved, pos, newCagePos, seen, info, cageCountRange)
+        }
     }
 }

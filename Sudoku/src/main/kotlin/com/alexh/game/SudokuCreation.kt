@@ -6,9 +6,9 @@ import kotlinx.serialization.Serializable
 import kotlin.random.Random
 
 enum class Game {
-    KILLER,
     HYPER,
-    JIGSAW
+    JIGSAW,
+    KILLER
 }
 
 enum class Dimension(
@@ -42,10 +42,50 @@ data class MakeSudokuCommand(
 )
 
 internal class SudokuNode(
-    val neighbors: MutableSet<SudokuNode>,
-    val place: Position,
+    length: Int,
+) {
+    private val _row: MutableSet<SudokuNode> = HashSet(length)
+    private val _col: MutableSet<SudokuNode> = HashSet(length)
+    private val _box: MutableSet<SudokuNode> = HashSet(length)
+    private val _hyper: MutableSet<SudokuNode> = HashSet(length)
+    private val _neighbors: MutableSet<SudokuNode> = HashSet(4 * length)
     var value: Int? = null
-)
+
+    val row: Set<SudokuNode>
+        get() = this._row
+
+    val col: Set<SudokuNode>
+        get() = this._col
+
+    val box: Set<SudokuNode>
+        get() = this._box
+
+    val hyper: Set<SudokuNode>
+        get() = this._hyper
+
+    val neighbors: Set<SudokuNode>
+        get() = this._neighbors
+
+    fun addToRowSet(other: SudokuNode) {
+        this._row.add(other)
+        this._neighbors.add(other)
+    }
+
+    fun addToColSet(other: SudokuNode) {
+        this._col.add(other)
+        this._neighbors.add(other)
+    }
+
+    fun addToBoxSet(other: SudokuNode) {
+        this._box.add(other)
+        this._neighbors.add(other)
+    }
+
+    fun addToHyperSet(other: SudokuNode) {
+        this._hyper.add(other)
+        this._neighbors.add(other)
+    }
+}
 
 @Serializable
 class Cage(

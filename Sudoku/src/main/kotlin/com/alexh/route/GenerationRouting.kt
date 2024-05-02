@@ -52,7 +52,7 @@ private fun getGames(
     cookies: RequestCookies
 ): Set<Game> =
     cookies[Cookies.GAMES]?.run {
-        return this.split(",").map{ Game.valueOf(it) }.toSet()
+        return this.split(",").map{ Game.valueOf(it) }.toSortedSet()
     } ?: emptySet()
 
 private fun cookieError(

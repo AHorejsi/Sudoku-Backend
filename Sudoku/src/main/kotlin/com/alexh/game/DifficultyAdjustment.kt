@@ -1,8 +1,5 @@
 package com.alexh.game
 
-import com.alexh.utils.Position
-import com.alexh.utils.get2d
-import com.alexh.utils.up
 import kotlin.random.Random
 
 internal fun adjustForDifficulty(
@@ -13,25 +10,25 @@ internal fun adjustForDifficulty(
     val rand = info.random
     val length = info.dimension.length
 
-    val givenCount = length * length
-    val targetGivenCount = determineAmountOfGivens(difficulty, givenCount, rand)
+    val targetGivenCount = determineAmountOfGivens(difficulty, length, rand)
     val lowerBound = determineLowerBound(difficulty, length)
 
     adjustForDifficultyHelper1(
         neighborhoods,
-        givenCount,
         targetGivenCount,
         lowerBound,
         rand,
-        info.dimension
+        length
     )
 }
 
 private fun determineAmountOfGivens(
     difficulty: Difficulty,
-    givenCount: Int,
+    length: Int,
     rand: Random
 ): Int {
+    val givenCount = length * length
+
     val minCount = (givenCount * difficulty.initialGivenLowerBound).toInt()
     val maxCount = (givenCount * difficulty.initialGivenUpperBound).toInt()
 
@@ -45,19 +42,18 @@ private fun determineLowerBound(
 
 private fun adjustForDifficultyHelper1(
     neighborhoods: List<SudokuNode>,
-    givenCount: Int,
     targetGivenCount: Int,
     lowerBound: Int,
     rand: Random,
-    dimension: Dimension
+    length: Int
 ) {
-    var newGivenCount = givenCount
+    var givenCount = length * length
 
     for (node in neighborhoods.asSequence().shuffled(rand)) {
-        if (adjustForDifficultyHelper2(node, lowerBound, neighborhoods, dimension)) {
-            --newGivenCount
+        if (adjustForDifficultyHelper2(node, lowerBound, neighborhoods, length)) {
+            --givenCount
 
-            if (newGivenCount <= targetGivenCount) {
+            if (givenCount == targetGivenCount) {
                 return
             }
         }
@@ -68,10 +64,10 @@ private fun adjustForDifficultyHelper2(
     node: SudokuNode,
     lowerBound: Int,
     neighborhoods: List<SudokuNode>,
-    dimension: Dimension
+    length: Int
 ): Boolean {
-    if (checkLowerBound(node.place, lowerBound, neighborhoods, dimension)) {
-        if (tryRemove(neighborhoods, dimension.length, node)) {
+    if (checkLowerBound(node, lowerBound)) {
+        if (tryRemove(neighborhoods, length, node)) {
             return true
         }
     }
@@ -80,101 +76,58 @@ private fun adjustForDifficultyHelper2(
 }
 
 private fun checkLowerBound(
-    pos: Position,
-    lowerBound: Int,
-    neighborhoods: List<SudokuNode>,
-    dimension: Dimension
-): Boolean {
-    val length = dimension.length
-    val range = 0 until length
-
-    val rows = checkRow(pos, lowerBound, neighborhoods, range, length)
-    val cols = checkCol(pos, lowerBound, neighborhoods, range, length)
-    val boxes = checkBox(pos, lowerBound, neighborhoods, length, dimension)
-
-    return rows && cols && boxes
-}
-
-
-private fun checkRow(
-    pos: Position,
-    lowerBound: Int,
-    neighborhoods: List<SudokuNode>,
-    range: IntRange,
-    length: Int
+    node: SudokuNode,
+    lowerBound: Int
 ): Boolean {
     var count = 0
 
-    val rowIndex = pos.rowIndex
-
-    for (colIndex in range) {
-        val node = neighborhoods.get2d(rowIndex, colIndex, length)
-
-        node.value?.let {
+    for (neighbor in node.row) {
+        if (null !== neighbor.value) {
             ++count
 
-            if (count >= lowerBound) {
-                return true
+            if (count == lowerBound) {
+                return false
             }
         }
     }
 
-    return false
-}
+    count = 0
 
-private fun checkCol(
-    pos: Position,
-    lowerBound: Int,
-    neighborhoods: List<SudokuNode>,
-    range: IntRange,
-    length: Int
-): Boolean {
-    var count = 0
-
-    val colIndex = pos.colIndex
-
-    for (rowIndex in range) {
-        val node = neighborhoods.get2d(rowIndex, colIndex, length)
-
-        node.value?.let {
+    for (neighbor in node.col) {
+        if (null !== neighbor.value) {
             ++count
 
-            if (count >= lowerBound) {
-                return true
+            if (count == lowerBound) {
+                return false
             }
         }
     }
 
-    return false
-}
+    count = 0
 
-private fun checkBox(
-    pos: Position,
-    lowerBound: Int,
-    neighborhoods: List<SudokuNode>,
-    length: Int,
-    dimension: Dimension
-): Boolean {
-    var count = 0
+    for (neighbor in node.box) {
+        if (null !== neighbor.value) {
+            ++count
 
-    val rowRange = (pos.rowIndex - pos.rowIndex % dimension.boxRows) up dimension.boxRows
-    val colRange = (pos.colIndex - pos.colIndex % dimension.boxCols) up dimension.boxCols
-
-    for (rowIndex in rowRange) {
-        for (colIndex in colRange) {
-            val node = neighborhoods.get2d(rowIndex, colIndex, length)
-
-            node.value?.let {
-                ++count
-
-                if (count >= lowerBound) {
-                    return true
-                }
+            if (count == lowerBound) {
+                return false
             }
         }
     }
 
-    return false
+    count = 0
+
+    for (neighbor in node.hyper) {
+        if (null !== neighbor.value) {
+            ++count
+
+            if (count == lowerBound) {
+                return false
+            }
+        }
+    }
+
+    return true
 }
 
 private fun tryRemove(
