@@ -1,5 +1,7 @@
 package com.alexh.utils
 
+import java.lang.IllegalArgumentException
+
 fun <T> List<T>.get2d(
     rowIndex: Int,
     colIndex: Int,
@@ -13,11 +15,15 @@ fun <T> List<T>.get2d(
 fun <T> List<T>.unflatten(
     rowLength: Int,
 ): List<List<T>> {
-    val matrix = mutableListOf<MutableList<T>>()
+    if (0 != this.size % rowLength) {
+        throw IllegalArgumentException("Cannot break up list with the given row length")
+    }
+
+    val matrix = ArrayList<MutableList<T>>(this.size / rowLength)
     val iter = this.iterator()
 
     while (iter.hasNext()) {
-        val row = mutableListOf<T>()
+        val row = ArrayList<T>(rowLength)
 
         repeat(rowLength) {
             val value = iter.next()

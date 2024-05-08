@@ -30,13 +30,10 @@ private fun initializeValuesHelper1(
     legal: Sequence<Int>,
     games: Set<Game>
 ) {
-    if (Game.JIGSAW in games) {
-
-    }
-    else if (Game.HYPER in games) {
+    if (Game.HYPER in games) {
         fillBox(neighborhoods, dimension.length, 1 up dimension.boxRows, 1 up dimension.boxCols, legal, rand)
     }
-    else {
+    else if (!games.any()) {
         fillRegularDiagonal(neighborhoods, dimension, rand, legal)
     }
 }
@@ -136,7 +133,7 @@ private fun isSafe(
     value: Int,
     node: SudokuNode
 ): Boolean {
-    for (neighbor in node.neighbors) {
+    for (neighbor in node.all) {
         if (value == neighbor.value) {
             return false
         }

@@ -5,14 +5,14 @@ internal fun hasUniqueSolution(
     length: Int
 ): Boolean {
     val unassigned = neighborhoods.asSequence().filter{ null === it.value }.toMutableList()
-    val values = (1 .. length).asSequence()
+    val values = 1 .. length
 
     return 1 == countSolutions(unassigned, values)
 }
 
 private fun countSolutions(
     unassigned: MutableList<SudokuNode>,
-    valueRange: Sequence<Int>
+    valueRange: IntRange
 ): Int {
     if (unassigned.isEmpty()) {
         return 1
@@ -40,11 +40,11 @@ private fun countSolutions(
 
 private fun findValidValues(
     node: SudokuNode,
-    valueRange: Sequence<Int>
+    valueRange: IntRange
 ): Set<Int> {
     val valid = valueRange.toHashSet()
 
-    for (neighbor in node.neighbors) {
+    for (neighbor in node.all) {
         neighbor.value?.let {
             valid.remove(it)
         }
