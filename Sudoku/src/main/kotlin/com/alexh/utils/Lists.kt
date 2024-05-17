@@ -12,6 +12,17 @@ fun <T> List<T>.get2d(
     return this[actualIndex]
 }
 
+fun <T> MutableList<T>.set2d(
+    rowIndex: Int,
+    colIndex: Int,
+    cols: Int,
+    elem: T
+) {
+    val actualIndex = rowIndex * cols + colIndex
+
+    this[actualIndex] = elem
+}
+
 fun <T> List<T>.unflatten(
     rowLength: Int,
 ): List<List<T>> {

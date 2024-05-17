@@ -45,60 +45,96 @@ internal class SudokuNode(
     length: Int,
     val place: Position
 ) {
-    val row: MutableSet<SudokuNode> = HashSet(length)
-    val col: MutableSet<SudokuNode> = HashSet(length)
-    val box: MutableSet<SudokuNode> = HashSet(length)
-    val hyper: MutableSet<SudokuNode> = HashSet(length)
-    val all: MutableSet<SudokuNode> = HashSet(4 * length)
+    private val _row: MutableSet<SudokuNode> = HashSet(length)
+    private val _col: MutableSet<SudokuNode> = HashSet(length)
+    private val _box: MutableSet<SudokuNode> = HashSet(length)
+    private val _hyper: MutableSet<SudokuNode> = HashSet(length)
+    private lateinit var _all: Set<SudokuNode>
+
     var value: Int? = null
+    private var changed: Boolean = false
 
-    fun addToRowSet(other: SudokuNode) {
+    val row: Iterable<SudokuNode>
+        get() = this._row
+    val col: Iterable<SudokuNode>
+        get() = this._col
+    val box: Iterable<SudokuNode>
+        get() = this._box
+    val hyper: Iterable<SudokuNode>
+        get() = this._hyper
+    val all: Iterable<SudokuNode>
+        get() {
+            if (this.changed) {
+                this._all = this._row union this._col union this._box union this._hyper
+                this.changed = false
+            }
+
+            return this._all
+        }
+
+    fun addToRowSet(other: SudokuNode): Boolean {
         if (this === other) {
             throw IllegalArgumentException("A node cannot have a connection to itself")
         }
 
-        this.row.add(other)
-        this.all.add(other)
+        this.changed = this._row.add(other)
+
+        return this.changed
     }
 
-    fun addToColSet(other: SudokuNode) {
+    fun addToColSet(other: SudokuNode): Boolean {
         if (this === other) {
             throw IllegalArgumentException("A node cannot have a connection to itself")
         }
 
-        this.col.add(other)
-        this.all.add(other)
+        this.changed = this._col.add(other)
+
+        return this.changed
     }
 
-    fun addToBoxSet(other: SudokuNode) {
+    fun addToBoxSet(other: SudokuNode): Boolean {
         if (this === other) {
             throw IllegalArgumentException("A node cannot have a connection to itself")
         }
 
-        this.box.add(other)
-        this.all.add(other)
+        this.changed = this._box.add(other)
+
+        return this.changed
     }
 
-    fun addToHyperSet(other: SudokuNode) {
+    fun removeFromBoxSet(other: SudokuNode): Boolean {
+        this.changed = this._box.remove(other)
+
+        return this.changed
+    }
+
+    fun addToHyperSet(other: SudokuNode): Boolean {
         if (this === other) {
             throw IllegalArgumentException("A node cannot have a connection to itself")
         }
 
-        this.hyper.add(other)
-        this.all.add(other)
+        this.changed = this._hyper.add(other)
+
+        return this.changed
+    }
+
+    fun removeFromHyperSet(other: SudokuNode): Boolean {
+        this.changed = this._hyper.remove(other)
+
+        return this.changed
     }
 }
 
 @Serializable
 class Cage(
     val sum: Int,
-    val positions: Set<Position>
+    val positions: MutableSet<Position>
 )
 
 @Serializable
 class Box(
-    val positions: Set<Position>,
-    val isHyper: Boolean
+    val isHyper: Boolean,
+    val positions: MutableSet<Position>
 )
 
 @Serializable
@@ -119,10 +155,10 @@ fun makeSudoku(info: MakeSudokuCommand): SudokuJson {
 
     val (neighborhoods, boxes) = initializeBoard(info)
     initializeValues(neighborhoods, info)
+    val cages = makeCages(neighborhoods, info)
     val solved = neighborhoods.map{ it.value!! }.unflatten(length)
     adjustForDifficulty(neighborhoods, info)
     val board = neighborhoods.map{ it.value }.unflatten(length)
-    val cages = makeCages(solved, info)
 
     return SudokuJson(board, solved, cages, boxes, length, difficulty, games)
 }

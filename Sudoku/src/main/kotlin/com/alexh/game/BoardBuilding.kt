@@ -3,18 +3,16 @@ package com.alexh.game
 import com.alexh.utils.Position
 import com.alexh.utils.get2d
 import com.alexh.utils.up
-import kotlin.random.Random
 
 internal fun initializeBoard(
     info: MakeSudokuCommand
 ): Pair<List<SudokuNode>, Set<Box>> {
     val length = info.dimension.length
-    val rand = info.random
 
     val neighborhoods = ArrayList<SudokuNode>(length * length)
-    initializeNeighborhoods(info, length, neighborhoods, rand)
+    initializeNeighborhoods(info, length, neighborhoods)
 
-    val boxes = HashSet<Box>(length)
+    val boxes = HashSet<Box>(length * 2)
     initializeBoxes(neighborhoods, length, boxes)
 
     return neighborhoods to boxes
@@ -23,22 +21,15 @@ internal fun initializeBoard(
 private fun initializeNeighborhoods(
     info: MakeSudokuCommand,
     length: Int,
-    neighborhoods: MutableList<SudokuNode>,
-    rand: Random
+    neighborhoods: MutableList<SudokuNode>
 ) {
-    val games = info.games
-
     val boxRows = info.dimension.boxRows
     val boxCols = info.dimension.boxCols
 
     makeRegularNeighborhoods(neighborhoods, length, boxRows, boxCols)
 
-    if (Game.HYPER in games) {
+    if (Game.HYPER in info.games) {
         makeRegularHyperNeighborhoods(neighborhoods, length, boxRows, boxCols)
-    }
-
-    if (Game.JIGSAW in games) {
-        deformBoxes(neighborhoods, length, boxRows, boxCols)
     }
 }
 
@@ -216,15 +207,6 @@ private fun makeIndividualHyperBox(
     }
 }
 
-private fun deformBoxes(
-    neighborhoods: List<SudokuNode>,
-    length: Int,
-    boxRows: Int,
-    boxCols: Int
-) {
-
-}
-
 private fun initializeBoxes(
     neighborhoods: List<SudokuNode>,
     length: Int,
@@ -268,7 +250,7 @@ private fun makeBox(
 
     positions.add(node.place)
 
-    return Box(positions, false)
+    return Box(false, positions)
 }
 
 private fun makeHyperBox(
@@ -276,7 +258,7 @@ private fun makeHyperBox(
     length: Int,
     seen: MutableSet<SudokuNode>
 ): Box? {
-    if (node in seen || node.hyper.isEmpty()) {
+    if (node in seen || !node.hyper.any()) {
         return null
     }
 
@@ -288,5 +270,5 @@ private fun makeHyperBox(
 
     positions.add(node.place)
 
-    return Box(positions, true)
+    return Box(true, positions)
 }

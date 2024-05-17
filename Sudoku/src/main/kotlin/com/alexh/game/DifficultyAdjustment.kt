@@ -53,7 +53,7 @@ private fun adjustForDifficultyHelper1(
         if (adjustForDifficultyHelper2(node, lowerBound, neighborhoods, length)) {
             --givenCount
 
-            if (givenCount == targetGivenCount) {
+            if (targetGivenCount == givenCount) {
                 return
             }
         }
@@ -79,55 +79,17 @@ private fun checkLowerBound(
     node: SudokuNode,
     lowerBound: Int
 ): Boolean {
-    var count = 0
+    val rows = node.row.count{ null !== it.value } >= lowerBound
+    val cols = node.col.count{ null !== it.value } >= lowerBound
+    val boxes = node.box.count{ null !== it.value } >= lowerBound
 
-    for (neighbor in node.row) {
-        if (null !== neighbor.value) {
-            ++count
+    var result = rows && cols && boxes
 
-            if (count == lowerBound) {
-                return false
-            }
-        }
+    if (node.hyper.any()) {
+        result = result && node.hyper.count{ null !== it.value } >= lowerBound
     }
 
-    count = 0
-
-    for (neighbor in node.col) {
-        if (null !== neighbor.value) {
-            ++count
-
-            if (count == lowerBound) {
-                return false
-            }
-        }
-    }
-
-    count = 0
-
-    for (neighbor in node.box) {
-        if (null !== neighbor.value) {
-            ++count
-
-            if (count == lowerBound) {
-                return false
-            }
-        }
-    }
-
-    count = 0
-
-    for (neighbor in node.hyper) {
-        if (null !== neighbor.value) {
-            ++count
-
-            if (count == lowerBound) {
-                return false
-            }
-        }
-    }
-
-    return true
+    return result
 }
 
 private fun tryRemove(

@@ -33,7 +33,7 @@ private fun initializeValuesHelper1(
     if (Game.HYPER in games) {
         fillBox(neighborhoods, dimension.length, 1 up dimension.boxRows, 1 up dimension.boxCols, legal, rand)
     }
-    else if (!games.any()) {
+    else if (games.isEmpty()) {
         fillRegularDiagonal(neighborhoods, dimension, rand, legal)
     }
 }
@@ -92,9 +92,7 @@ private fun shuffleValues(
             val node = neighborhoods.get2d(rowIndex, colIndex, length)
 
             if (null === node.value) {
-                val shuffled = legal.shuffled(rand)
-
-                legalMap[node] = shuffled
+                legalMap[node] = legal.shuffled(rand)
             }
         }
     }
