@@ -29,7 +29,7 @@ private fun countSolutions(
         node.value = null
 
         if (found > 1) {
-            return found
+            break
         }
     }
 

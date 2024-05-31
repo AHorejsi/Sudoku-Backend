@@ -40,7 +40,7 @@ private fun makeCagesHelper(
     length: Int,
     cageRange: IntRange
 ) {
-    val available = makeAllPositions(length)
+    val available = neighborhoods.asSequence().map{ it.place }.toMutableList()
 
     while (available.any()) {
         val cageSize = cageRange.random(rand)
@@ -52,11 +52,7 @@ private fun makeCagesHelper(
             cagePos.add(pos)
             available.remove(pos)
 
-            val adjacent = listOf(pos.up, pos.down, pos.left, pos.right)
-                .asSequence()
-                .filterNot{ it.outOfBounds(length) }
-                .filter{ it in available }
-                .toList()
+            val adjacent = listOf(pos.up, pos.down, pos.left, pos.right).filter{ !it.outOfBounds(length) && it in available }
 
             if (adjacent.isEmpty()) {
                 break
@@ -70,16 +66,4 @@ private fun makeCagesHelper(
 
         cages.add(newCage)
     }
-}
-
-private fun makeAllPositions(
-    length: Int
-): MutableList<Position> {
-    val range = (0 until length).asSequence()
-
-    return range.map{ rowIndex ->
-        range.map{ colIndex ->
-            Position(rowIndex, colIndex)
-        }
-    }.flatten().toMutableList()
 }

@@ -11,15 +11,19 @@ internal fun adjustForDifficulty(
     val length = info.dimension.length
 
     val targetGivenCount = determineAmountOfGivens(difficulty, length, rand)
-    val lowerBound = determineLowerBound(difficulty, length)
+    val lowerBound = (length * difficulty.initialGivensPerNeighborhood).toInt()
 
-    adjustForDifficultyHelper1(
-        neighborhoods,
-        targetGivenCount,
-        lowerBound,
-        rand,
-        length
-    )
+    var givenCount = length * length
+
+    for (node in neighborhoods.asSequence().shuffled(rand)) {
+        if (checkLowerBound(node, lowerBound) && tryRemove(neighborhoods, length, node)) {
+            --givenCount
+
+            if (givenCount <= targetGivenCount) {
+                break
+            }
+        }
+    }
 }
 
 private fun determineAmountOfGivens(
@@ -30,49 +34,9 @@ private fun determineAmountOfGivens(
     val givenCount = length * length
 
     val minCount = (givenCount * difficulty.initialGivenLowerBound).toInt()
-    val maxCount = (givenCount * difficulty.initialGivenUpperBound).toInt()
+    val maxCount = (givenCount * difficulty.initialGivenUpperBound).toInt() + 1
 
-    return rand.nextInt(minCount, maxCount + 1)
-}
-
-private fun determineLowerBound(
-    difficulty: Difficulty,
-    length: Int
-): Int = (length * difficulty.initialGivensPerNeighborhood).toInt()
-
-private fun adjustForDifficultyHelper1(
-    neighborhoods: List<SudokuNode>,
-    targetGivenCount: Int,
-    lowerBound: Int,
-    rand: Random,
-    length: Int
-) {
-    var givenCount = length * length
-
-    for (node in neighborhoods.asSequence().shuffled(rand)) {
-        if (adjustForDifficultyHelper2(node, lowerBound, neighborhoods, length)) {
-            --givenCount
-
-            if (targetGivenCount == givenCount) {
-                return
-            }
-        }
-    }
-}
-
-private fun adjustForDifficultyHelper2(
-    node: SudokuNode,
-    lowerBound: Int,
-    neighborhoods: List<SudokuNode>,
-    length: Int
-): Boolean {
-    if (checkLowerBound(node, lowerBound)) {
-        if (tryRemove(neighborhoods, length, node)) {
-            return true
-        }
-    }
-
-    return false
+    return rand.nextInt(minCount, maxCount)
 }
 
 private fun checkLowerBound(

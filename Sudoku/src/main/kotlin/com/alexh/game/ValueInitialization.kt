@@ -109,8 +109,9 @@ private fun initializeValuesHelper2(
     }
 
     val node = unassigned.removeLast()
+    val valueList = legalMap.getValue(node)
 
-    for (value in legalMap.getValue(node)) {
+    for (value in valueList) {
         if (isSafe(value, node)) {
             node.value = value
 
