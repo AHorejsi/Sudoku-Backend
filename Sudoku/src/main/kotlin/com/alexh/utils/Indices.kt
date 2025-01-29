@@ -19,9 +19,11 @@ class Position (
     val right: Position
         get() = Position(this.rowIndex, this.colIndex + 1)
 
-    fun outOfBounds(length: Int): Boolean = outOfBounds(this.rowIndex, length) || outOfBounds(this.colIndex, length)
+    fun outOfBounds(length: Int): Boolean =
+        outOfBounds(this.rowIndex, length) || outOfBounds(this.colIndex, length)
 
-    override fun hashCode(): Int = 31 * (this.rowIndex + this.colIndex)
+    override fun hashCode(): Int =
+        31 * (this.rowIndex + this.colIndex)
 
     override fun equals(other: Any?): Boolean =
         other is Position && 0 == this.compareTo(other)
@@ -36,8 +38,8 @@ class Position (
     }
 }
 
-fun outOfBounds(index: Int, length: Int): Boolean = index < 0 || index >= length
+fun outOfBounds(index: Int, length: Int): Boolean =
+    index < 0 || index >= length
 
-infix fun Int.up(
-    amount: Int
-): IntRange = this until (this + amount)
+infix fun Int.up(amount: Int): IntRange =
+    this until (this + amount)

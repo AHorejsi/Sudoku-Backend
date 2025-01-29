@@ -6,9 +6,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.server.application.*
 
-fun configureSecurity(
-    app: Application
-) {
+fun configureSecurity(app: Application) {
     app.authentication {
         this.jwt {
             val config = app.environment.config
