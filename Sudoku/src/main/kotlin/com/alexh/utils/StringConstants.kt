@@ -12,9 +12,9 @@ class Cookies private constructor() {
         const val DIFFICULTY = "difficulty"
         const val GAMES = "games"
 
-        const val NAME = "name"
+        const val USERNAME = "username"
         const val EMAIL = "email"
-        const val NAME_OR_EMAIL = "nameOrEmail"
+        const val USERNAME_OR_EMAIL = "usernameOrEmail"
         const val PASSWORD = "password"
     }
 }
@@ -29,7 +29,7 @@ class Endpoints private constructor() {
 
         const val CREATE_USER_LOGIN = "/createUser"
         const val GET_USER_BY_LOGIN = "/getUser"
-        const val DELETE_USER_BY_ID = "/deleteUser"
+        const val DELETE_USER_BY_LOGIN = "/deleteUser"
     }
 }
 

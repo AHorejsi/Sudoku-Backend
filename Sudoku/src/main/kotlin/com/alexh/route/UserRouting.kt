@@ -11,15 +11,17 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
+private const val useEmbeddedDatabase = true
+
 fun configureRoutingForUsers(app: Application) {
     app.routing {
         this.post(Endpoints.CREATE_USER_LOGIN) {
             createUser(app, this.call)
         }
         this.get(Endpoints.GET_USER_BY_LOGIN) {
-            readUser(app, this.call)
+            getUser(app, this.call)
         }
-        this.post(Endpoints.DELETE_USER_BY_ID) {
+        this.post(Endpoints.DELETE_USER_BY_LOGIN) {
             deleteUser(app, this.call)
         }
     }
@@ -28,60 +30,47 @@ fun configureRoutingForUsers(app: Application) {
 private suspend fun createUser(app: Application, call: ApplicationCall) {
     val cookies = call.request.cookies
 
-    val name = cookies[Cookies.NAME]
+    val username = cookies[Cookies.USERNAME]
     val email = cookies[Cookies.EMAIL]
     val password = cookies[Cookies.PASSWORD]
 
-    if (null === name || null === email || null === password) {
-        throw InternalError("Necessary cookies have not been supplied")
+    if (username.isNullOrEmpty() || email.isNullOrEmpty() || password.isNullOrEmpty()) {
+        loginError()
     }
 
-    val conn = connect(true, app)
-    val service = UserService(conn)
+    val db = connect(useEmbeddedDatabase, app)
+    val service = UserService(db)
 
-    val result = service.create(name, email, password)
-
-    if (null === result) {
-        call.respond(HttpStatusCode.Conflict)
-    }
-    else {
-        call.respond(HttpStatusCode.Created)
-    }
+    service.create(username, password, email)
 }
 
-private suspend fun readUser(app: Application, call: ApplicationCall) {
+private suspend fun getUser(app: Application, call: ApplicationCall) {
     val cookies = call.request.cookies
 
-    val nameOrEmail = cookies[Cookies.NAME_OR_EMAIL]
+    val usernameOrEmail = cookies[Cookies.USERNAME_OR_EMAIL]
     val password = cookies[Cookies.PASSWORD]
 
-    if (null === nameOrEmail || null === password) {
-        cookieError()
+    if (usernameOrEmail.isNullOrEmpty() || password.isNullOrEmpty()) {
+        loginError()
     }
 
-    val conn = connect(true, app)
-    val service = UserService(conn)
+    val db = connect(useEmbeddedDatabase, app)
+    val service = UserService(db)
 
-    val user = service.read(nameOrEmail, password)
+    val login = service.read(usernameOrEmail, password)
 
-    if (null === user) {
-        call.respond(HttpStatusCode.Unauthorized)
-    }
-    else {
-        call.respond(HttpStatusCode.OK, user)
-    }
+    call.respond(HttpStatusCode.OK, login)
 }
 
 private suspend fun deleteUser(app: Application, call: ApplicationCall) {
     val user = call.receive<User>()
 
-    val conn = connect(true, app)
-    val service = UserService(conn)
+    val db = connect(useEmbeddedDatabase, app)
+    val service = UserService(db)
 
     service.delete(user)
-
-    call.respond(HttpStatusCode.OK)
 }
 
-private fun cookieError(): Nothing =
-    throw InternalError("Necessary cookies have not been supplied")
+private fun loginError(): Nothing {
+    throw InternalError("Invalid login information")
+}
