@@ -145,7 +145,7 @@ class SudokuJson(
     val boxes: Set<Box>,
     val length: Int,
     val difficulty: Difficulty,
-    val games: Set<Game>,
+    val games: Set<Game>
 )
 
 fun makeSudoku(info: MakeSudokuCommand): SudokuJson {

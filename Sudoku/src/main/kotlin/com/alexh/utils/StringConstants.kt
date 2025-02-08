@@ -16,6 +16,8 @@ class Cookies private constructor() {
         const val EMAIL = "email"
         const val USERNAME_OR_EMAIL = "usernameOrEmail"
         const val PASSWORD = "password"
+
+        const val JSON = "json"
     }
 }
 
@@ -27,9 +29,13 @@ class Endpoints private constructor() {
     companion object {
         const val GENERATION = "/generate"
 
-        const val CREATE_USER_LOGIN = "/createUser"
-        const val GET_USER_BY_LOGIN = "/getUser"
-        const val DELETE_USER_BY_LOGIN = "/deleteUser"
+        const val CREATE_USER = "/createUser"
+        const val GET_USER = "/getUser"
+        const val DELETE_USER = "/deleteUser"
+
+        const val CREATE_PUZZLE = "/createPuzzle"
+        const val UPDATE_PUZZLE = "/updatePuzzle"
+        const val DELETE_PUZZLE = "/deletePuzzle"
     }
 }
 
