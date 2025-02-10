@@ -102,6 +102,7 @@ internal class SudokuNode(
         return this.changed
     }
 
+    @Suppress("UNUSED")
     fun removeFromBoxSet(other: SudokuNode): Boolean {
         this.changed = this._box.remove(other)
 
@@ -118,6 +119,7 @@ internal class SudokuNode(
         return this.changed
     }
 
+    @Suppress("UNUSED")
     fun removeFromHyperSet(other: SudokuNode): Boolean {
         this.changed = this._hyper.remove(other)
 
@@ -125,18 +127,21 @@ internal class SudokuNode(
     }
 }
 
+@Suppress("UNUSED")
 @Serializable
 class Cage(
     val sum: Int,
     val positions: MutableSet<Position>
 )
 
+@Suppress("UNUSED")
 @Serializable
 class Box(
     val isHyper: Boolean,
     val positions: MutableSet<Position>
 )
 
+@Suppress("UNUSED")
 @Serializable
 class SudokuJson(
     val board: List<List<Int?>>,

@@ -49,11 +49,14 @@ private suspend fun createUser(app: Application, call: ApplicationCall) {
     }
 
     val db = connect(useEmbeddedDatabase, app)
-    val service = UserService(db)
 
-    service.createUser(username, password, email)
+    db.use {
+        val service = UserService(it)
 
-    call.respond(HttpStatusCode.OK)
+        service.createUser(username, email, password)
+
+        call.respond(HttpStatusCode.OK)
+    }
 }
 
 private suspend fun getUser(app: Application, call: ApplicationCall) {
@@ -67,24 +70,28 @@ private suspend fun getUser(app: Application, call: ApplicationCall) {
     }
 
     val db = connect(useEmbeddedDatabase, app)
-    val service = UserService(db)
 
-    val login = service.getUser(usernameOrEmail, password)
+    db.use {
+        val service = UserService(it)
 
-    call.respond(HttpStatusCode.OK, login)
+        val login = service.getUser(usernameOrEmail, password)
 
-    call.respond(HttpStatusCode.OK)
+        call.respond(HttpStatusCode.OK, login)
+    }
 }
 
 private suspend fun deleteUser(app: Application, call: ApplicationCall) {
     val user = call.receive(User::class)
 
     val db = connect(useEmbeddedDatabase, app)
-    val service = UserService(db)
 
-    service.deleteUser(user)
+    db.use {
+        val service = UserService(it)
 
-    call.respond(HttpStatusCode.OK)
+        service.deleteUser(user)
+
+        call.respond(HttpStatusCode.OK)
+    }
 }
 
 private fun loginError(): Nothing {
@@ -102,31 +109,40 @@ private suspend fun createPuzzle(app: Application, call: ApplicationCall) {
     }
 
     val db = connect(useEmbeddedDatabase, app)
-    val service = UserService(db)
 
-    val puzzle = service.createPuzzle(json, user)
+    db.use {
+        val service = UserService(it)
 
-    call.respond(HttpStatusCode.OK, puzzle)
+        val puzzle = service.createPuzzle(json, user)
+
+        call.respond(HttpStatusCode.OK, puzzle)
+    }
 }
 
 private suspend fun updatePuzzle(app: Application, call: ApplicationCall) {
     val puzzle = call.receive(Puzzle::class)
 
     val db = connect(useEmbeddedDatabase, app)
-    val service = UserService(db)
 
-    service.updatePuzzle(puzzle)
+    db.use {
+        val service = UserService(it)
 
-    call.respond(HttpStatusCode.OK)
+        service.updatePuzzle(puzzle)
+
+        call.respond(HttpStatusCode.OK)
+    }
 }
 
 private suspend fun deletePuzzle(app: Application, call: ApplicationCall) {
     val puzzle = call.receive(Puzzle::class)
 
     val db = connect(useEmbeddedDatabase, app)
-    val service = UserService(db)
 
-    service.deletePuzzle(puzzle)
+    db.use {
+        val service = UserService(it)
 
-    call.respond(HttpStatusCode.OK)
+        service.deletePuzzle(puzzle)
+
+        call.respond(HttpStatusCode.OK)
+    }
 }

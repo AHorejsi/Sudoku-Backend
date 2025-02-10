@@ -27,7 +27,7 @@ class UserService(private val dbConn: Connection) {
         private const val GET_USER =
                 "SELECT " +
                     "$USERNAME, $EMAIL, " +
-                    "GROUP_CONCAT($PUZZLE_TABLE_ID) AS $PUZZLE_ID, " +
+                    "GROUP_CONCAT($PUZZLE_TABLE_ID, ';') AS $PUZZLE_ID, " +
                     "GROUP_CONCAT($JSON, ';') AS $JSON FROM $USER_TABLE " +
                 "WHERE ($USERNAME = ? OR $EMAIL = ?) AND $PASSWORD = ? " +
                 "LEFT JOIN $PUZZLE_TABLE ON $USER_TABLE.$USER_TABLE_ID = $PUZZLE_TABLE.$USER_ID " +
@@ -49,37 +49,37 @@ class UserService(private val dbConn: Connection) {
     }
 
     suspend fun createUser(username: String, password: String, email: String) = withContext(Dispatchers.IO) {
-        val stmt = this@UserService.dbConn.prepareStatement(CREATE_USER, Statement.RETURN_GENERATED_KEYS)
+        this@UserService.dbConn.prepareStatement(CREATE_USER, Statement.RETURN_GENERATED_KEYS).use { stmt ->
+            stmt.setString(1, username)
+            stmt.setString(2, password)
+            stmt.setString(3, email)
 
-        stmt.setString(1, username)
-        stmt.setString(2, password)
-        stmt.setString(3, email)
+            stmt.executeUpdate()
 
-        stmt.executeUpdate()
-
-        val keys = stmt.generatedKeys
-
-        if (!keys.next()) {
-            throw InternalError("Failed to create User")
+            stmt.generatedKeys.use { keys ->
+                if (!keys.next()) {
+                    throw InternalError("Failed to create User")
+                }
+            }
         }
     }
 
     suspend fun getUser(usernameOrEmail: String, password: String): LoginAttempt = withContext(Dispatchers.IO) {
-        val stmt = this@UserService.dbConn.prepareStatement(GET_USER)
+        this@UserService.dbConn.prepareStatement(GET_USER).use { stmt ->
+            stmt.setString(1, usernameOrEmail)
+            stmt.setString(2, usernameOrEmail)
+            stmt.setString(3, password)
 
-        stmt.setString(1, usernameOrEmail)
-        stmt.setString(2, usernameOrEmail)
-        stmt.setString(3, password)
+            stmt.executeQuery().use { results ->
+                if (!results.next()) {
+                    return@withContext LoginAttempt.Failure
+                }
+                else {
+                    val user = this@UserService.makeUser(results)
 
-        val results = stmt.executeQuery()
-
-        if (!results.next()) {
-            return@withContext LoginAttempt.Failure
-        }
-        else {
-            val user = this@UserService.makeUser(results)
-
-            return@withContext LoginAttempt.Success(user)
+                    return@withContext LoginAttempt.Success(user)
+                }
+            }
         }
     }
 
@@ -99,49 +99,49 @@ class UserService(private val dbConn: Connection) {
     }
 
     suspend fun deleteUser(user: User): Unit = withContext(Dispatchers.IO) {
-        val stmt = this@UserService.dbConn.prepareStatement(DELETE_USER)
+        this@UserService.dbConn.prepareStatement(DELETE_USER).use { stmt ->
+            stmt.setInt(1, user.id)
+            stmt.setString(2, user.username)
+            stmt.setString(3, user.email)
 
-        stmt.setInt(1, user.id)
-        stmt.setString(2, user.username)
-        stmt.setString(3, user.email)
-
-        stmt.executeUpdate()
+            stmt.executeUpdate()
+        }
     }
 
     suspend fun createPuzzle(json: String, user: User): Puzzle = withContext(Dispatchers.IO) {
-        val stmt = this@UserService.dbConn.prepareStatement(CREATE_PUZZLE, Statement.RETURN_GENERATED_KEYS)
+        this@UserService.dbConn.prepareStatement(CREATE_PUZZLE, Statement.RETURN_GENERATED_KEYS).use { stmt ->
+            stmt.setString(1, json)
+            stmt.setInt(2, user.id)
 
-        stmt.setString(1, json)
-        stmt.setInt(2, user.id)
+            stmt.executeUpdate()
 
-        stmt.executeUpdate()
+            stmt.generatedKeys.use { keys ->
+                if (!keys.next()) {
+                    throw InternalError("Failed to create Puzzle")
+                }
+                else {
+                    val id = keys.getInt(UserService.PUZZLE_TABLE_ID)
 
-        val keys = stmt.generatedKeys
-
-        if (!keys.next()) {
-            throw InternalError("Failed to create User")
-        }
-        else {
-            val id = keys.getInt(UserService.PUZZLE_TABLE_ID)
-
-            return@withContext Puzzle(id, json)
+                    return@withContext Puzzle(id, json)
+                }
+            }
         }
     }
 
     suspend fun updatePuzzle(puzzle: Puzzle): Unit = withContext(Dispatchers.IO) {
-        val stmt = this@UserService.dbConn.prepareStatement(UPDATE_PUZZLE)
+        this@UserService.dbConn.prepareStatement(UPDATE_PUZZLE).use { stmt ->
+            stmt.setString(1, puzzle.json)
+            stmt.setInt(2, puzzle.id)
 
-        stmt.setString(1, puzzle.json)
-        stmt.setInt(2, puzzle.id)
-
-        stmt.executeUpdate()
+            stmt.executeUpdate()
+        }
     }
 
     suspend fun deletePuzzle(puzzle: Puzzle): Unit = withContext(Dispatchers.IO) {
-        val stmt = this@UserService.dbConn.prepareStatement(DELETE_PUZZLE)
+        this@UserService.dbConn.prepareStatement(DELETE_PUZZLE).use { stmt ->
+            stmt.setInt(1, puzzle.id)
 
-        stmt.setInt(1, puzzle.id)
-
-        stmt.executeUpdate()
+            stmt.executeUpdate()
+        }
     }
 }

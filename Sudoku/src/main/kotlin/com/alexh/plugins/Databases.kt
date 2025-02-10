@@ -45,13 +45,3 @@ fun connect(embedded: Boolean, app: Application): Connection {
         return DriverManager.getConnection(url, user, password)
     }
 }
-
-fun checkConnection(connection: Connection) {
-    if (connection.isClosed) {
-        throw SQLException("Database connection is closed")
-    }
-
-    if (!connection.isValid(1000)) {
-        throw SQLException("Database connection is invalid")
-    }
-}
