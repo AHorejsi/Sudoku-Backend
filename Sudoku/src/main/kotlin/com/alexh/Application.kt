@@ -1,17 +1,17 @@
 package com.alexh
 
-import io.ktor.server.application.*
-import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import com.alexh.plugins.*
 import com.alexh.route.*
+import io.ktor.server.application.*
 
-fun main() {
-    embeddedServer(Netty, port=8080, host="0.0.0.0", module=Application::module).start(true)
+fun main(args: Array<String>) {
+    EngineMain.main(args)
 }
 
+// Specified to be called in resources/application.conf
 fun Application.module() {
-    //configureSecurity(this)
+    configureSecurity(this)
     configureSerialization(this)
     configureRoutingForGeneratingPuzzles(this)
     configureRoutingForUsers(this)
