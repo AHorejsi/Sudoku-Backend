@@ -10,7 +10,7 @@ fun main(args: Array<String>) {
 }
 
 // Specified to be called in resources/application.conf
-fun Application.module() {
+fun Application.mainModule() {
     configureSecurity(this)
     configureSerialization(this)
     configureRoutingForGeneratingPuzzles(this)

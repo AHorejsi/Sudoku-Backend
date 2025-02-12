@@ -19,22 +19,33 @@ class UserService(private val dbConn: Connection) {
         const val PUZZLE_TABLE_ID = "id"
         const val JSON = "json"
         const val USER_ID = "userId"
-        const val PUZZLE_ID = "puzzleId"
+
+        private const val CREATE_USER_TABLE =
+            "CREATE TABLE IF NOT EXISTS $USER_TABLE (" +
+                "$USER_TABLE_ID SERIAL PRIMARY KEY," +
+                "$USERNAME TEXT UNIQUE NOT NULL," +
+                "$PASSWORD TEXT NOT NULL," +
+                "$EMAIL TEXT UNIQUE NOT NULL" +
+            ")"
+        private const val CREATE_PUZZLE_TABLE =
+            "CREATE TABLE IF NOT EXISTS $PUZZLE_TABLE (" +
+                "$PUZZLE_TABLE_ID SERIAL PRIMARY KEY," +
+                "$JSON LONGTEXT NOT NULL," +
+                "$USER_ID INT REFERENCES $USER_TABLE($USER_TABLE_ID)" +
+            ")"
 
         private const val CREATE_USER =
             "INSERT INTO $USER_TABLE ($USERNAME, $PASSWORD, $EMAIL) " +
             "VALUES (?, ?, ?);"
         private const val GET_USER =
-                "SELECT " +
-                    "$USERNAME, $EMAIL, " +
-                    "GROUP_CONCAT($PUZZLE_TABLE_ID, ';') AS $PUZZLE_ID, " +
-                    "GROUP_CONCAT($JSON, ';') AS $JSON FROM $USER_TABLE " +
-                "WHERE ($USERNAME = ? OR $EMAIL = ?) AND $PASSWORD = ? " +
-                "LEFT JOIN $PUZZLE_TABLE ON $USER_TABLE.$USER_TABLE_ID = $PUZZLE_TABLE.$USER_ID " +
-                "GROUP BY $USER_TABLE_ID;"
+            "SELECT $USER_TABLE.$USER_TABLE_ID, $USERNAME, $EMAIL, $PUZZLE_TABLE.$PUZZLE_TABLE_ID, $JSON " +
+            "FROM $USER_TABLE " +
+            "LEFT JOIN $PUZZLE_TABLE ON $USER_TABLE.$USER_TABLE_ID = $PUZZLE_TABLE.$USER_ID " +
+            "WHERE ($USERNAME = ? OR $EMAIL = ?) AND $PASSWORD = ? " +
+            "GROUP BY $USER_TABLE.$USER_TABLE_ID;"
         private const val DELETE_USER =
             "DELETE FROM $USER_TABLE " +
-            "WHERE $USER_TABLE_ID = ? AND $USERNAME = ? AND $EMAIL = ?;"
+            "WHERE $USER_TABLE_ID = ? AND ($USERNAME = ? OR $EMAIL = ?) AND $PASSWORD = ?;"
 
         private const val CREATE_PUZZLE =
             "INSERT INTO $PUZZLE_TABLE ($JSON, $USER_ID)" +
@@ -46,6 +57,13 @@ class UserService(private val dbConn: Connection) {
         private const val DELETE_PUZZLE =
             "DELETE FROM $PUZZLE_TABLE " +
             "WHERE $PUZZLE_TABLE_ID = ?;"
+    }
+
+    init {
+        this.dbConn.createStatement().use { stmt ->
+            stmt.executeUpdate(CREATE_USER_TABLE)
+            stmt.executeUpdate(CREATE_PUZZLE_TABLE)
+        }
     }
 
     suspend fun createUser(username: String, password: String, email: String) = withContext(Dispatchers.IO) {
@@ -84,25 +102,34 @@ class UserService(private val dbConn: Connection) {
     }
 
     private fun makeUser(results: ResultSet): User {
-        val userId = results.getInt(UserService.USER_TABLE_ID)
+        val userId = results.getInt("$USER_TABLE.$USER_TABLE_ID")
         val username = results.getString(UserService.USERNAME)
         val email = results.getString(UserService.EMAIL)
 
-        val puzzlesIds = results.getString(UserService.PUZZLE_ID).split(";").asSequence()
-        val puzzleJsons = results.getString(UserService.JSON).split(";").asSequence()
-        val puzzles = puzzlesIds
-            .zip(puzzleJsons)
-            .map{ (id, json) -> Puzzle(id.toInt(), json) }
-            .toList()
+        val puzzles = mutableListOf<Puzzle>()
+
+        do {
+            val id = results.getInt("$PUZZLE_TABLE.$PUZZLE_TABLE_ID")
+            val json = results.getString(UserService.JSON)
+
+            if (null === json) {
+                break
+            }
+
+            val newPuzzle = Puzzle(id, json)
+
+            puzzles.add(newPuzzle)
+        } while (results.next())
 
         return User(userId, username, email, puzzles)
     }
 
-    suspend fun deleteUser(user: User): Unit = withContext(Dispatchers.IO) {
+    suspend fun deleteUser(userId: Int, usernameOrEmail: String, password: String): Unit = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(DELETE_USER).use { stmt ->
-            stmt.setInt(1, user.id)
-            stmt.setString(2, user.username)
-            stmt.setString(3, user.email)
+            stmt.setInt(1, userId)
+            stmt.setString(2, usernameOrEmail)
+            stmt.setString(3, usernameOrEmail)
+            stmt.setString(4, password)
 
             stmt.executeUpdate()
         }

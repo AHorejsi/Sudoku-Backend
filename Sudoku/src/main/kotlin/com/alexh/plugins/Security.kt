@@ -15,16 +15,19 @@ fun configureSecurity(app: Application) {
             val jwtAudience = config.property("jwt.audience").getString()
             val jwtIssuer = config.property("jwt.issuer").getString()
 
+            val verifierAlgorithm = Algorithm.HMAC256(jwtSecret)
+
             this.realm = config.property("jwt.realm").getString()
 
-            verifier(
+            this.verifier(
                 JWT
-                    .require(Algorithm.HMAC256(jwtSecret))
+                    .require(verifierAlgorithm)
                     .withAudience(jwtAudience)
                     .withIssuer(jwtIssuer)
                     .build()
             )
-            validate { credential ->
+
+            this.validate { credential ->
                 if (credential.payload.audience.contains(jwtAudience))
                     JWTPrincipal(credential.payload)
                 else

@@ -3,13 +3,13 @@ package com.alexh.models
 import kotlinx.serialization.Serializable
 
 @Serializable
-class Puzzle(
+data class Puzzle(
     val id: Int,
     val json: String
 )
 
 @Serializable
-class User(
+data class User(
     val id: Int,
     val username: String,
     val email: String,
@@ -18,6 +18,9 @@ class User(
 
 @Serializable
 sealed class LoginAttempt {
+    @Serializable
     class Success(@Suppress("UNUSED") val user: User) : LoginAttempt()
+
+    @Serializable
     object Failure : LoginAttempt()
 }

@@ -38,11 +38,11 @@ fun configureRoutingForUsers(app: Application) {
 }
 
 private suspend fun createUser(app: Application, call: ApplicationCall) {
-    val cookies = call.request.cookies
+    val form = call.receiveParameters()
 
-    val username = cookies[Cookies.USERNAME]
-    val email = cookies[Cookies.EMAIL]
-    val password = cookies[Cookies.PASSWORD]
+    val username = form["username"]
+    val password = form["password"]
+    val email = form["email"]
 
     if (username.isNullOrEmpty() || email.isNullOrEmpty() || password.isNullOrEmpty()) {
         loginError()
@@ -53,21 +53,24 @@ private suspend fun createUser(app: Application, call: ApplicationCall) {
     db.use {
         val service = UserService(it)
 
-        service.createUser(username, email, password)
+        service.createUser(username, password, email)
 
         call.respond(HttpStatusCode.OK)
     }
 }
 
 private suspend fun getUser(app: Application, call: ApplicationCall) {
-    val cookies = call.request.cookies
+    val form = call.receiveParameters()
 
-    val usernameOrEmail = cookies[Cookies.USERNAME_OR_EMAIL]
-    val password = cookies[Cookies.PASSWORD]
+    val usernameOrEmail = form["usernameOrEmail"]
+    val password = form["password"]
 
     if (usernameOrEmail.isNullOrEmpty() || password.isNullOrEmpty()) {
         loginError()
     }
+
+    println(usernameOrEmail)
+    println(password)
 
     val db = connect(useEmbeddedDatabase, app)
 
@@ -81,21 +84,29 @@ private suspend fun getUser(app: Application, call: ApplicationCall) {
 }
 
 private suspend fun deleteUser(app: Application, call: ApplicationCall) {
-    val user = call.receive(User::class)
+    val cookies = call.request.cookies
+
+    val userId = cookies["userId"]
+    val usernameOrEmail = cookies["usernameOrEmail"]
+    val password = cookies["password"]
+
+    if (userId.isNullOrEmpty() || usernameOrEmail.isNullOrEmpty() || password.isNullOrEmpty()) {
+        loginError()
+    }
 
     val db = connect(useEmbeddedDatabase, app)
 
     db.use {
         val service = UserService(it)
 
-        service.deleteUser(user)
+        service.deleteUser(userId.toInt(), usernameOrEmail, password)
 
         call.respond(HttpStatusCode.OK)
     }
 }
 
 private fun loginError(): Nothing {
-    throw InternalError("Invalid login information")
+    throw InternalError("Invalid cookies")
 }
 
 private suspend fun createPuzzle(app: Application, call: ApplicationCall) {

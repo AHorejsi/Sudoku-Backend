@@ -12,11 +12,6 @@ class Cookies private constructor() {
         const val DIFFICULTY = "difficulty"
         const val GAMES = "games"
 
-        const val USERNAME = "username"
-        const val EMAIL = "email"
-        const val USERNAME_OR_EMAIL = "usernameOrEmail"
-        const val PASSWORD = "password"
-
         const val JSON = "json"
     }
 }
