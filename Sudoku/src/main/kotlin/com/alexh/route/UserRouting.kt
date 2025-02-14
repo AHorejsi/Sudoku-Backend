@@ -6,6 +6,7 @@ import com.alexh.models.UserService
 import com.alexh.plugins.connect
 import com.alexh.utils.Cookies
 import com.alexh.utils.Endpoints
+import com.alexh.utils.FormFields
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -14,22 +15,22 @@ import io.ktor.server.routing.*
 
 fun configureRoutingForUsers(app: Application) {
     app.routing {
-        this.post(Endpoints.CREATE_USER) {
+        this.put(Endpoints.CREATE_USER) {
             createUser(app, this.call)
         }
         this.get(Endpoints.GET_USER) {
             getUser(app, this.call)
         }
-        this.post(Endpoints.DELETE_USER) {
+        this.delete(Endpoints.DELETE_USER) {
             deleteUser(app, this.call)
         }
-        this.post(Endpoints.CREATE_PUZZLE) {
+        this.put(Endpoints.CREATE_PUZZLE) {
             createPuzzle(app, this.call)
         }
-        this.post(Endpoints.UPDATE_PUZZLE) {
+        this.put(Endpoints.UPDATE_PUZZLE) {
             updatePuzzle(app, this.call)
         }
-        this.post(Endpoints.DELETE_PUZZLE) {
+        this.delete(Endpoints.DELETE_PUZZLE) {
             deletePuzzle(app, this.call)
         }
     }
@@ -38,9 +39,9 @@ fun configureRoutingForUsers(app: Application) {
 private suspend fun createUser(app: Application, call: ApplicationCall) {
     val form = call.receiveParameters()
 
-    val username = form["username"]
-    val password = form["password"]
-    val email = form["email"]
+    val username = form[FormFields.USERNAME]
+    val password = form[FormFields.PASSWORD]
+    val email = form[FormFields.EMAIL]
 
     if (username.isNullOrEmpty() || email.isNullOrEmpty() || password.isNullOrEmpty()) {
         loginError()
@@ -61,15 +62,12 @@ private suspend fun createUser(app: Application, call: ApplicationCall) {
 private suspend fun getUser(app: Application, call: ApplicationCall) {
     val form = call.receiveParameters()
 
-    val usernameOrEmail = form["usernameOrEmail"]
-    val password = form["password"]
+    val usernameOrEmail = form[FormFields.USERNAME_OR_EMAIL]
+    val password = form[FormFields.PASSWORD]
 
     if (usernameOrEmail.isNullOrEmpty() || password.isNullOrEmpty()) {
         loginError()
     }
-
-    println(usernameOrEmail)
-    println(password)
 
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
@@ -85,10 +83,11 @@ private suspend fun getUser(app: Application, call: ApplicationCall) {
 
 private suspend fun deleteUser(app: Application, call: ApplicationCall) {
     val cookies = call.request.cookies
+    val form = call.receiveParameters()
 
-    val userId = cookies["userId"]
-    val usernameOrEmail = cookies["usernameOrEmail"]
-    val password = cookies["password"]
+    val userId = cookies[Cookies.USER_ID]
+    val usernameOrEmail = form[FormFields.USERNAME_OR_EMAIL]
+    val password = form[FormFields.PASSWORD]
 
     if (userId.isNullOrEmpty() || usernameOrEmail.isNullOrEmpty() || password.isNullOrEmpty()) {
         loginError()
@@ -107,7 +106,7 @@ private suspend fun deleteUser(app: Application, call: ApplicationCall) {
 }
 
 private fun loginError(): Nothing {
-    throw InternalError("Invalid cookies")
+    throw InternalError("Invalid Request")
 }
 
 private suspend fun createPuzzle(app: Application, call: ApplicationCall) {
