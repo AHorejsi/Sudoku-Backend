@@ -12,8 +12,6 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-private const val useEmbeddedDatabase = true
-
 fun configureRoutingForUsers(app: Application) {
     app.routing {
         this.post(Endpoints.CREATE_USER) {
@@ -48,6 +46,7 @@ private suspend fun createUser(app: Application, call: ApplicationCall) {
         loginError()
     }
 
+    val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
 
     db.use {
@@ -72,6 +71,7 @@ private suspend fun getUser(app: Application, call: ApplicationCall) {
     println(usernameOrEmail)
     println(password)
 
+    val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
 
     db.use {
@@ -94,6 +94,7 @@ private suspend fun deleteUser(app: Application, call: ApplicationCall) {
         loginError()
     }
 
+    val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
 
     db.use {
@@ -119,6 +120,7 @@ private suspend fun createPuzzle(app: Application, call: ApplicationCall) {
         throw InternalError("Invalid JSON")
     }
 
+    val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
 
     db.use {
@@ -133,6 +135,7 @@ private suspend fun createPuzzle(app: Application, call: ApplicationCall) {
 private suspend fun updatePuzzle(app: Application, call: ApplicationCall) {
     val puzzle = call.receive(Puzzle::class)
 
+    val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
 
     db.use {
@@ -147,6 +150,7 @@ private suspend fun updatePuzzle(app: Application, call: ApplicationCall) {
 private suspend fun deletePuzzle(app: Application, call: ApplicationCall) {
     val puzzle = call.receive(Puzzle::class)
 
+    val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
 
     db.use {
