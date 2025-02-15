@@ -1,7 +1,6 @@
 package com.alexh.route
 
 import com.alexh.models.Puzzle
-import com.alexh.models.User
 import com.alexh.models.UserService
 import com.alexh.plugins.connect
 import com.alexh.utils.Cookies
@@ -44,7 +43,7 @@ private suspend fun createUser(app: Application, call: ApplicationCall) {
     val email = form[FormFields.EMAIL]
 
     if (username.isNullOrEmpty() || email.isNullOrEmpty() || password.isNullOrEmpty()) {
-        loginError()
+        error()
     }
 
     val useEmbeddedDatabase = app.environment.developmentMode
@@ -66,7 +65,7 @@ private suspend fun getUser(app: Application, call: ApplicationCall) {
     val password = form[FormFields.PASSWORD]
 
     if (usernameOrEmail.isNullOrEmpty() || password.isNullOrEmpty()) {
-        loginError()
+        error()
     }
 
     val useEmbeddedDatabase = app.environment.developmentMode
@@ -85,12 +84,12 @@ private suspend fun deleteUser(app: Application, call: ApplicationCall) {
     val cookies = call.request.cookies
     val form = call.receiveParameters()
 
-    val userId = cookies[Cookies.USER_ID]
+    val userId = cookies[Cookies.USER_ID]?.toInt()
     val usernameOrEmail = form[FormFields.USERNAME_OR_EMAIL]
     val password = form[FormFields.PASSWORD]
 
-    if (userId.isNullOrEmpty() || usernameOrEmail.isNullOrEmpty() || password.isNullOrEmpty()) {
-        loginError()
+    if (null === userId || usernameOrEmail.isNullOrEmpty() || password.isNullOrEmpty()) {
+        error()
     }
 
     val useEmbeddedDatabase = app.environment.developmentMode
@@ -99,24 +98,20 @@ private suspend fun deleteUser(app: Application, call: ApplicationCall) {
     db.use {
         val service = UserService(it)
 
-        service.deleteUser(userId.toInt(), usernameOrEmail, password)
+        service.deleteUser(userId, usernameOrEmail, password)
 
         call.respond(HttpStatusCode.OK)
     }
-}
-
-private fun loginError(): Nothing {
-    throw InternalError("Invalid Request")
 }
 
 private suspend fun createPuzzle(app: Application, call: ApplicationCall) {
     val cookies = call.request.cookies
 
     val json = cookies[Cookies.JSON]
-    val user = call.receive(User::class)
+    val userId = cookies[Cookies.USER_ID]?.toInt()
 
-    if (json.isNullOrEmpty()) {
-        throw InternalError("Invalid JSON")
+    if (json.isNullOrEmpty() || null === userId) {
+        error()
     }
 
     val useEmbeddedDatabase = app.environment.developmentMode
@@ -125,14 +120,21 @@ private suspend fun createPuzzle(app: Application, call: ApplicationCall) {
     db.use {
         val service = UserService(it)
 
-        val puzzle = service.createPuzzle(json, user)
+        val puzzle = service.createPuzzle(json, userId)
 
         call.respond(HttpStatusCode.OK, puzzle)
     }
 }
 
 private suspend fun updatePuzzle(app: Application, call: ApplicationCall) {
-    val puzzle = call.receive(Puzzle::class)
+    val cookies = call.request.cookies
+
+    val puzzleId = cookies[Cookies.PUZZLE_ID]?.toInt()
+    val json = cookies[Cookies.JSON]
+
+    if (null === puzzleId || json.isNullOrEmpty()) {
+        error()
+    }
 
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
@@ -140,14 +142,21 @@ private suspend fun updatePuzzle(app: Application, call: ApplicationCall) {
     db.use {
         val service = UserService(it)
 
-        service.updatePuzzle(puzzle)
+        service.updatePuzzle(puzzleId, json)
 
         call.respond(HttpStatusCode.OK)
     }
 }
 
 private suspend fun deletePuzzle(app: Application, call: ApplicationCall) {
-    val puzzle = call.receive(Puzzle::class)
+    val cookies = call.request.cookies
+
+    val userId = cookies[Cookies.USER_ID]?.toInt()
+    val puzzleId = cookies[Cookies.PUZZLE_ID]?.toInt()
+
+    if (null == userId || null == puzzleId) {
+        error()
+    }
 
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
@@ -155,8 +164,12 @@ private suspend fun deletePuzzle(app: Application, call: ApplicationCall) {
     db.use {
         val service = UserService(it)
 
-        service.deletePuzzle(puzzle)
+        service.deletePuzzle(puzzleId, userId)
 
         call.respond(HttpStatusCode.OK)
     }
+}
+
+private fun error(): Nothing {
+    throw InternalError("Invalid Request")
 }

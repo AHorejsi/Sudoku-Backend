@@ -13,6 +13,7 @@ fun main(args: Array<String>) {
 fun Application.mainModule() {
     configureSecurity(this)
     configureSerialization(this)
+    configureCors(this)
     configureRoutingForGeneratingPuzzles(this)
     configureRoutingForUsers(this)
 }

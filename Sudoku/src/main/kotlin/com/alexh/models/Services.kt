@@ -43,8 +43,7 @@ class UserService(private val dbConn: Connection) {
             "SELECT $USER_TABLE.$USER_TABLE_ID, $USERNAME, $EMAIL, $PUZZLE_TABLE.$PUZZLE_TABLE_ID, $JSON " +
             "FROM $USER_TABLE " +
             "LEFT JOIN $PUZZLE_TABLE ON $USER_TABLE.$USER_TABLE_ID = $PUZZLE_TABLE.$USER_ID " +
-            "WHERE ($USERNAME = ? OR $EMAIL = ?) AND $PASSWORD = ? " +
-            "GROUP BY $USER_TABLE.$USER_TABLE_ID;"
+            "WHERE ($USERNAME = ? OR $EMAIL = ?) AND $PASSWORD = ?;"
         private const val DELETE_USER =
             "DELETE FROM $USER_TABLE " +
             "WHERE $USER_TABLE_ID = ? AND ($USERNAME = ? OR $EMAIL = ?) AND $PASSWORD = ?;"
@@ -58,7 +57,7 @@ class UserService(private val dbConn: Connection) {
             "WHERE $PUZZLE_TABLE_ID = ?;"
         private const val DELETE_PUZZLE =
             "DELETE FROM $PUZZLE_TABLE " +
-            "WHERE $PUZZLE_TABLE_ID = ?;"
+            "WHERE $PUZZLE_TABLE_ID = ? AND $USER_ID = ?;"
     }
 
     init {
@@ -119,7 +118,6 @@ class UserService(private val dbConn: Connection) {
             }
 
             val newPuzzle = Puzzle(id, json)
-
             puzzles.add(newPuzzle)
         } while (results.next())
 
@@ -137,10 +135,10 @@ class UserService(private val dbConn: Connection) {
         }
     }
 
-    suspend fun createPuzzle(json: String, user: User): Puzzle = withContext(Dispatchers.IO) {
+    suspend fun createPuzzle(json: String, userId: Int): Puzzle = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(CREATE_PUZZLE, Statement.RETURN_GENERATED_KEYS).use { stmt ->
             stmt.setString(1, json)
-            stmt.setInt(2, user.id)
+            stmt.setInt(2, userId)
 
             stmt.executeUpdate()
 
@@ -157,18 +155,19 @@ class UserService(private val dbConn: Connection) {
         }
     }
 
-    suspend fun updatePuzzle(puzzle: Puzzle): Unit = withContext(Dispatchers.IO) {
+    suspend fun updatePuzzle(puzzleId: Int, json: String): Unit = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(UPDATE_PUZZLE).use { stmt ->
-            stmt.setString(1, puzzle.json)
-            stmt.setInt(2, puzzle.id)
+            stmt.setString(1, json)
+            stmt.setInt(2, puzzleId)
 
             stmt.executeUpdate()
         }
     }
 
-    suspend fun deletePuzzle(puzzle: Puzzle): Unit = withContext(Dispatchers.IO) {
+    suspend fun deletePuzzle(puzzleId: Int, userId: Int): Unit = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(DELETE_PUZZLE).use { stmt ->
-            stmt.setInt(1, puzzle.id)
+            stmt.setInt(1, puzzleId)
+            stmt.setInt(2, userId)
 
             stmt.executeUpdate()
         }

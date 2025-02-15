@@ -27,6 +27,7 @@ class Cookies private constructor() {
 
         const val USER_ID = "userId"
 
+        const val PUZZLE_ID = "puzzleId"
         const val JSON = "json"
     }
 }
