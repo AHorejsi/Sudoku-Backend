@@ -1,6 +1,5 @@
 package com.alexh.route
 
-import com.alexh.models.Puzzle
 import com.alexh.models.UserService
 import com.alexh.plugins.connect
 import com.alexh.utils.Cookies
