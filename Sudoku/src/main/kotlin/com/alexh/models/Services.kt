@@ -62,13 +62,13 @@ class UserService(private val dbConn: Connection) {
 
     init {
         this.dbConn.createStatement().use { stmt ->
-            stmt.executeUpdate(CREATE_USER_TABLE)
-            stmt.executeUpdate(CREATE_PUZZLE_TABLE)
+            stmt.executeUpdate(UserService.CREATE_USER_TABLE)
+            stmt.executeUpdate(UserService.CREATE_PUZZLE_TABLE)
         }
     }
 
     suspend fun createUser(username: String, password: String, email: String) = withContext(Dispatchers.IO) {
-        this@UserService.dbConn.prepareStatement(CREATE_USER, Statement.RETURN_GENERATED_KEYS).use { stmt ->
+        this@UserService.dbConn.prepareStatement(UserService.CREATE_USER, Statement.RETURN_GENERATED_KEYS).use { stmt ->
             stmt.setString(1, username)
             stmt.setString(2, password)
             stmt.setString(3, email)
@@ -84,7 +84,7 @@ class UserService(private val dbConn: Connection) {
     }
 
     suspend fun getUser(usernameOrEmail: String, password: String): LoginAttempt = withContext(Dispatchers.IO) {
-        this@UserService.dbConn.prepareStatement(GET_USER).use { stmt ->
+        this@UserService.dbConn.prepareStatement(UserService.GET_USER).use { stmt ->
             stmt.setString(1, usernameOrEmail)
             stmt.setString(2, usernameOrEmail)
             stmt.setString(3, password)
@@ -94,7 +94,7 @@ class UserService(private val dbConn: Connection) {
                     return@withContext LoginAttempt.Failure
                 }
                 else {
-                    val user = this@UserService.makeUser(results)
+                    val user = this@UserService.buildUser(results)
 
                     return@withContext LoginAttempt.Success(user)
                 }
@@ -102,30 +102,49 @@ class UserService(private val dbConn: Connection) {
         }
     }
 
-    private fun makeUser(results: ResultSet): User {
+    private fun buildUser(results: ResultSet): User {
+        if (results.isLast) {
+            return this.buildUserWithPotentiallyNoPuzzles(results)
+        }
+
         val userId = results.getInt("$USER_TABLE.$USER_TABLE_ID")
         val username = results.getString(UserService.USERNAME)
         val email = results.getString(UserService.EMAIL)
 
+        val puzzleIdField = "$PUZZLE_TABLE.$PUZZLE_TABLE_ID"
         val puzzles = mutableListOf<Puzzle>()
 
         do {
-            val id = results.getInt("$PUZZLE_TABLE.$PUZZLE_TABLE_ID")
+            val puzzleId = results.getInt(puzzleIdField)
             val json = results.getString(UserService.JSON)
 
-            if (null === json) {
-                break
-            }
-
-            val newPuzzle = Puzzle(id, json)
+            val newPuzzle = Puzzle(puzzleId, json)
             puzzles.add(newPuzzle)
         } while (results.next())
 
         return User(userId, username, email, puzzles)
     }
 
+    private fun buildUserWithPotentiallyNoPuzzles(results: ResultSet): User {
+        val userId = results.getInt("$USER_TABLE.$USER_TABLE_ID")
+        val username = results.getString(UserService.USERNAME)
+        val email = results.getString(UserService.EMAIL)
+        val puzzleId = results.getInt("$PUZZLE_TABLE.$USER_TABLE_ID")
+        val json = results.getString(UserService.JSON)
+
+        val puzzles = mutableListOf<Puzzle>()
+
+        if (null !== json) {
+            val newPuzzle = Puzzle(puzzleId, json)
+
+            puzzles.add(newPuzzle)
+        }
+
+        return User(userId, username, email, puzzles)
+    }
+
     suspend fun deleteUser(userId: Int, usernameOrEmail: String, password: String): Unit = withContext(Dispatchers.IO) {
-        this@UserService.dbConn.prepareStatement(DELETE_USER).use { stmt ->
+        this@UserService.dbConn.prepareStatement(UserService.DELETE_USER).use { stmt ->
             stmt.setInt(1, userId)
             stmt.setString(2, usernameOrEmail)
             stmt.setString(3, usernameOrEmail)
@@ -136,7 +155,7 @@ class UserService(private val dbConn: Connection) {
     }
 
     suspend fun createPuzzle(json: String, userId: Int): Puzzle = withContext(Dispatchers.IO) {
-        this@UserService.dbConn.prepareStatement(CREATE_PUZZLE, Statement.RETURN_GENERATED_KEYS).use { stmt ->
+        this@UserService.dbConn.prepareStatement(UserService.CREATE_PUZZLE, Statement.RETURN_GENERATED_KEYS).use { stmt ->
             stmt.setString(1, json)
             stmt.setInt(2, userId)
 
@@ -156,7 +175,7 @@ class UserService(private val dbConn: Connection) {
     }
 
     suspend fun updatePuzzle(puzzleId: Int, json: String): Unit = withContext(Dispatchers.IO) {
-        this@UserService.dbConn.prepareStatement(UPDATE_PUZZLE).use { stmt ->
+        this@UserService.dbConn.prepareStatement(UserService.UPDATE_PUZZLE).use { stmt ->
             stmt.setString(1, json)
             stmt.setInt(2, puzzleId)
 
@@ -165,7 +184,7 @@ class UserService(private val dbConn: Connection) {
     }
 
     suspend fun deletePuzzle(puzzleId: Int, userId: Int): Unit = withContext(Dispatchers.IO) {
-        this@UserService.dbConn.prepareStatement(DELETE_PUZZLE).use { stmt ->
+        this@UserService.dbConn.prepareStatement(UserService.DELETE_PUZZLE).use { stmt ->
             stmt.setInt(1, puzzleId)
             stmt.setInt(2, userId)
 
