@@ -4,7 +4,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.cors.routing.*
 
-fun configureCors(app: Application) {
+fun configureHttp(app: Application) {
     app.install(CORS) {
         this.allowMethod(HttpMethod.Options)
         this.allowMethod(HttpMethod.Get)
