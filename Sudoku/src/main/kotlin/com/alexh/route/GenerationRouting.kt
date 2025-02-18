@@ -8,11 +8,20 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import org.slf4j.LoggerFactory
+
+private val logger = LoggerFactory.getLogger("Puzzle-Generation-Routing")
 
 fun configureRoutingForGeneratingPuzzles(app: Application) {
     app.routing {
         this.get(Endpoints.GENERATION) {
-            generatePuzzle(this.call)
+            runCatching {
+                generatePuzzle(this.call)
+            }.onSuccess {
+                logger.info("Generated puzzle successfully")
+            }.onFailure {
+                logger.error(it.stackTraceToString())
+            }
         }
     }
 }
@@ -33,12 +42,12 @@ private suspend fun generatePuzzle(call: ApplicationCall) {
 private fun getDimension(cookies: RequestCookies): Dimension =
     cookies[Cookies.DIMENSION]?.let {
         return Dimension.valueOf(it)
-    } ?: cookieError()
+    } ?: error("Cookie called ${Cookies.DIMENSION} not found")
 
 private fun getDifficulty(cookies: RequestCookies): Difficulty =
     cookies[Cookies.DIFFICULTY]?.let {
         return Difficulty.valueOf(it)
-    } ?: cookieError()
+    } ?: error("Cookie called ${Cookies.DIFFICULTY} not found")
 
 private fun getGames(cookies: RequestCookies): Set<Game> =
     cookies[Cookies.GAMES]?.run {
@@ -48,8 +57,10 @@ private fun getGames(cookies: RequestCookies): Set<Game> =
             emptySet()
         else
             values.map{ Game.valueOf(it) }.toSortedSet()
-    } ?: cookieError()
+    } ?: error("Cookie called ${Cookies.GAMES} not found")
 
-private fun cookieError(): Nothing {
-    throw InternalError("Necessary cookies have not been supplied")
+private fun error(message: String): Nothing {
+    logger.error(message)
+
+    throw InternalError(message)
 }

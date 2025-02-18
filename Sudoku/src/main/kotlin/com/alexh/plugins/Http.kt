@@ -15,6 +15,7 @@ fun configureHttp(app: Application) {
         this.allowHeader(HttpHeaders.AccessControlAllowOrigin)
         this.allowHeader(HttpHeaders.Connection)
         this.allowHeader(HttpHeaders.Accept)
+        this.allowHeader(HttpHeaders.UserAgent)
         this.allowHeader(HttpHeaders.ContentType)
 
         this.allowCredentials = true

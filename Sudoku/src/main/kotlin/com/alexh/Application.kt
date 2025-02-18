@@ -14,6 +14,7 @@ fun Application.mainModule() {
     configureSecurity(this)
     configureSerialization(this)
     configureHttp(this)
+    configureMonitoring(this)
     configureRoutingForGeneratingPuzzles(this)
     configureRoutingForUsers(this)
 }

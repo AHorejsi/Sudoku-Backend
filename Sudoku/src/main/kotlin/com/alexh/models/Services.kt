@@ -67,8 +67,8 @@ class UserService(private val dbConn: Connection) {
         }
     }
 
-    suspend fun createUser(username: String, password: String, email: String) = withContext(Dispatchers.IO) {
-        this@UserService.dbConn.prepareStatement(UserService.CREATE_USER, Statement.RETURN_GENERATED_KEYS).use { stmt ->
+    suspend fun createUser(username: String, password: String, email: String): Unit = withContext(Dispatchers.IO) {
+        this@UserService.dbConn.prepareStatement(CREATE_USER, Statement.RETURN_GENERATED_KEYS).use { stmt ->
             stmt.setString(1, username)
             stmt.setString(2, password)
             stmt.setString(3, email)
@@ -84,7 +84,7 @@ class UserService(private val dbConn: Connection) {
     }
 
     suspend fun getUser(usernameOrEmail: String, password: String): LoginAttempt = withContext(Dispatchers.IO) {
-        this@UserService.dbConn.prepareStatement(UserService.GET_USER).use { stmt ->
+        this@UserService.dbConn.prepareStatement(GET_USER).use { stmt ->
             stmt.setString(1, usernameOrEmail)
             stmt.setString(2, usernameOrEmail)
             stmt.setString(3, password)
@@ -144,7 +144,7 @@ class UserService(private val dbConn: Connection) {
     }
 
     suspend fun deleteUser(userId: Int, usernameOrEmail: String, password: String): Unit = withContext(Dispatchers.IO) {
-        this@UserService.dbConn.prepareStatement(UserService.DELETE_USER).use { stmt ->
+        this@UserService.dbConn.prepareStatement(DELETE_USER).use { stmt ->
             stmt.setInt(1, userId)
             stmt.setString(2, usernameOrEmail)
             stmt.setString(3, usernameOrEmail)
@@ -155,7 +155,7 @@ class UserService(private val dbConn: Connection) {
     }
 
     suspend fun createPuzzle(json: String, userId: Int): Puzzle = withContext(Dispatchers.IO) {
-        this@UserService.dbConn.prepareStatement(UserService.CREATE_PUZZLE, Statement.RETURN_GENERATED_KEYS).use { stmt ->
+        this@UserService.dbConn.prepareStatement(CREATE_PUZZLE, Statement.RETURN_GENERATED_KEYS).use { stmt ->
             stmt.setString(1, json)
             stmt.setInt(2, userId)
 
@@ -175,7 +175,7 @@ class UserService(private val dbConn: Connection) {
     }
 
     suspend fun updatePuzzle(puzzleId: Int, json: String): Unit = withContext(Dispatchers.IO) {
-        this@UserService.dbConn.prepareStatement(UserService.UPDATE_PUZZLE).use { stmt ->
+        this@UserService.dbConn.prepareStatement(UPDATE_PUZZLE).use { stmt ->
             stmt.setString(1, json)
             stmt.setInt(2, puzzleId)
 
@@ -184,7 +184,7 @@ class UserService(private val dbConn: Connection) {
     }
 
     suspend fun deletePuzzle(puzzleId: Int, userId: Int): Unit = withContext(Dispatchers.IO) {
-        this@UserService.dbConn.prepareStatement(UserService.DELETE_PUZZLE).use { stmt ->
+        this@UserService.dbConn.prepareStatement(DELETE_PUZZLE).use { stmt ->
             stmt.setInt(1, puzzleId)
             stmt.setInt(2, userId)
 
