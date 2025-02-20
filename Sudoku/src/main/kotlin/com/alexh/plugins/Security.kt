@@ -7,7 +7,6 @@ import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
-import io.ktor.util.*
 
 fun configureSecurity(app: Application) {
     app.install(Authentication) {
