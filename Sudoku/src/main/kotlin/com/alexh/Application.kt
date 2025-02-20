@@ -10,6 +10,7 @@ fun main(args: Array<String>) {
 }
 
 // Specified to be called in resources/application.conf
+@Suppress("UNUSED")
 fun Application.setupModule() {
     configureSecurity(this)
     configureSerialization(this)
@@ -18,6 +19,7 @@ fun Application.setupModule() {
 }
 
 // Specified to be called in resources/application.conf
+@Suppress("UNUSED")
 fun Application.routingModule() {
     configureRoutingForGeneratingPuzzles(this)
     configureRoutingForUsers(this)
