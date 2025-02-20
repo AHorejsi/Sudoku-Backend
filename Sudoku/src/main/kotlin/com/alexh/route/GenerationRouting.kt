@@ -16,7 +16,7 @@ private val logger = LoggerFactory.getLogger("Puzzle-Generation-Routing")
 fun configureRoutingForGeneratingPuzzles(app: Application) {
     app.routing {
         this.authenticate("auth-jwt") {
-            this.get(Endpoints.GENERATION) {
+            this.get(Endpoints.GENERATE) {
                 runCatching {
                     generatePuzzle(this.call)
                 }.onSuccess {

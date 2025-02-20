@@ -38,7 +38,7 @@ class Endpoints private constructor() {
     }
 
     companion object {
-        const val GENERATION = "/generate"
+        const val GENERATE = "/generate"
 
         const val CREATE_USER = "/createUser"
         const val GET_USER = "/getUser"
