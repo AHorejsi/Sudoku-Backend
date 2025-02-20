@@ -58,12 +58,18 @@ class UserService(private val dbConn: Connection) {
         private const val DELETE_PUZZLE =
             "DELETE FROM $PUZZLE_TABLE " +
             "WHERE $PUZZLE_TABLE_ID = ? AND $USER_ID = ?;"
+
+        private var alreadyInitialized: Boolean = false
     }
 
     init {
-        this.dbConn.createStatement().use { stmt ->
-            stmt.executeUpdate(CREATE_USER_TABLE)
-            stmt.executeUpdate(CREATE_PUZZLE_TABLE)
+        if (!UserService.alreadyInitialized) {
+            this.dbConn.createStatement().use { stmt ->
+                stmt.executeUpdate(CREATE_USER_TABLE)
+                stmt.executeUpdate(CREATE_PUZZLE_TABLE)
+            }
+
+            UserService.alreadyInitialized = true
         }
     }
 
