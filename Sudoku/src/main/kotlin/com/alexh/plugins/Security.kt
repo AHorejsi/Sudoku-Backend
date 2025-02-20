@@ -4,7 +4,9 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.response.*
 
 fun configureSecurity(app: Application) {
     app.install(Authentication) {
@@ -16,6 +18,7 @@ fun configureSecurity(app: Application) {
             val jwtIssuer = config.property("jwt.issuer").getString()
 
             val verifierAlgorithm = Algorithm.HMAC256(jwtSecret)
+            val expiration = System.currentTimeMillis() * 60000
 
             this.realm = config.property("jwt.realm").getString()
 
@@ -24,6 +27,7 @@ fun configureSecurity(app: Application) {
                     .require(verifierAlgorithm)
                     .withAudience(jwtAudience)
                     .withIssuer(jwtIssuer)
+                    .acceptExpiresAt(expiration)
                     .build()
             )
 
@@ -32,6 +36,10 @@ fun configureSecurity(app: Application) {
                     JWTPrincipal(credential.payload)
                 else
                     null
+            }
+
+            this.challenge { _, _ ->
+                this.call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")
             }
         }
     }

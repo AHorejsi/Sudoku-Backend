@@ -9,6 +9,7 @@ import com.alexh.utils.Endpoints
 import com.alexh.utils.FormFields
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -18,36 +19,54 @@ private val logger = LoggerFactory.getLogger("User-Routing")
 
 fun configureRoutingForUsers(app: Application) {
     app.routing {
-        this.put(Endpoints.CREATE_USER) {
-            val result = createUser(app, this.call)
+        this.authenticate("auth-jwt") {
+            this.put(Endpoints.CREATE_USER) {
+                val result = createUser(app, this.call)
 
-            handleResult(result, this.call, "Successfully created User")
-        }
-        this.get(Endpoints.GET_USER) {
-            val result = getUser(app, this.call)
+                handleResult(result, this.call, "Successfully created User")
+            }
+            this.get(Endpoints.GET_USER) {
+                val result = getUser(app, this.call)
 
-            handleResult(result, this.call, "Successfully retrieved User")
-        }
-        this.delete(Endpoints.DELETE_USER) {
-            val result = deleteUser(app, this.call)
+                handleResult(result, this.call, "Successfully retrieved User")
+            }
+            this.delete(Endpoints.DELETE_USER) {
+                val result = deleteUser(app, this.call)
 
-            handleResult(result, this.call, "Successfully deleted User")
-        }
-        this.put(Endpoints.CREATE_PUZZLE) {
-            val result = createPuzzle(app, this.call)
+                handleResult(result, this.call, "Successfully deleted User")
+            }
+            this.put(Endpoints.CREATE_PUZZLE) {
+                val result = createPuzzle(app, this.call)
 
-            handleResult(result, this.call, "Successfully created Puzzle")
-        }
-        this.put(Endpoints.UPDATE_PUZZLE) {
-            val result = updatePuzzle(app, this.call)
+                handleResult(result, this.call, "Successfully created Puzzle")
+            }
+            this.put(Endpoints.UPDATE_PUZZLE) {
+                val result = updatePuzzle(app, this.call)
 
-            handleResult(result, this.call, "Successfully updated Puzzle")
-        }
-        this.delete(Endpoints.DELETE_PUZZLE) {
-            val result = deletePuzzle(app, this.call)
+                handleResult(result, this.call, "Successfully updated Puzzle")
+            }
+            this.delete(Endpoints.DELETE_PUZZLE) {
+                val result = deletePuzzle(app, this.call)
 
-            handleResult(result, this.call, "Successfully deleted Puzzle")
+                handleResult(result, this.call, "Successfully deleted Puzzle")
+            }
         }
+    }
+}
+
+private suspend inline fun <reified TType : Any> handleResult(
+    result: Result<TType>,
+    call: ApplicationCall,
+    successMessage: String
+) {
+    result.onSuccess { value ->
+        call.respond(HttpStatusCode.OK, value)
+
+        logger.info(successMessage)
+    }.onFailure { exception ->
+        call.respond(HttpStatusCode.BadRequest)
+
+        logger.error(exception.stackTraceToString())
     }
 }
 
@@ -176,20 +195,4 @@ private suspend fun deletePuzzle(app: Application, call: ApplicationCall): Resul
 
 private fun error(message: String): Nothing {
     throw InternalError(message)
-}
-
-private suspend inline fun <reified TType : Any> handleResult(
-    result: Result<TType>,
-    call: ApplicationCall,
-    successMessage: String
-) {
-    result.onSuccess { value ->
-        call.respond(HttpStatusCode.OK, value)
-
-        logger.info(successMessage)
-    }.onFailure { exception ->
-        call.respond(HttpStatusCode.BadRequest)
-
-        logger.error(exception.stackTraceToString())
-    }
 }
