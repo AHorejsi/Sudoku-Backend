@@ -62,8 +62,8 @@ class UserService(private val dbConn: Connection) {
 
     init {
         this.dbConn.createStatement().use { stmt ->
-            stmt.executeUpdate(UserService.CREATE_USER_TABLE)
-            stmt.executeUpdate(UserService.CREATE_PUZZLE_TABLE)
+            stmt.executeUpdate(CREATE_USER_TABLE)
+            stmt.executeUpdate(CREATE_PUZZLE_TABLE)
         }
     }
 
