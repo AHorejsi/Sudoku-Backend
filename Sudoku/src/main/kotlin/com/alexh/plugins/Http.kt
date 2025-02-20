@@ -26,7 +26,7 @@ fun configureHttp(app: Application) {
         if (app.environment.developmentMode) {
             this.anyHost() // Don't do this in production!
         } else {
-            this.allowHost("http://localhost:1234")
+            this.allowHost(app.environment.config.host)
         }
     }
 }
