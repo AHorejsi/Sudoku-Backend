@@ -13,7 +13,7 @@ data class User(
     val id: Int,
     val username: String,
     val email: String,
-    @Suppress("UNUSED") val puzzles: List<Puzzle>
+    val puzzles: List<Puzzle>
 )
 
 @Serializable

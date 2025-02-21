@@ -3,6 +3,8 @@ package com.alexh.route
 import com.alexh.game.*
 import com.alexh.utils.Endpoints
 import com.alexh.utils.Cookies
+import com.alexh.utils.doError
+import com.alexh.utils.handleResult
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -17,19 +19,15 @@ fun configureRoutingForGeneratingPuzzles(app: Application) {
     app.routing {
         this.authenticate("auth-jwt") {
             this.get(Endpoints.GENERATE) {
-                runCatching {
-                    generatePuzzle(this.call)
-                }.onSuccess {
-                    logger.info("Generated puzzle successfully")
-                }.onFailure {
-                    logger.error(it.stackTraceToString())
-                }
+                val result = generatePuzzle(this.call)
+
+                handleResult(result, this.call, logger, "Successfully generated Sudoku")
             }
         }
     }
 }
 
-private suspend fun generatePuzzle(call: ApplicationCall) {
+private fun generatePuzzle(call: ApplicationCall): Result<SudokuJson> = runCatching {
     val cookies = call.request.cookies
 
     val dimension = getDimension(cookies)
@@ -39,18 +37,18 @@ private suspend fun generatePuzzle(call: ApplicationCall) {
     val info = MakeSudokuCommand(dimension, difficulty, games)
     val sudoku = makeSudoku(info)
 
-    call.respond(HttpStatusCode.OK, sudoku)
+    return@runCatching sudoku
 }
 
 private fun getDimension(cookies: RequestCookies): Dimension =
     cookies[Cookies.DIMENSION]?.let {
         return Dimension.valueOf(it)
-    } ?: error("Cookie called ${Cookies.DIMENSION} not found")
+    } ?: doError("Cookie called ${Cookies.DIMENSION} not found", logger)
 
 private fun getDifficulty(cookies: RequestCookies): Difficulty =
     cookies[Cookies.DIFFICULTY]?.let {
         return Difficulty.valueOf(it)
-    } ?: error("Cookie called ${Cookies.DIFFICULTY} not found")
+    } ?: doError("Cookie called ${Cookies.DIFFICULTY} not found", logger)
 
 private fun getGames(cookies: RequestCookies): Set<Game> =
     cookies[Cookies.GAMES]?.run {
@@ -60,10 +58,4 @@ private fun getGames(cookies: RequestCookies): Set<Game> =
             emptySet()
         else
             values.map{ Game.valueOf(it) }.toSortedSet()
-    } ?: error("Cookie called ${Cookies.GAMES} not found")
-
-private fun error(message: String): Nothing {
-    logger.error(message)
-
-    throw InternalError(message)
-}
+    } ?: doError("Cookie called ${Cookies.GAMES} not found", logger)

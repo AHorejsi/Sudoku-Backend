@@ -4,14 +4,10 @@ import com.alexh.models.LoginAttempt
 import com.alexh.models.Puzzle
 import com.alexh.models.UserService
 import com.alexh.plugins.connect
-import com.alexh.utils.Cookies
-import com.alexh.utils.Endpoints
-import com.alexh.utils.FormFields
-import io.ktor.http.*
+import com.alexh.utils.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
-import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
 
@@ -23,50 +19,34 @@ fun configureRoutingForUsers(app: Application) {
             this.put(Endpoints.CREATE_USER) {
                 val result = createUser(app, this.call)
 
-                handleResult(result, this.call, "Successfully created User")
+                handleResult(result, this.call, logger, "Successfully created User")
             }
             this.get(Endpoints.GET_USER) {
                 val result = getUser(app, this.call)
 
-                handleResult(result, this.call, "Successfully retrieved User")
+                handleResult(result, this.call, logger, "Successfully retrieved User")
             }
             this.delete(Endpoints.DELETE_USER) {
                 val result = deleteUser(app, this.call)
 
-                handleResult(result, this.call, "Successfully deleted User")
+                handleResult(result, this.call, logger, "Successfully deleted User")
             }
             this.put(Endpoints.CREATE_PUZZLE) {
                 val result = createPuzzle(app, this.call)
 
-                handleResult(result, this.call, "Successfully created Puzzle")
+                handleResult(result, this.call, logger, "Successfully created Puzzle")
             }
             this.put(Endpoints.UPDATE_PUZZLE) {
                 val result = updatePuzzle(app, this.call)
 
-                handleResult(result, this.call, "Successfully updated Puzzle")
+                handleResult(result, this.call, logger, "Successfully updated Puzzle")
             }
             this.delete(Endpoints.DELETE_PUZZLE) {
                 val result = deletePuzzle(app, this.call)
 
-                handleResult(result, this.call, "Successfully deleted Puzzle")
+                handleResult(result, this.call, logger, "Successfully deleted Puzzle")
             }
         }
-    }
-}
-
-private suspend inline fun <reified TType : Any> handleResult(
-    result: Result<TType>,
-    call: ApplicationCall,
-    successMessage: String
-) {
-    result.onSuccess { value ->
-        call.respond(HttpStatusCode.OK, value)
-
-        logger.info(successMessage)
-    }.onFailure { exception ->
-        call.respond(HttpStatusCode.BadRequest)
-
-        logger.error(exception.stackTraceToString())
     }
 }
 
@@ -78,7 +58,7 @@ private suspend fun createUser(app: Application, call: ApplicationCall): Result<
     val email = form[FormFields.EMAIL]
 
     if (username.isNullOrEmpty() || email.isNullOrEmpty() || password.isNullOrEmpty()) {
-        error("Not all necessary cookies have been provided")
+        doError("Not all necessary cookies have been provided", logger)
     }
 
     val useEmbeddedDatabase = app.environment.developmentMode
@@ -98,7 +78,7 @@ private suspend fun getUser(app: Application, call: ApplicationCall): Result<Log
     val password = form[FormFields.PASSWORD]
 
     if (usernameOrEmail.isNullOrEmpty() || password.isNullOrEmpty()) {
-        error("Not all necessary cookies have been provided")
+        doError("Not all necessary cookies have been provided", logger)
     }
 
     val useEmbeddedDatabase = app.environment.developmentMode
@@ -120,7 +100,7 @@ private suspend fun deleteUser(app: Application, call: ApplicationCall): Result<
     val password = form[FormFields.PASSWORD]
 
     if (null === userId || usernameOrEmail.isNullOrEmpty() || password.isNullOrEmpty()) {
-        error("Not all necessary cookies have been provided")
+        doError("Not all necessary cookies have been provided", logger)
     }
 
     val useEmbeddedDatabase = app.environment.developmentMode
@@ -140,7 +120,7 @@ private suspend fun createPuzzle(app: Application, call: ApplicationCall): Resul
     val userId = cookies[Cookies.USER_ID]?.toInt()
 
     if (json.isNullOrEmpty() || null === userId) {
-        error("Not all necessary cookies have been provided")
+        doError("Not all necessary cookies have been provided", logger)
     }
 
     val useEmbeddedDatabase = app.environment.developmentMode
@@ -160,7 +140,7 @@ private suspend fun updatePuzzle(app: Application, call: ApplicationCall): Resul
     val json = cookies[Cookies.JSON]
 
     if (null === puzzleId || json.isNullOrEmpty()) {
-        error("Not all necessary cookies have been provided")
+        doError("Not all necessary cookies have been provided", logger)
     }
 
     val useEmbeddedDatabase = app.environment.developmentMode
@@ -180,7 +160,7 @@ private suspend fun deletePuzzle(app: Application, call: ApplicationCall): Resul
     val puzzleId = cookies[Cookies.PUZZLE_ID]?.toInt()
 
     if (null == userId || null == puzzleId) {
-        error("Not all necessary cookies have been provided")
+        doError("Not all necessary cookies have been provided", logger)
     }
 
     val useEmbeddedDatabase = app.environment.developmentMode
@@ -191,8 +171,4 @@ private suspend fun deletePuzzle(app: Application, call: ApplicationCall): Resul
 
         service.deletePuzzle(puzzleId, userId)
     }
-}
-
-private fun error(message: String): Nothing {
-    throw InternalError(message)
 }

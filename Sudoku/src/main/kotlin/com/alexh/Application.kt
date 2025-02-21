@@ -9,7 +9,7 @@ fun main(args: Array<String>) {
     EngineMain.main(args)
 }
 
-// Specified to be called in resources/application.conf
+// Specified to be called in configurations
 @Suppress("UNUSED")
 fun Application.setupModule() {
     configureSecurity(this)
@@ -18,7 +18,7 @@ fun Application.setupModule() {
     configureMonitoring(this)
 }
 
-// Specified to be called in resources/application.conf
+// Specified to be called in configurations
 @Suppress("UNUSED")
 fun Application.routingModule() {
     configureRoutingForGeneratingPuzzles(this)
