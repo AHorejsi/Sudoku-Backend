@@ -5,11 +5,9 @@ import com.alexh.utils.Endpoints
 import com.alexh.utils.Cookies
 import com.alexh.utils.doError
 import com.alexh.utils.handleResult
-import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
-import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
 

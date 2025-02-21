@@ -8,7 +8,6 @@ fun configureHttp(app: Application) {
     app.install(CORS) {
         this.allowMethod(HttpMethod.Options)
         this.allowMethod(HttpMethod.Get)
-        this.allowMethod(HttpMethod.Post)
         this.allowMethod(HttpMethod.Put)
         this.allowMethod(HttpMethod.Delete)
 
@@ -20,7 +19,10 @@ fun configureHttp(app: Application) {
         this.allowHeader(HttpHeaders.UserAgent)
         this.allowHeader(HttpHeaders.ContentType)
         this.allowHeader(HttpHeaders.ContentLength)
+        this.allowHeader(HttpHeaders.Vary)
+        this.allowHeader(HttpHeaders.Host)
 
+        this.allowSameOrigin = true
         this.allowCredentials = true
 
         if (app.environment.developmentMode) {
