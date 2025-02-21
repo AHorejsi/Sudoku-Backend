@@ -16,11 +16,12 @@ fun Application.setupModule() {
     configureSerialization(this)
     configureHttp(this)
     configureMonitoring(this)
+    configureRouting(this)
 }
 
 // Specified to be called in configurations
 @Suppress("UNUSED")
-fun Application.routingModule() {
+fun Application.endpointModule() {
     configureRoutingForGeneratingPuzzles(this)
     configureRoutingForUsers(this)
 }
