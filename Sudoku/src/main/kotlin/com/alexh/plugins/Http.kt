@@ -2,6 +2,7 @@ package com.alexh.plugins
 
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.cors.routing.*
 
 fun configureHttp(app: Application) {
@@ -29,6 +30,14 @@ fun configureHttp(app: Application) {
             this.anyHost() // Don't do this in production!
         } else {
             this.allowHost(app.environment.config.host)
+        }
+    }
+
+    app.install(Compression) {
+        this.gzip {
+            this.matchContentType(ContentType.Application.Any)
+            this.minimumSize(1024)
+            this.priority = 1.0
         }
     }
 }
