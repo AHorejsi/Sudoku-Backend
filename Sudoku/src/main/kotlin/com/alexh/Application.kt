@@ -16,7 +16,6 @@ fun Application.setupModule() {
     configureSerialization(this)
     configureHttp(this)
     configureMonitoring(this)
-    configureRouting(this)
 }
 
 // Specified to be called in configurations
