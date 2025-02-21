@@ -1,7 +1,7 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.8.20'
-    id 'io.ktor.plugin' version '2.2.4'
-    id 'org.jetbrains.kotlin.plugin.serialization' version '1.8.20'
+    id "org.jetbrains.kotlin.jvm" version "1.8.20"
+    id "io.ktor.plugin" version "2.2.4"
+    id "org.jetbrains.kotlin.plugin.serialization" version "1.8.20"
 }
 
 group "com.alexh"
@@ -16,25 +16,27 @@ repositories {
 }
 
 dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "org.postgresql:postgresql:42.7.2"
     implementation "io.ktor:ktor-server-core-jvm:$ktor_version"
     implementation "io.ktor:ktor-server-auth-jvm:$ktor_version"
     implementation "io.ktor:ktor-server-auth-jwt:$ktor_version"
     implementation "io.ktor:ktor-server-compression:$ktor_version"
     implementation "io.ktor:ktor-server-content-negotiation-jvm:$ktor_version"
-    implementation "io.ktor:ktor-serialization-kotlinx-json-jvm:$ktor_version"
-    implementation "org.postgresql:postgresql:42.7.2"
-    implementation "com.h2database:h2:2.2.220"
+    implementation "io.ktor:ktor-server-cors:$ktor_version"
+    implementation "io.ktor:ktor-server-core:$ktor_version"
+    implementation "io.ktor:ktor-server-host-common:$ktor_version"
+    implementation "io.ktor:ktor-server-status-pages:$ktor_version"
+    implementation "io.ktor:ktor-server-core:$ktor_version"
     implementation "io.ktor:ktor-server-call-logging"
     implementation "io.ktor:ktor-server-netty-jvm:$ktor_version"
+    implementation "io.ktor:ktor-serialization-kotlinx-json-jvm:$ktor_version"
+    implementation "io.ktor:ktor-network-tls-certificates:$ktor_version"
+    implementation "com.h2database:h2:2.2.220"
     implementation "ch.qos.logback:logback-classic:1.4.12"
-    implementation 'io.ktor:ktor-server-cors:2.2.4'
-    implementation 'io.ktor:ktor-server-core:2.2.4'
-    implementation 'io.ktor:ktor-server-host-common:2.2.4'
-    implementation 'io.ktor:ktor-server-status-pages:2.2.4'
-    implementation 'io.ktor:ktor-server-core:2.2.4'
-    testImplementation "io.ktor:ktor-server-tests-jvm:$ktor_version"
+
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    testImplementation "io.ktor:ktor-server-tests-jvm:$ktor_version"
 }
 
 kotlin {
