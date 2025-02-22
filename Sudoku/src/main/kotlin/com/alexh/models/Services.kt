@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.Connection
 import java.sql.ResultSet
+import java.sql.SQLException
 import java.sql.Statement
 
 @Suppress("RemoveRedundantQualifierName")
@@ -83,7 +84,7 @@ class UserService(private val dbConn: Connection) {
 
             stmt.generatedKeys.use { keys ->
                 if (!keys.next()) {
-                    throw InternalError("Failed to create User")
+                    throw SQLException("Failed to create User")
                 }
             }
         }
@@ -169,7 +170,7 @@ class UserService(private val dbConn: Connection) {
 
             stmt.generatedKeys.use { keys ->
                 if (!keys.next()) {
-                    throw InternalError("Failed to create Puzzle")
+                    throw SQLException("Failed to create Puzzle")
                 }
                 else {
                     val id = keys.getInt(UserService.PUZZLE_TABLE_ID)
