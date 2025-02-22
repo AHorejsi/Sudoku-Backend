@@ -90,21 +90,17 @@ class UserService(private val dbConn: Connection) {
         }
     }
 
-    suspend fun getUser(usernameOrEmail: String, password: String): LoginAttempt = withContext(Dispatchers.IO) {
+    suspend fun readUser(usernameOrEmail: String, password: String): User? = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(GET_USER).use { stmt ->
             stmt.setString(1, usernameOrEmail)
             stmt.setString(2, usernameOrEmail)
             stmt.setString(3, password)
 
             stmt.executeQuery().use { results ->
-                if (!results.next()) {
-                    return@withContext LoginAttempt.Failure
-                }
-                else {
-                    val user = this@UserService.buildUser(results)
-
-                    return@withContext LoginAttempt.Success(user)
-                }
+                return@withContext if (results.next())
+                    this@UserService.buildUser(results)
+                else
+                    null
             }
         }
     }

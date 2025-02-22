@@ -41,7 +41,7 @@ class Endpoints private constructor() {
         const val GENERATE = "/generate"
 
         const val CREATE_USER = "/createUser"
-        const val GET_USER = "/getUser"
+        const val READ_USER = "/readUser"
         const val DELETE_USER = "/deleteUser"
 
         const val CREATE_PUZZLE = "/createPuzzle"

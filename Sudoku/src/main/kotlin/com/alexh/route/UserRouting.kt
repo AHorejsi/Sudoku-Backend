@@ -21,8 +21,8 @@ fun configureRoutingForUsers(app: Application) {
 
                 handleResult(result, this.call, logger, "Successfully created User")
             }
-            this.get(Endpoints.GET_USER) {
-                val result = getUser(app, this.call)
+            this.get(Endpoints.READ_USER) {
+                val result = readUser(app, this.call)
 
                 handleResult(result, this.call, logger, "Successfully retrieved User")
             }
@@ -71,7 +71,7 @@ private suspend fun createUser(app: Application, call: ApplicationCall): Result<
     }
 }
 
-private suspend fun getUser(app: Application, call: ApplicationCall): Result<LoginAttempt> = runCatching {
+private suspend fun readUser(app: Application, call: ApplicationCall): Result<LoginAttempt> = runCatching {
     val form = call.receiveParameters()
 
     val usernameOrEmail = form[FormFields.USERNAME_OR_EMAIL]
@@ -87,7 +87,12 @@ private suspend fun getUser(app: Application, call: ApplicationCall): Result<Log
     db.use {
         val service = UserService(it)
 
-        return@runCatching service.getUser(usernameOrEmail, password)
+        val user = service.readUser(usernameOrEmail, password)
+
+        return@runCatching if (null === user)
+            LoginAttempt.Failure
+        else
+            LoginAttempt.Success(user)
     }
 }
 
