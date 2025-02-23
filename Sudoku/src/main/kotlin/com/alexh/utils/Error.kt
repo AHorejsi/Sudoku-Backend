@@ -11,7 +11,7 @@ fun cookieError(cookieName: String, logger: Logger): Nothing {
 
     logger.error(message)
     
-    throw CustomExceptions(message)
+    throw CookieException(message)
 }
 
 suspend inline fun <reified TType : Any> handleResult(
@@ -27,7 +27,7 @@ suspend inline fun <reified TType : Any> handleResult(
         val stackTrace = exception.stackTraceToString()
         val status = when (exception) {
             is SQLException -> HttpStatusCode.BadGateway
-            is CustomExceptions, is NullPointerException -> HttpStatusCode.UnprocessableEntity
+            is CookieException, is NullPointerException -> HttpStatusCode.UnprocessableEntity
             else -> HttpStatusCode.InternalServerError
         }
 
