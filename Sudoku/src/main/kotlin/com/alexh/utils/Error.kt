@@ -1,14 +1,18 @@
 package com.alexh.utils
 
+import com.alexh.utils.except.CookieException
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import org.slf4j.Logger
+import java.sql.SQLException
 
-fun doError(message: String, logger: Logger): Nothing {
+fun cookieError(cookieName: String, logger: Logger): Nothing {
+    val message = "Cookie name $cookieName was not found"
+
     logger.error(message)
     
-    throw InternalError(message)
+    throw CookieException(message)
 }
 
 suspend inline fun <reified TType : Any> handleResult(
@@ -19,11 +23,16 @@ suspend inline fun <reified TType : Any> handleResult(
 ) {
     result.onSuccess { value ->
         call.respond(HttpStatusCode.OK, value)
-
         logger.info(successMessage)
     }.onFailure { exception ->
-        call.respond(HttpStatusCode.InternalServerError)
+        val stackTrace = exception.stackTraceToString()
+        val status = when (exception) {
+            is SQLException -> HttpStatusCode.BadGateway
+            is CookieException, is NullPointerException -> HttpStatusCode.UnprocessableEntity
+            else -> HttpStatusCode.InternalServerError
+        }
 
-        logger.error(exception.stackTraceToString())
+        call.respond(status, stackTrace)
+        logger.error(stackTrace)
     }
 }

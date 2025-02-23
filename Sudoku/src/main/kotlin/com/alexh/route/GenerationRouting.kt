@@ -3,7 +3,7 @@ package com.alexh.route
 import com.alexh.game.*
 import com.alexh.utils.Endpoints
 import com.alexh.utils.Cookies
-import com.alexh.utils.doError
+import com.alexh.utils.cookieError
 import com.alexh.utils.handleResult
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("Puzzle-Generation-Routing")
 
-fun configureRoutingForGeneratingPuzzles(app: Application) {
+fun configureEndpointsForGeneratingPuzzles(app: Application) {
     app.routing {
         this.authenticate("auth-jwt") {
             this.get(Endpoints.GENERATE) {
@@ -41,12 +41,12 @@ private fun generatePuzzle(call: ApplicationCall): Result<SudokuJson> = runCatch
 private fun getDimension(cookies: RequestCookies): Dimension =
     cookies[Cookies.DIMENSION]?.let {
         return Dimension.valueOf(it)
-    } ?: doError("Cookie called ${Cookies.DIMENSION} not found", logger)
+    } ?: cookieError(Cookies.DIMENSION, logger)
 
 private fun getDifficulty(cookies: RequestCookies): Difficulty =
     cookies[Cookies.DIFFICULTY]?.let {
         return Difficulty.valueOf(it)
-    } ?: doError("Cookie called ${Cookies.DIFFICULTY} not found", logger)
+    } ?: cookieError(Cookies.DIFFICULTY, logger)
 
 private fun getGames(cookies: RequestCookies): Set<Game> =
     cookies[Cookies.GAMES]?.run {
@@ -56,4 +56,4 @@ private fun getGames(cookies: RequestCookies): Set<Game> =
             emptySet()
         else
             values.map{ Game.valueOf(it) }.toSortedSet()
-    } ?: doError("Cookie called ${Cookies.GAMES} not found", logger)
+    } ?: cookieError(Cookies.GAMES, logger)

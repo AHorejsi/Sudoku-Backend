@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("User-Routing")
 
-fun configureRoutingForUsers(app: Application) {
+fun configureEndpointsForUsers(app: Application) {
     app.routing {
         this.authenticate("auth-jwt") {
             this.put(Endpoints.CREATE_USER) {
@@ -53,13 +53,9 @@ fun configureRoutingForUsers(app: Application) {
 private suspend fun createUser(app: Application, call: ApplicationCall): Result<Unit> = runCatching {
     val form = call.receiveParameters()
 
-    val username = form[FormFields.USERNAME]
-    val password = form[FormFields.PASSWORD]
-    val email = form[FormFields.EMAIL]
-
-    if (username.isNullOrEmpty() || email.isNullOrEmpty() || password.isNullOrEmpty()) {
-        doError("Not all necessary cookies have been provided", logger)
-    }
+    val username = form[FormFields.USERNAME]!!
+    val password = form[FormFields.PASSWORD]!!
+    val email = form[FormFields.EMAIL]!!
 
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
@@ -74,12 +70,8 @@ private suspend fun createUser(app: Application, call: ApplicationCall): Result<
 private suspend fun readUser(app: Application, call: ApplicationCall): Result<LoginAttempt> = runCatching {
     val form = call.receiveParameters()
 
-    val usernameOrEmail = form[FormFields.USERNAME_OR_EMAIL]
-    val password = form[FormFields.PASSWORD]
-
-    if (usernameOrEmail.isNullOrEmpty() || password.isNullOrEmpty()) {
-        doError("Not all necessary cookies have been provided", logger)
-    }
+    val usernameOrEmail = form[FormFields.USERNAME_OR_EMAIL]!!
+    val password = form[FormFields.PASSWORD]!!
 
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
@@ -100,13 +92,9 @@ private suspend fun deleteUser(app: Application, call: ApplicationCall): Result<
     val cookies = call.request.cookies
     val form = call.receiveParameters()
 
-    val userId = cookies[Cookies.USER_ID]?.toInt()
-    val usernameOrEmail = form[FormFields.USERNAME_OR_EMAIL]
-    val password = form[FormFields.PASSWORD]
-
-    if (null === userId || usernameOrEmail.isNullOrEmpty() || password.isNullOrEmpty()) {
-        doError("Not all necessary cookies have been provided", logger)
-    }
+    val userId = cookies[Cookies.USER_ID]!!.toInt()
+    val usernameOrEmail = form[FormFields.USERNAME_OR_EMAIL]!!
+    val password = form[FormFields.PASSWORD]!!
 
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
@@ -121,12 +109,8 @@ private suspend fun deleteUser(app: Application, call: ApplicationCall): Result<
 private suspend fun createPuzzle(app: Application, call: ApplicationCall): Result<Puzzle> = runCatching {
     val cookies = call.request.cookies
 
-    val json = cookies[Cookies.JSON]
-    val userId = cookies[Cookies.USER_ID]?.toInt()
-
-    if (json.isNullOrEmpty() || null === userId) {
-        doError("Not all necessary cookies have been provided", logger)
-    }
+    val json = cookies[Cookies.JSON]!!
+    val userId = cookies[Cookies.USER_ID]!!.toInt()
 
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
@@ -141,12 +125,8 @@ private suspend fun createPuzzle(app: Application, call: ApplicationCall): Resul
 private suspend fun updatePuzzle(app: Application, call: ApplicationCall): Result<Unit> = runCatching {
     val cookies = call.request.cookies
 
-    val puzzleId = cookies[Cookies.PUZZLE_ID]?.toInt()
-    val json = cookies[Cookies.JSON]
-
-    if (null === puzzleId || json.isNullOrEmpty()) {
-        doError("Not all necessary cookies have been provided", logger)
-    }
+    val puzzleId = cookies[Cookies.PUZZLE_ID]!!.toInt()
+    val json = cookies[Cookies.JSON]!!
 
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
@@ -161,12 +141,8 @@ private suspend fun updatePuzzle(app: Application, call: ApplicationCall): Resul
 private suspend fun deletePuzzle(app: Application, call: ApplicationCall): Result<Unit> = runCatching {
     val cookies = call.request.cookies
 
-    val userId = cookies[Cookies.USER_ID]?.toInt()
-    val puzzleId = cookies[Cookies.PUZZLE_ID]?.toInt()
-
-    if (null == userId || null == puzzleId) {
-        doError("Not all necessary cookies have been provided", logger)
-    }
+    val userId = cookies[Cookies.USER_ID]!!.toInt()
+    val puzzleId = cookies[Cookies.PUZZLE_ID]!!.toInt()
 
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
