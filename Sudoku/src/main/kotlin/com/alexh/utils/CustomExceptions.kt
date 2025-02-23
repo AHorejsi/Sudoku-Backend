@@ -1,6 +1,6 @@
-package com.alexh.utils.except
+package com.alexh.utils
 
-class CookieException(
+class CustomExceptions(
     override val message: String = "",
     override val cause: Throwable? = null
 ) : RuntimeException()

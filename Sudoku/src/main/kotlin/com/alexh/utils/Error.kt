@@ -1,6 +1,5 @@
 package com.alexh.utils
 
-import com.alexh.utils.except.CookieException
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
@@ -12,7 +11,7 @@ fun cookieError(cookieName: String, logger: Logger): Nothing {
 
     logger.error(message)
     
-    throw CookieException(message)
+    throw CustomExceptions(message)
 }
 
 suspend inline fun <reified TType : Any> handleResult(
@@ -28,7 +27,7 @@ suspend inline fun <reified TType : Any> handleResult(
         val stackTrace = exception.stackTraceToString()
         val status = when (exception) {
             is SQLException -> HttpStatusCode.BadGateway
-            is CookieException, is NullPointerException -> HttpStatusCode.UnprocessableEntity
+            is CustomExceptions, is NullPointerException -> HttpStatusCode.UnprocessableEntity
             else -> HttpStatusCode.InternalServerError
         }
 
