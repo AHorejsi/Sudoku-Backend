@@ -28,6 +28,7 @@ suspend inline fun <reified TType : Any> handleResult(
         val status = when (exception) {
             is SQLException -> HttpStatusCode.BadGateway
             is CookieException -> HttpStatusCode.UnprocessableEntity
+            is JwtException -> HttpStatusCode.Unauthorized
             is NullPointerException -> HttpStatusCode.BadRequest
             else -> HttpStatusCode.InternalServerError
         }

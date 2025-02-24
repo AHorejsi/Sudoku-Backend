@@ -7,6 +7,7 @@ import com.alexh.plugins.connect
 import com.alexh.utils.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
@@ -51,6 +52,8 @@ fun configureEndpointsForUsers(app: Application) {
 }
 
 private suspend fun createUser(app: Application, call: ApplicationCall): Result<Unit> = runCatching {
+    checkJwtToken(app, call)
+
     val form = call.receiveParameters()
 
     val username = form[FormFields.USERNAME]!!
@@ -151,5 +154,13 @@ private suspend fun deletePuzzle(app: Application, call: ApplicationCall): Resul
         val service = UserService(it)
 
         service.deletePuzzle(puzzleId, userId)
+    }
+}
+
+private fun checkJwtToken(app: Application, call: ApplicationCall) {
+    val principal = call.principal<JWTPrincipal>()
+
+    if (null === principal) {
+        throw JwtException("Invalid JWT Token")
     }
 }

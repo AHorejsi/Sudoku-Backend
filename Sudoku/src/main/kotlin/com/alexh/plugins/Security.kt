@@ -14,8 +14,8 @@ fun configureSecurity(app: Application) {
             val config = app.environment.config
 
             val jwtSecret = config.property("jwt.secret").getString()
-            val jwtAudience = config.property("jwt.audience").getString()
             val jwtIssuer = config.property("jwt.issuer").getString()
+            val jwtAudience = config.property("jwt.audience").getString()
 
             val verifierAlgorithm = Algorithm.HMAC256(jwtSecret)
             val expiration = System.currentTimeMillis() * 60000
@@ -25,8 +25,9 @@ fun configureSecurity(app: Application) {
             this.verifier(
                 JWT
                     .require(verifierAlgorithm)
-                    .withAudience(jwtAudience)
                     .withIssuer(jwtIssuer)
+                    .withAudience(jwtAudience)
+                    .withClaimPresence("iss")
                     .acceptExpiresAt(expiration)
                     .build()
             )
