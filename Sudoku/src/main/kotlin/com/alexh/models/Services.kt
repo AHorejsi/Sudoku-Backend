@@ -2,10 +2,7 @@ package com.alexh.models
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.sql.Connection
-import java.sql.ResultSet
-import java.sql.SQLException
-import java.sql.Statement
+import java.sql.*
 
 @Suppress("RemoveRedundantQualifierName")
 class UserService(private val dbConn: Connection) {
@@ -74,21 +71,47 @@ class UserService(private val dbConn: Connection) {
         }
     }
 
-    suspend fun createUser(username: String, password: String, email: String): Unit = withContext(Dispatchers.IO) {
+    suspend fun createUser(username: String, password: String, email: String): UserCreationAttempt = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(CREATE_USER, Statement.RETURN_GENERATED_KEYS).use { stmt ->
-            stmt.setString(1, username)
-            stmt.setString(2, password)
-            stmt.setString(3, email)
-
-            stmt.executeUpdate()
-
-            stmt.generatedKeys.use { keys ->
-                if (!keys.next()) {
-                    throw SQLException("Failed to create User")
-                }
-            }
+            runUserCreationStatement(stmt, username, password, email)
         }
     }
+
+    private fun runUserCreationStatement(
+        stmt: PreparedStatement,
+        username: String,
+        password: String,
+        email: String,
+    ): UserCreationAttempt {
+        stmt.setString(1, username)
+        stmt.setString(2, password)
+        stmt.setString(3, email)
+
+        runCatching {
+            stmt.executeUpdate()
+        }.onFailure { ex->
+            val attempt = checkForExpectedUserCreationErrors(ex)
+
+            if (null !== attempt) {
+                return attempt
+            }
+        }
+
+        // Serves to check for errors that were not expected
+        stmt.generatedKeys.use { keys ->
+            if (!keys.next()) {
+                throw SQLException("Failed to create User")
+            }
+        }
+
+        return UserCreationAttempt.Success
+    }
+
+    private fun checkForExpectedUserCreationErrors(ex: Throwable): UserCreationAttempt? =
+        if (ex is SQLException && ex.message!!.startsWith("Unique"))
+            UserCreationAttempt.DuplicateAdded
+        else
+            null
 
     suspend fun readUser(usernameOrEmail: String, password: String): User? = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(GET_USER).use { stmt ->

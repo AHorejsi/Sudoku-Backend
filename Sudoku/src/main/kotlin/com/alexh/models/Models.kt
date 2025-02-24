@@ -24,3 +24,12 @@ sealed class LoginAttempt {
     @Serializable
     object Failure : LoginAttempt()
 }
+
+@Serializable
+sealed class UserCreationAttempt {
+    @Serializable
+    object Success : UserCreationAttempt()
+
+    @Serializable
+    object DuplicateAdded : UserCreationAttempt()
+}

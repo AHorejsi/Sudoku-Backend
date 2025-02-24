@@ -2,6 +2,7 @@ package com.alexh.route
 
 import com.alexh.models.LoginAttempt
 import com.alexh.models.Puzzle
+import com.alexh.models.UserCreationAttempt
 import com.alexh.models.UserService
 import com.alexh.plugins.connect
 import com.alexh.utils.*
@@ -25,7 +26,7 @@ fun configureEndpointsForUsers(app: Application) {
             this.get(Endpoints.READ_USER) {
                 val result = readUser(app, this.call)
 
-                handleResult(result, this.call, logger, "Successfully retrieved User")
+                handleResult(result, this.call, logger, "Successfully searched for User")
             }
             this.delete(Endpoints.DELETE_USER) {
                 val result = deleteUser(app, this.call)
@@ -51,7 +52,7 @@ fun configureEndpointsForUsers(app: Application) {
     }
 }
 
-private suspend fun createUser(app: Application, call: ApplicationCall): Result<Unit> = runCatching {
+private suspend fun createUser(app: Application, call: ApplicationCall): Result<UserCreationAttempt> = runCatching {
     checkJwtToken(app, call)
 
     val form = call.receiveParameters()
@@ -66,7 +67,7 @@ private suspend fun createUser(app: Application, call: ApplicationCall): Result<
     db.use {
         val service = UserService(it)
 
-        service.createUser(username, password, email)
+        return@runCatching service.createUser(username, password, email)
     }
 }
 
