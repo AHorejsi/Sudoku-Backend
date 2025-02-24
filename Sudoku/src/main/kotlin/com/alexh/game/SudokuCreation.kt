@@ -17,11 +17,7 @@ enum class Dimension(
     val boxCols: Int
 ) {
     FOUR(4, 2, 2),
-    EIGHT(8, 4, 2),
     NINE(9, 3, 3),
-    TEN(10, 2, 5),
-    TWELVE(12, 3, 4),
-    FIFTEEN(15, 5, 3),
     SIXTEEN(16, 4, 4)
 }
 
