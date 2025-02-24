@@ -160,10 +160,15 @@ fun makeSudoku(info: MakeSudokuCommand): SudokuJson {
     val games = info.games
 
     val (neighborhoods, boxes) = initializeBoard(info)
+
     initializeValues(neighborhoods, info)
+
     val cages = makeCages(neighborhoods, info)
+
     val solved = neighborhoods.map{ it.value!! }.unflatten(length)
+
     adjustForDifficulty(neighborhoods, info)
+
     val board = neighborhoods.map{ it.value }.unflatten(length)
 
     return SudokuJson(board, solved, cages, boxes, length, difficulty, games)
