@@ -22,6 +22,7 @@ fun configureHttp(app: Application) {
         this.allowHeader(HttpHeaders.ContentLength)
         this.allowHeader(HttpHeaders.Vary)
         this.allowHeader(HttpHeaders.Host)
+        this.allowHeader(HttpHeaders.XRequestId)
 
         this.allowSameOrigin = true
         this.allowCredentials = true

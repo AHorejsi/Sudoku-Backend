@@ -1,5 +1,6 @@
 package com.alexh.plugins
 
+import com.alexh.utils.JwtClaims
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.http.*
@@ -27,7 +28,7 @@ fun configureSecurity(app: Application) {
                     .require(verifierAlgorithm)
                     .withIssuer(jwtIssuer)
                     .withAudience(jwtAudience)
-                    .withClaimPresence("iss")
+                    .withClaimPresence(JwtClaims.OP_KEY)
                     .acceptExpiresAt(expiration)
                     .build()
             )

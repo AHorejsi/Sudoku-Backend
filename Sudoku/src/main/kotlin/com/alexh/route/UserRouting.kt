@@ -53,7 +53,7 @@ fun configureEndpointsForUsers(app: Application) {
 }
 
 private suspend fun createUser(app: Application, call: ApplicationCall): Result<UserCreationAttempt> = runCatching {
-    checkJwtToken(app, call)
+    checkJwtToken(call, JwtClaims.CREATE_USER_VALUE)
 
     val form = call.receiveParameters()
 
@@ -72,6 +72,8 @@ private suspend fun createUser(app: Application, call: ApplicationCall): Result<
 }
 
 private suspend fun readUser(app: Application, call: ApplicationCall): Result<LoginAttempt> = runCatching {
+    checkJwtToken(call, JwtClaims.READ_USER_VALUE)
+
     val form = call.receiveParameters()
 
     val usernameOrEmail = form[FormFields.USERNAME_OR_EMAIL]!!
@@ -93,6 +95,8 @@ private suspend fun readUser(app: Application, call: ApplicationCall): Result<Lo
 }
 
 private suspend fun deleteUser(app: Application, call: ApplicationCall): Result<Unit> = runCatching {
+    checkJwtToken(call, JwtClaims.DELETE_USER_VALUE)
+
     val cookies = call.request.cookies
     val form = call.receiveParameters()
 
@@ -111,6 +115,8 @@ private suspend fun deleteUser(app: Application, call: ApplicationCall): Result<
 }
 
 private suspend fun createPuzzle(app: Application, call: ApplicationCall): Result<Puzzle> = runCatching {
+    checkJwtToken(call, JwtClaims.CREATE_PUZZLE_VALUE)
+
     val cookies = call.request.cookies
 
     val json = cookies[Cookies.JSON]!!
@@ -127,6 +133,8 @@ private suspend fun createPuzzle(app: Application, call: ApplicationCall): Resul
 }
 
 private suspend fun updatePuzzle(app: Application, call: ApplicationCall): Result<Unit> = runCatching {
+    checkJwtToken(call, JwtClaims.UPDATE_PUZZLE_VALUE)
+
     val cookies = call.request.cookies
 
     val puzzleId = cookies[Cookies.PUZZLE_ID]!!.toInt()
@@ -143,6 +151,8 @@ private suspend fun updatePuzzle(app: Application, call: ApplicationCall): Resul
 }
 
 private suspend fun deletePuzzle(app: Application, call: ApplicationCall): Result<Unit> = runCatching {
+    checkJwtToken(call, JwtClaims.DELETE_PUZZLE_VALUE)
+
     val cookies = call.request.cookies
 
     val userId = cookies[Cookies.USER_ID]!!.toInt()
@@ -155,13 +165,5 @@ private suspend fun deletePuzzle(app: Application, call: ApplicationCall): Resul
         val service = UserService(it)
 
         service.deletePuzzle(puzzleId, userId)
-    }
-}
-
-private fun checkJwtToken(app: Application, call: ApplicationCall) {
-    val principal = call.principal<JWTPrincipal>()
-
-    if (null === principal) {
-        throw JwtException("Invalid JWT Token")
     }
 }

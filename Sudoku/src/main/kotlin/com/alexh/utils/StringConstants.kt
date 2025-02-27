@@ -50,6 +50,24 @@ class Endpoints private constructor() {
     }
 }
 
+class JwtClaims private constructor() {
+    init {
+        noInstances(JwtClaims::class)
+    }
+
+    companion object {
+        const val OP_KEY = "op"
+
+        const val GENERATE_PUZZLE_VALUE = "GENERATE PUZZLE"
+        const val CREATE_USER_VALUE = "CREATE USER"
+        const val READ_USER_VALUE = "READ USER"
+        const val DELETE_USER_VALUE = "DELETE USER"
+        const val CREATE_PUZZLE_VALUE = "CREATE PUZZLE"
+        const val UPDATE_PUZZLE_VALUE = "UPDATE PUZZLE"
+        const val DELETE_PUZZLE_VALUE = "DELETE PUZZLE"
+    }
+}
+
 private fun <T : Any> noInstances(cls: KClass<T>): Nothing {
     throw Exception("No instances of ${cls.java.name}")
 }

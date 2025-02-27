@@ -4,10 +4,12 @@ import io.ktor.server.netty.*
 import com.alexh.plugins.*
 import com.alexh.route.*
 import io.ktor.server.application.*
+import org.slf4j.LoggerFactory
 
-fun main(args: Array<String>) {
+val logger = LoggerFactory.getLogger("Application-Main")!!
+
+fun main(args: Array<String>) =
     EngineMain.main(args)
-}
 
 // Specified to be called in configurations
 @Suppress("UNUSED")
@@ -15,7 +17,7 @@ fun Application.setupModule() {
     configureSecurity(this)
     configureSerialization(this)
     configureHttp(this)
-    configureMonitoring(this)
+    configureMonitoring(this, logger)
 }
 
 // Specified to be called in configurations

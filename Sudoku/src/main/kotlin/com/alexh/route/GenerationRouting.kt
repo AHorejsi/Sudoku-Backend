@@ -1,10 +1,7 @@
 package com.alexh.route
 
 import com.alexh.game.*
-import com.alexh.utils.Endpoints
-import com.alexh.utils.Cookies
-import com.alexh.utils.cookieError
-import com.alexh.utils.handleResult
+import com.alexh.utils.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
@@ -26,6 +23,8 @@ fun configureEndpointsForGeneratingPuzzles(app: Application) {
 }
 
 private fun generatePuzzle(call: ApplicationCall): Result<SudokuJson> = runCatching {
+    checkJwtToken(call, "GENERATE_PUZZLE")
+
     val cookies = call.request.cookies
 
     val dimension = getDimension(cookies)
@@ -41,12 +40,12 @@ private fun generatePuzzle(call: ApplicationCall): Result<SudokuJson> = runCatch
 private fun getDimension(cookies: RequestCookies): Dimension =
     cookies[Cookies.DIMENSION]?.let {
         return Dimension.valueOf(it)
-    } ?: cookieError(Cookies.DIMENSION, logger)
+    } ?: cookieError(Cookies.DIMENSION)
 
 private fun getDifficulty(cookies: RequestCookies): Difficulty =
     cookies[Cookies.DIFFICULTY]?.let {
         return Difficulty.valueOf(it)
-    } ?: cookieError(Cookies.DIFFICULTY, logger)
+    } ?: cookieError(Cookies.DIFFICULTY)
 
 private fun getGames(cookies: RequestCookies): Set<Game> =
     cookies[Cookies.GAMES]?.run {
@@ -56,4 +55,4 @@ private fun getGames(cookies: RequestCookies): Set<Game> =
             emptySet()
         else
             values.map{ Game.valueOf(it) }.toSortedSet()
-    } ?: cookieError(Cookies.GAMES, logger)
+    } ?: cookieError(Cookies.GAMES)
