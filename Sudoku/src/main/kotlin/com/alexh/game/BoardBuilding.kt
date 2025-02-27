@@ -3,6 +3,7 @@ package com.alexh.game
 import com.alexh.utils.Position
 import com.alexh.utils.get2d
 import com.alexh.utils.up
+import java.util.TreeSet
 
 internal fun initializeBoard(
     info: MakeSudokuCommand
@@ -215,7 +216,7 @@ private fun initializeBoxes(
     val seen = HashSet<SudokuNode>(2 * length * length)
 
     for (node in neighborhoods) {
-        val box = makeBox(node, length, seen)
+        val box = makeBox(node, seen)
 
         box?.let {
             boxSet.add(it)
@@ -225,7 +226,7 @@ private fun initializeBoxes(
     seen.clear()
 
     for (node in neighborhoods) {
-        val hyperBox = makeHyperBox(node, length, seen)
+        val hyperBox = makeHyperBox(node, seen)
 
         hyperBox?.let {
             boxSet.add(it)
@@ -235,14 +236,13 @@ private fun initializeBoxes(
 
 private fun makeBox(
     node: SudokuNode,
-    length: Int,
     seen: MutableSet<SudokuNode>
 ): Box? {
     if (node in seen) {
         return null
     }
 
-    val positions = HashSet<Position>(length)
+    val positions = TreeSet<Position>()
 
     for (neighbor in node.box) {
         positions.add(neighbor.place)
@@ -255,14 +255,13 @@ private fun makeBox(
 
 private fun makeHyperBox(
     node: SudokuNode,
-    length: Int,
     seen: MutableSet<SudokuNode>
 ): Box? {
     if (node in seen || !node.hyper.any()) {
         return null
     }
 
-    val positions = HashSet<Position>(length)
+    val positions = TreeSet<Position>()
 
     for (neighbor in node.hyper) {
         positions.add(neighbor.place)
