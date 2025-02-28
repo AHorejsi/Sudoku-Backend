@@ -6,6 +6,7 @@ import java.sql.*
 
 @Suppress("RemoveRedundantQualifierName")
 class UserService(private val dbConn: Connection) {
+    @Suppress("MemberVisibilityCanBePrivate")
     companion object {
         const val USER_TABLE = "Users"
         const val USER_TABLE_ID = "id"
@@ -28,7 +29,7 @@ class UserService(private val dbConn: Connection) {
         private const val CREATE_PUZZLE_TABLE =
             "CREATE TABLE IF NOT EXISTS $PUZZLE_TABLE (" +
                 "$PUZZLE_TABLE_ID SERIAL PRIMARY KEY," +
-                "$JSON LONGTEXT NOT NULL," +
+                "$JSON TEXT NOT NULL," +
                 "$USER_ID INT REFERENCES $USER_TABLE($USER_TABLE_ID) " +
                     "ON UPDATE CASCADE " +
                     "ON DELETE CASCADE" +
@@ -83,7 +84,7 @@ class UserService(private val dbConn: Connection) {
             stmt.setString(2, password)
             stmt.setString(3, email)
 
-            this@UserService.doUserCreation(stmt)
+            return@withContext this@UserService.doUserCreation(stmt)
         }
     }
 
@@ -177,12 +178,13 @@ class UserService(private val dbConn: Connection) {
             stmt.setString(3, usernameOrEmail)
             stmt.setString(4, password)
 
-            val rowsAffected = stmt.executeUpdate()
+            val amountOfRowsDeleted = stmt.executeUpdate()
 
-            return@withContext if (1 == rowsAffected)
-                UserDeletionAttempt.Success
-            else
-                UserDeletionAttempt.Failure
+            return@withContext when (amountOfRowsDeleted) {
+                0 -> UserDeletionAttempt.FailedToFind
+                1 -> UserDeletionAttempt.Success
+                else -> throw SQLException("More than one user deleted")
+            }
         }
     }
 

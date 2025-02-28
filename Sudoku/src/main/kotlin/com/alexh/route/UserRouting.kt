@@ -84,7 +84,7 @@ private suspend fun readUser(app: Application, call: ApplicationCall): Result<Lo
         val user = service.readUser(usernameOrEmail, password)
 
         return@runCatching if (null === user)
-            LoginAttempt.Failure
+            LoginAttempt.FailedToFind
         else
             LoginAttempt.Success(user)
     }

@@ -17,15 +17,6 @@ data class User(
 )
 
 @Serializable
-sealed class LoginAttempt {
-    @Serializable
-    class Success(@Suppress("UNUSED") val user: User) : LoginAttempt()
-
-    @Serializable
-    object Failure : LoginAttempt()
-}
-
-@Serializable
 sealed class UserCreationAttempt {
     @Serializable
     object Success : UserCreationAttempt()
@@ -35,10 +26,19 @@ sealed class UserCreationAttempt {
 }
 
 @Serializable
+sealed class LoginAttempt {
+    @Serializable
+    class Success(@Suppress("UNUSED") val user: User) : LoginAttempt()
+
+    @Serializable
+    object FailedToFind : LoginAttempt()
+}
+
+@Serializable
 sealed class UserDeletionAttempt {
     @Serializable
     object Success : UserDeletionAttempt()
 
     @Serializable
-    object Failure : UserDeletionAttempt()
+    object FailedToFind : UserDeletionAttempt()
 }
