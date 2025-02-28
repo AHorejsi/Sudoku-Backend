@@ -103,10 +103,10 @@ private suspend fun deleteUser(app: Application, call: ApplicationCall): Result<
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
 
-    return@runCatching db.use {
+    db.use {
         val service = UserService(it)
 
-        return@use service.deleteUser(userId, usernameOrEmail, password)
+        return@runCatching service.deleteUser(userId, usernameOrEmail, password)
     }
 }
 
