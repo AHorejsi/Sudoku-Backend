@@ -61,32 +61,33 @@ class UserService(private val dbConn: Connection) {
     }
 
     init {
-        if (!UserService.alreadyInitialized) {
-            this.dbConn.createStatement().use { stmt ->
-                stmt.executeUpdate(CREATE_USER_TABLE)
-                stmt.executeUpdate(CREATE_PUZZLE_TABLE)
-            }
+        this.initializeTables()
+    }
 
-            UserService.alreadyInitialized = true
+    private fun initializeTables() {
+        if (UserService.alreadyInitialized) {
+            return
         }
+
+        this.dbConn.createStatement().use { stmt ->
+            stmt.executeUpdate(CREATE_USER_TABLE)
+            stmt.executeUpdate(CREATE_PUZZLE_TABLE)
+        }
+
+        UserService.alreadyInitialized = true
     }
 
     suspend fun createUser(username: String, password: String, email: String): UserCreationAttempt = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(CREATE_USER, Statement.RETURN_GENERATED_KEYS).use { stmt ->
-            runUserCreationStatement(stmt, username, password, email)
+            stmt.setString(1, username)
+            stmt.setString(2, password)
+            stmt.setString(3, email)
+
+            this@UserService.doUserCreation(stmt)
         }
     }
 
-    private fun runUserCreationStatement(
-        stmt: PreparedStatement,
-        username: String,
-        password: String,
-        email: String,
-    ): UserCreationAttempt {
-        stmt.setString(1, username)
-        stmt.setString(2, password)
-        stmt.setString(3, email)
-
+    private fun doUserCreation(stmt: PreparedStatement): UserCreationAttempt {
         runCatching {
             stmt.executeUpdate()
         }.onFailure { ex->
@@ -169,14 +170,19 @@ class UserService(private val dbConn: Connection) {
         return User(userId, username, email, puzzles)
     }
 
-    suspend fun deleteUser(userId: Int, usernameOrEmail: String, password: String): Unit = withContext(Dispatchers.IO) {
+    suspend fun deleteUser(userId: Int, usernameOrEmail: String, password: String): UserDeletionAttempt = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(DELETE_USER).use { stmt ->
             stmt.setInt(1, userId)
             stmt.setString(2, usernameOrEmail)
             stmt.setString(3, usernameOrEmail)
             stmt.setString(4, password)
 
-            stmt.executeUpdate()
+            val rowsAffected = stmt.executeUpdate()
+
+            return@withContext if (1 == rowsAffected)
+                UserDeletionAttempt.Success
+            else
+                UserDeletionAttempt.Failure
         }
     }
 

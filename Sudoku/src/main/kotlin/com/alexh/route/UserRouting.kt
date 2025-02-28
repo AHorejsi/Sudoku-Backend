@@ -1,14 +1,10 @@
 package com.alexh.route
 
-import com.alexh.models.LoginAttempt
-import com.alexh.models.Puzzle
-import com.alexh.models.UserCreationAttempt
-import com.alexh.models.UserService
+import com.alexh.models.*
 import com.alexh.plugins.connect
 import com.alexh.utils.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
-import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
@@ -21,32 +17,32 @@ fun configureEndpointsForUsers(app: Application) {
             this.put(Endpoints.CREATE_USER) {
                 val result = createUser(app, this.call)
 
-                handleResult(result, this.call, logger, "Successfully created User")
+                handleResult(result, this.call, logger, "Successful call to ${Endpoints.CREATE_USER}")
             }
             this.get(Endpoints.READ_USER) {
                 val result = readUser(app, this.call)
 
-                handleResult(result, this.call, logger, "Successfully searched for User")
+                handleResult(result, this.call, logger, "Successful call to ${Endpoints.READ_USER}")
             }
             this.delete(Endpoints.DELETE_USER) {
                 val result = deleteUser(app, this.call)
 
-                handleResult(result, this.call, logger, "Successfully deleted User")
+                handleResult(result, this.call, logger, "Successful call to ${Endpoints.DELETE_USER}")
             }
             this.put(Endpoints.CREATE_PUZZLE) {
                 val result = createPuzzle(app, this.call)
 
-                handleResult(result, this.call, logger, "Successfully created Puzzle")
+                handleResult(result, this.call, logger, "Successful call to ${Endpoints.CREATE_PUZZLE}")
             }
             this.put(Endpoints.UPDATE_PUZZLE) {
                 val result = updatePuzzle(app, this.call)
 
-                handleResult(result, this.call, logger, "Successfully updated Puzzle")
+                handleResult(result, this.call, logger, "Successful call to ${Endpoints.UPDATE_PUZZLE}")
             }
             this.delete(Endpoints.DELETE_PUZZLE) {
                 val result = deletePuzzle(app, this.call)
 
-                handleResult(result, this.call, logger, "Successfully deleted Puzzle")
+                handleResult(result, this.call, logger, "Successful call to ${Endpoints.DELETE_PUZZLE}")
             }
         }
     }
@@ -94,7 +90,7 @@ private suspend fun readUser(app: Application, call: ApplicationCall): Result<Lo
     }
 }
 
-private suspend fun deleteUser(app: Application, call: ApplicationCall): Result<Unit> = runCatching {
+private suspend fun deleteUser(app: Application, call: ApplicationCall): Result<UserDeletionAttempt> = runCatching {
     checkJwtToken(call, JwtClaims.DELETE_USER_VALUE)
 
     val cookies = call.request.cookies
@@ -107,10 +103,10 @@ private suspend fun deleteUser(app: Application, call: ApplicationCall): Result<
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
 
-    db.use {
+    return@runCatching db.use {
         val service = UserService(it)
 
-        service.deleteUser(userId, usernameOrEmail, password)
+        return@use service.deleteUser(userId, usernameOrEmail, password)
     }
 }
 

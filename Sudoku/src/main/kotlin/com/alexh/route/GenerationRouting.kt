@@ -23,7 +23,7 @@ fun configureEndpointsForGeneratingPuzzles(app: Application) {
 }
 
 private fun generatePuzzle(call: ApplicationCall): Result<SudokuJson> = runCatching {
-    checkJwtToken(call, "GENERATE_PUZZLE")
+    checkJwtToken(call, JwtClaims.GENERATE_PUZZLE_VALUE)
 
     val cookies = call.request.cookies
 

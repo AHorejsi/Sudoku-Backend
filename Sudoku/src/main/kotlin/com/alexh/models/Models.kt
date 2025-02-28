@@ -33,3 +33,12 @@ sealed class UserCreationAttempt {
     @Serializable
     object DuplicateAdded : UserCreationAttempt()
 }
+
+@Serializable
+sealed class UserDeletionAttempt {
+    @Serializable
+    object Success : UserDeletionAttempt()
+
+    @Serializable
+    object Failure : UserDeletionAttempt()
+}
