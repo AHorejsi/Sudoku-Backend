@@ -5,7 +5,7 @@ plugins {
 }
 
 group "com.alexh"
-version "0.0.1"
+version "1.0.0"
 mainClassName = "com.alexh.ApplicationKt"
 
 def isDevelopment = project.ext.has("development")
