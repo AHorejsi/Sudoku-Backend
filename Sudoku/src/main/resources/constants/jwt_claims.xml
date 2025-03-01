@@ -6,6 +6,7 @@
     <generatePuzzle value="GENERATE PUZZLE" />
     <createUser value="CREATE USER" />
     <readUser value="READ USER" />
+    <updateUser value="UPDATE USER" />
     <deleteUser value="DELETE USER" />
     <createPuzzle value="CREATE PUZZLE" />
     <updatePuzzle value="UPDATE PUZZLE" />

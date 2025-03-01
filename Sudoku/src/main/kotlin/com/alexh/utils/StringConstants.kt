@@ -41,6 +41,9 @@ class Cookies private constructor() {
         val DIFFICULTY: String
         val GAMES: String
         val USER_ID: String
+        val USERNAME: String
+        val EMAIL: String
+        val PASSWORD: String
         val PUZZLE_ID: String
         val JSON: String
 
@@ -54,8 +57,11 @@ class Cookies private constructor() {
             this.DIFFICULTY = (children.item(3) as Element).tagName
             this.GAMES = (children.item(5) as Element).tagName
             this.USER_ID = (children.item(7) as Element).tagName
-            this.PUZZLE_ID = (children.item(9) as Element).tagName
-            this.JSON = (children.item(11) as Element).tagName
+            this.USERNAME = (children.item(9) as Element).tagName
+            this.EMAIL = (children.item(11) as Element).tagName
+            this.PASSWORD = (children.item(13) as Element).tagName
+            this.PUZZLE_ID = (children.item(15) as Element).tagName
+            this.JSON = (children.item(17) as Element).tagName
         }
     }
 }
@@ -68,6 +74,7 @@ class Endpoints private constructor() {
     companion object {
         val GENERATE: String
         val CREATE_USER: String
+        val UPDATE_USER: String
         val READ_USER: String
         val DELETE_USER: String
         val CREATE_PUZZLE: String
@@ -83,10 +90,11 @@ class Endpoints private constructor() {
             this.GENERATE = (children.item(1) as Element).getAttribute("value")
             this.CREATE_USER = (children.item(3) as Element).getAttribute("value")
             this.READ_USER = (children.item(5) as Element).getAttribute("value")
-            this.DELETE_USER = (children.item(7) as Element).getAttribute("value")
-            this.CREATE_PUZZLE = (children.item(9) as Element).getAttribute("value")
-            this.UPDATE_PUZZLE = (children.item(11) as Element).getAttribute("value")
-            this.DELETE_PUZZLE = (children.item(13) as Element).getAttribute("value")
+            this.UPDATE_USER = (children.item(7) as Element).getAttribute("value")
+            this.DELETE_USER = (children.item(9) as Element).getAttribute("value")
+            this.CREATE_PUZZLE = (children.item(11) as Element).getAttribute("value")
+            this.UPDATE_PUZZLE = (children.item(13) as Element).getAttribute("value")
+            this.DELETE_PUZZLE = (children.item(15) as Element).getAttribute("value")
         }
     }
 }
@@ -104,6 +112,7 @@ class JwtClaims private constructor() {
         val GENERATE_PUZZLE_VALUE: String
         val CREATE_USER_VALUE: String
         val READ_USER_VALUE: String
+        val UPDATE_USER_VALUE: String
         val DELETE_USER_VALUE: String
         val CREATE_PUZZLE_VALUE: String
         val UPDATE_PUZZLE_VALUE: String
@@ -122,10 +131,11 @@ class JwtClaims private constructor() {
             this.GENERATE_PUZZLE_VALUE = (children.item(7) as Element).getAttribute("value")
             this.CREATE_USER_VALUE = (children.item(9) as Element).getAttribute("value")
             this.READ_USER_VALUE = (children.item(11) as Element).getAttribute("value")
-            this.DELETE_USER_VALUE = (children.item(13) as Element).getAttribute("value")
-            this.CREATE_PUZZLE_VALUE = (children.item(15) as Element).getAttribute("value")
-            this.UPDATE_PUZZLE_VALUE = (children.item(17) as Element).getAttribute("value")
-            this.DELETE_PUZZLE_VALUE = (children.item(19) as Element).getAttribute("value")
+            this.UPDATE_USER_VALUE = (children.item(13) as Element).getAttribute("value")
+            this.DELETE_USER_VALUE = (children.item(15) as Element).getAttribute("value")
+            this.CREATE_PUZZLE_VALUE = (children.item(17) as Element).getAttribute("value")
+            this.UPDATE_PUZZLE_VALUE = (children.item(19) as Element).getAttribute("value")
+            this.DELETE_PUZZLE_VALUE = (children.item(21) as Element).getAttribute("value")
         }
     }
 }

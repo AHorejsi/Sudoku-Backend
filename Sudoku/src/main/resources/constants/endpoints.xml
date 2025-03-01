@@ -2,6 +2,7 @@
     <generate value="/generate" />
     <createUser value="/createUser" />
     <readUser value="/readUser" />
+    <updateUser value="/updateUser" />
     <deleteUser value="/deleteUser" />
     <createPuzzle value="/createPuzzle" />
     <updatePuzzle value="/updatePuzzle" />

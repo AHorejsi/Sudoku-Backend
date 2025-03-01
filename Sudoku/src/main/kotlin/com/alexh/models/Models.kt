@@ -17,28 +17,42 @@ data class User(
 )
 
 @Serializable
-sealed class UserCreationAttempt {
+sealed class CreateUserAttempt {
     @Serializable
-    object Success : UserCreationAttempt()
+    object Success : CreateUserAttempt()
 
     @Serializable
-    object DuplicateAdded : UserCreationAttempt()
+    object DuplicateFound : CreateUserAttempt()
 }
 
 @Serializable
-sealed class LoginAttempt {
+sealed class ReadUserAttempt {
     @Serializable
-    class Success(@Suppress("UNUSED") val user: User) : LoginAttempt()
+    class Success(@Suppress("UNUSED") val user: User) : ReadUserAttempt()
 
     @Serializable
-    object FailedToFind : LoginAttempt()
+    object FailedToFind : ReadUserAttempt()
 }
 
 @Serializable
-sealed class UserDeletionAttempt {
+sealed class UpdateUserAttempt {
     @Serializable
-    object Success : UserDeletionAttempt()
+    class Success(
+        @Suppress("UNUSED")
+        val newUsername: String,
+        @Suppress("UNUSED")
+        val newEmail: String
+    ) : UpdateUserAttempt()
 
     @Serializable
-    object FailedToFind : UserDeletionAttempt()
+    object FailedToFind : UpdateUserAttempt()
+}
+
+@Serializable
+sealed class DeleteUserAttempt {
+    @Serializable
+    object Success : DeleteUserAttempt()
+
+    @Serializable
+    object FailedToFind : DeleteUserAttempt()
 }

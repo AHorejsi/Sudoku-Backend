@@ -43,6 +43,10 @@ class UserService(private val dbConn: Connection) {
             "FROM $USER_TABLE " +
             "LEFT JOIN $PUZZLE_TABLE ON $USER_TABLE.$USER_TABLE_ID = $PUZZLE_TABLE.$USER_ID " +
             "WHERE ($USERNAME = ? OR $EMAIL = ?) AND $PASSWORD = ?;"
+        private const val UPDATE_USER =
+            "UPDATE $USER_TABLE " +
+            "SET $USERNAME = ?, $EMAIL = ? " +
+            "WHERE $USER_TABLE_ID = ? AND $USERNAME = ? AND $EMAIL = ? AND $PASSWORD = ?;"
         private const val DELETE_USER =
             "DELETE FROM $USER_TABLE " +
             "WHERE $USER_TABLE_ID = ? AND ($USERNAME = ? OR $EMAIL = ?) AND $PASSWORD = ?;"
@@ -78,7 +82,7 @@ class UserService(private val dbConn: Connection) {
         UserService.alreadyInitialized = true
     }
 
-    suspend fun createUser(username: String, password: String, email: String): UserCreationAttempt = withContext(Dispatchers.IO) {
+    suspend fun createUser(username: String, password: String, email: String): CreateUserAttempt = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(CREATE_USER, Statement.RETURN_GENERATED_KEYS).use { stmt ->
             stmt.setString(1, username)
             stmt.setString(2, password)
@@ -88,7 +92,7 @@ class UserService(private val dbConn: Connection) {
         }
     }
 
-    private fun doUserCreation(stmt: PreparedStatement): UserCreationAttempt {
+    private fun doUserCreation(stmt: PreparedStatement): CreateUserAttempt {
         runCatching {
             stmt.executeUpdate()
         }.onFailure { ex->
@@ -106,12 +110,12 @@ class UserService(private val dbConn: Connection) {
             }
         }
 
-        return UserCreationAttempt.Success
+        return CreateUserAttempt.Success
     }
 
-    private fun checkForExpectedUserCreationErrors(ex: Throwable): UserCreationAttempt? =
+    private fun checkForExpectedUserCreationErrors(ex: Throwable): CreateUserAttempt? =
         if (ex is SQLException && ex.message!!.startsWith("Unique"))
-            UserCreationAttempt.DuplicateAdded
+            CreateUserAttempt.DuplicateFound
         else
             null
 
@@ -171,7 +175,33 @@ class UserService(private val dbConn: Connection) {
         return User(userId, username, email, puzzles)
     }
 
-    suspend fun deleteUser(userId: Int, usernameOrEmail: String, password: String): UserDeletionAttempt = withContext(Dispatchers.IO) {
+    suspend fun updateUser(
+        userId: Int,
+        oldUsername: String,
+        oldEmail: String,
+        password: String,
+        newUsername: String,
+        newEmail: String
+    ): UpdateUserAttempt = withContext(Dispatchers.IO) {
+        this@UserService.dbConn.prepareStatement(UPDATE_USER).use { stmt ->
+            stmt.setString(1, newUsername)
+            stmt.setString(2, newEmail)
+            stmt.setInt(3, userId)
+            stmt.setString(4, oldUsername)
+            stmt.setString(5, oldEmail)
+            stmt.setString(6, password)
+
+            val amountOfRowsUpdated = stmt.executeUpdate()
+
+            return@withContext when (amountOfRowsUpdated) {
+                0 -> UpdateUserAttempt.FailedToFind
+                1 -> UpdateUserAttempt.Success(newUsername, newEmail)
+                else -> throw SQLException("More than one user updated")
+            }
+        }
+    }
+
+    suspend fun deleteUser(userId: Int, usernameOrEmail: String, password: String): DeleteUserAttempt = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(DELETE_USER).use { stmt ->
             stmt.setInt(1, userId)
             stmt.setString(2, usernameOrEmail)
@@ -181,8 +211,8 @@ class UserService(private val dbConn: Connection) {
             val amountOfRowsDeleted = stmt.executeUpdate()
 
             return@withContext when (amountOfRowsDeleted) {
-                0 -> UserDeletionAttempt.FailedToFind
-                1 -> UserDeletionAttempt.Success
+                0 -> DeleteUserAttempt.FailedToFind
+                1 -> DeleteUserAttempt.Success
                 else -> throw SQLException("More than one user deleted")
             }
         }
