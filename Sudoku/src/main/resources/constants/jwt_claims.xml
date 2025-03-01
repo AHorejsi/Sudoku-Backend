@@ -1,0 +1,13 @@
+<JwtClaims>
+    <operation key="op" />
+    <issuer key="iss" />
+    <audience key="aud" />
+
+    <generatePuzzle value="GENERATE PUZZLE" />
+    <createUser value="CREATE USER" />
+    <readUser value="READ USER" />
+    <deleteUser value="DELETE USER" />
+    <createPuzzle value="CREATE PUZZLE" />
+    <updatePuzzle value="UPDATE PUZZLE" />
+    <deletePuzzle value="DELETE PUZZLE" />
+</JwtClaims>

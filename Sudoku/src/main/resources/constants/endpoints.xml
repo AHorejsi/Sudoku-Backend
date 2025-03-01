@@ -1,0 +1,9 @@
+<Endpoints>
+    <generate value="/generate" />
+    <createUser value="/createUser" />
+    <readUser value="/readUser" />
+    <deleteUser value="/deleteUser" />
+    <createPuzzle value="/createPuzzle" />
+    <updatePuzzle value="/updatePuzzle" />
+    <deletePuzzle value="/deletePuzzle" />
+</Endpoints>
