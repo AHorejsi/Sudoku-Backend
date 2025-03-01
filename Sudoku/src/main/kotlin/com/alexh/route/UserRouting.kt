@@ -53,14 +53,10 @@ fun configureEndpointsForUsers(app: Application) {
     }
 }
 
-private suspend fun createUser(app: Application, call: ApplicationCall): Result<CreateUserAttempt> = runCatching {
+private suspend fun createUser(app: Application, call: ApplicationCall): Result<CreateUserResponse> = runCatching {
     checkJwtToken(call, JwtClaims.CREATE_USER_VALUE)
 
-    val form = call.receiveParameters()
-
-    val username = form[FormFields.USERNAME]!!
-    val password = form[FormFields.PASSWORD]!!
-    val email = form[FormFields.EMAIL]!!
+    val request = call.receive(CreateUserRequest::class)
 
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
@@ -68,17 +64,14 @@ private suspend fun createUser(app: Application, call: ApplicationCall): Result<
     db.use {
         val service = UserService(it)
 
-        return@runCatching service.createUser(username, password, email)
+        return@runCatching service.createUser(request.username, request.password, request.email)
     }
 }
 
-private suspend fun readUser(app: Application, call: ApplicationCall): Result<ReadUserAttempt> = runCatching {
+private suspend fun readUser(app: Application, call: ApplicationCall): Result<ReadUserResponse> = runCatching {
     checkJwtToken(call, JwtClaims.READ_USER_VALUE)
 
-    val form = call.receiveParameters()
-
-    val usernameOrEmail = form[FormFields.USERNAME_OR_EMAIL]!!
-    val password = form[FormFields.PASSWORD]!!
+    val request = call.receive(ReadUserRequest::class)
 
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
@@ -86,48 +79,44 @@ private suspend fun readUser(app: Application, call: ApplicationCall): Result<Re
     db.use {
         val service = UserService(it)
 
-        val user = service.readUser(usernameOrEmail, password)
-
-        return@runCatching if (null === user)
-            ReadUserAttempt.FailedToFind
-        else
-            ReadUserAttempt.Success(user)
+        return@runCatching service.readUser(request.usernameOrEmail, request.password)
     }
 }
 
-private suspend fun updateUser(app: Application, call: ApplicationCall): Result<UpdateUserAttempt> = runCatching {
+private suspend fun updateUser(app: Application, call: ApplicationCall): Result<UpdateUserResponse> = runCatching {
     checkJwtToken(call, JwtClaims.UPDATE_USER_VALUE)
 
     val cookies = call.request.cookies
-    val form = call.receiveParameters()
+    val request = call.receive(UpdateUserRequest::class)
 
     val userId = cookies[Cookies.USER_ID]!!.toInt()
     val oldUsername = cookies[Cookies.USERNAME]!!
     val oldEmail = cookies[Cookies.EMAIL]!!
 
-    val newUsername = form[FormFields.USERNAME]!!
-    val newEmail = form[FormFields.EMAIL]!!
-    val password = form[FormFields.PASSWORD]!!
-
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
 
     db.use {
         val service = UserService(it)
 
-        return@runCatching service.updateUser(userId, oldUsername, oldEmail, password, newUsername, newEmail)
+        return@runCatching service.updateUser(
+            userId,
+            oldUsername,
+            oldEmail,
+            request.password,
+            request.newUsername,
+            request.newEmail
+        )
     }
 }
 
-private suspend fun deleteUser(app: Application, call: ApplicationCall): Result<DeleteUserAttempt> = runCatching {
+private suspend fun deleteUser(app: Application, call: ApplicationCall): Result<DeleteUserResponse> = runCatching {
     checkJwtToken(call, JwtClaims.DELETE_USER_VALUE)
 
     val cookies = call.request.cookies
-    val form = call.receiveParameters()
+    val request = call.receive(DeleteUserRequest::class)
 
     val userId = cookies[Cookies.USER_ID]!!.toInt()
-    val usernameOrEmail = form[FormFields.USERNAME_OR_EMAIL]!!
-    val password = form[FormFields.PASSWORD]!!
 
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
@@ -135,7 +124,7 @@ private suspend fun deleteUser(app: Application, call: ApplicationCall): Result<
     db.use {
         val service = UserService(it)
 
-        return@runCatching service.deleteUser(userId, usernameOrEmail, password)
+        return@runCatching service.deleteUser(userId, request.usernameOrEmail, request.password)
     }
 }
 

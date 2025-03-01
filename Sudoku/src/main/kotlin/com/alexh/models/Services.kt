@@ -82,7 +82,7 @@ class UserService(private val dbConn: Connection) {
         UserService.alreadyInitialized = true
     }
 
-    suspend fun createUser(username: String, password: String, email: String): CreateUserAttempt = withContext(Dispatchers.IO) {
+    suspend fun createUser(username: String, password: String, email: String): CreateUserResponse = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(CREATE_USER, Statement.RETURN_GENERATED_KEYS).use { stmt ->
             stmt.setString(1, username)
             stmt.setString(2, password)
@@ -92,7 +92,7 @@ class UserService(private val dbConn: Connection) {
         }
     }
 
-    private fun doUserCreation(stmt: PreparedStatement): CreateUserAttempt {
+    private fun doUserCreation(stmt: PreparedStatement): CreateUserResponse {
         runCatching {
             stmt.executeUpdate()
         }.onFailure { ex->
@@ -110,16 +110,16 @@ class UserService(private val dbConn: Connection) {
             }
         }
 
-        return CreateUserAttempt.Success
+        return CreateUserResponse.Success
     }
 
-    private fun checkForExpectedUserCreationErrors(ex: Throwable): CreateUserAttempt? =
+    private fun checkForExpectedUserCreationErrors(ex: Throwable): CreateUserResponse? =
         if (ex is SQLException && ex.message!!.startsWith("Unique"))
-            CreateUserAttempt.DuplicateFound
+            CreateUserResponse.DuplicateFound
         else
             null
 
-    suspend fun readUser(usernameOrEmail: String, password: String): User? = withContext(Dispatchers.IO) {
+    suspend fun readUser(usernameOrEmail: String, password: String): ReadUserResponse = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(GET_USER).use { stmt ->
             stmt.setString(1, usernameOrEmail)
             stmt.setString(2, usernameOrEmail)
@@ -129,32 +129,18 @@ class UserService(private val dbConn: Connection) {
                 return@withContext if (results.next())
                     this@UserService.buildUser(results)
                 else
-                    null
+                    ReadUserResponse.FailedToFind
             }
         }
     }
 
-    private fun buildUser(results: ResultSet): User {
-        if (results.isLast) {
-            return this.buildUserWithPotentiallyNoPuzzles(results)
-        }
+    private fun buildUser(results: ResultSet): ReadUserResponse {
+        val user = if (results.isLast)
+            this.buildUserWithPotentiallyNoPuzzles(results)
+        else
+            this.buildUserWithManyPuzzles(results)
 
-        val userId = results.getInt("$USER_TABLE.$USER_TABLE_ID")
-        val username = results.getString(UserService.USERNAME)
-        val email = results.getString(UserService.EMAIL)
-
-        val puzzleIdField = "$PUZZLE_TABLE.$PUZZLE_TABLE_ID"
-        val puzzles = mutableListOf<Puzzle>()
-
-        do {
-            val puzzleId = results.getInt(puzzleIdField)
-            val json = results.getString(UserService.JSON)
-
-            val newPuzzle = Puzzle(puzzleId, json)
-            puzzles.add(newPuzzle)
-        } while (results.next())
-
-        return User(userId, username, email, puzzles)
+        return ReadUserResponse.Success(user)
     }
 
     private fun buildUserWithPotentiallyNoPuzzles(results: ResultSet): User {
@@ -175,6 +161,25 @@ class UserService(private val dbConn: Connection) {
         return User(userId, username, email, puzzles)
     }
 
+    private fun buildUserWithManyPuzzles(results: ResultSet): User {
+        val userId = results.getInt("$USER_TABLE.$USER_TABLE_ID")
+        val username = results.getString(UserService.USERNAME)
+        val email = results.getString(UserService.EMAIL)
+
+        val puzzleIdField = "$PUZZLE_TABLE.$PUZZLE_TABLE_ID"
+        val puzzles = mutableListOf<Puzzle>()
+
+        do {
+            val puzzleId = results.getInt(puzzleIdField)
+            val json = results.getString(UserService.JSON)
+
+            val newPuzzle = Puzzle(puzzleId, json)
+            puzzles.add(newPuzzle)
+        } while (results.next())
+
+        return User(userId, username, email, puzzles)
+    }
+
     suspend fun updateUser(
         userId: Int,
         oldUsername: String,
@@ -182,7 +187,7 @@ class UserService(private val dbConn: Connection) {
         password: String,
         newUsername: String,
         newEmail: String
-    ): UpdateUserAttempt = withContext(Dispatchers.IO) {
+    ): UpdateUserResponse = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(UPDATE_USER).use { stmt ->
             stmt.setString(1, newUsername)
             stmt.setString(2, newEmail)
@@ -194,14 +199,14 @@ class UserService(private val dbConn: Connection) {
             val amountOfRowsUpdated = stmt.executeUpdate()
 
             return@withContext when (amountOfRowsUpdated) {
-                0 -> UpdateUserAttempt.FailedToFind
-                1 -> UpdateUserAttempt.Success(newUsername, newEmail)
+                0 -> UpdateUserResponse.FailedToFind
+                1 -> UpdateUserResponse.Success(newUsername, newEmail)
                 else -> throw SQLException("More than one user updated")
             }
         }
     }
 
-    suspend fun deleteUser(userId: Int, usernameOrEmail: String, password: String): DeleteUserAttempt = withContext(Dispatchers.IO) {
+    suspend fun deleteUser(userId: Int, usernameOrEmail: String, password: String): DeleteUserResponse = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(DELETE_USER).use { stmt ->
             stmt.setInt(1, userId)
             stmt.setString(2, usernameOrEmail)
@@ -211,8 +216,8 @@ class UserService(private val dbConn: Connection) {
             val amountOfRowsDeleted = stmt.executeUpdate()
 
             return@withContext when (amountOfRowsDeleted) {
-                0 -> DeleteUserAttempt.FailedToFind
-                1 -> DeleteUserAttempt.Success
+                0 -> DeleteUserResponse.FailedToFind
+                1 -> DeleteUserResponse.Success
                 else -> throw SQLException("More than one user deleted")
             }
         }

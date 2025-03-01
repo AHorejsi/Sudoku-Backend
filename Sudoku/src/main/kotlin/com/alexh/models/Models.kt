@@ -3,13 +3,13 @@ package com.alexh.models
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Puzzle(
+class Puzzle(
     val id: Int,
     val json: String
 )
 
 @Serializable
-data class User(
+class User(
     val id: Int,
     val username: String,
     val email: String,
@@ -17,42 +17,68 @@ data class User(
 )
 
 @Serializable
-sealed class CreateUserAttempt {
+class CreateUserRequest(
+    val username: String,
+    val password: String,
+    val email: String
+)
+
+@Serializable
+sealed class CreateUserResponse {
     @Serializable
-    object Success : CreateUserAttempt()
+    object Success : CreateUserResponse()
 
     @Serializable
-    object DuplicateFound : CreateUserAttempt()
+    object DuplicateFound : CreateUserResponse()
 }
 
 @Serializable
-sealed class ReadUserAttempt {
+class ReadUserRequest(
+    val usernameOrEmail: String,
+    val password: String
+)
+
+@Serializable
+sealed class ReadUserResponse {
     @Serializable
-    class Success(@Suppress("UNUSED") val user: User) : ReadUserAttempt()
+    class Success(@Suppress("UNUSED") val user: User) : ReadUserResponse()
 
     @Serializable
-    object FailedToFind : ReadUserAttempt()
+    object FailedToFind : ReadUserResponse()
 }
 
 @Serializable
-sealed class UpdateUserAttempt {
+class UpdateUserRequest(
+    val newUsername: String,
+    val newEmail: String,
+    val password: String
+)
+
+@Serializable
+sealed class UpdateUserResponse {
     @Serializable
     class Success(
         @Suppress("UNUSED")
         val newUsername: String,
         @Suppress("UNUSED")
         val newEmail: String
-    ) : UpdateUserAttempt()
+    ) : UpdateUserResponse()
 
     @Serializable
-    object FailedToFind : UpdateUserAttempt()
+    object FailedToFind : UpdateUserResponse()
 }
 
 @Serializable
-sealed class DeleteUserAttempt {
+class DeleteUserRequest(
+    val usernameOrEmail: String,
+    val password: String
+)
+
+@Serializable
+sealed class DeleteUserResponse {
     @Serializable
-    object Success : DeleteUserAttempt()
+    object Success : DeleteUserResponse()
 
     @Serializable
-    object FailedToFind : DeleteUserAttempt()
+    object FailedToFind : DeleteUserResponse()
 }
