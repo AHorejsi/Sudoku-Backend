@@ -29,12 +29,15 @@ fun configureSecurity(app: Application) {
                     .withIssuer(jwtIssuer)
                     .withAudience(jwtAudience)
                     .withClaimPresence(JwtClaims.OP_KEY)
+                    .withClaimPresence(JwtClaims.ISS_KEY)
                     .acceptExpiresAt(expiration)
                     .build()
             )
 
             this.validate { credential ->
-                if (credential.payload.audience.contains(jwtAudience))
+                val payload = credential.payload
+
+                if (payload.audience.contains(jwtAudience) && payload.issuer == jwtIssuer)
                     JWTPrincipal(credential.payload)
                 else
                     null
