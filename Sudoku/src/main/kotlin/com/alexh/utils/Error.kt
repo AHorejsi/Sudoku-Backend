@@ -4,13 +4,10 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
+import io.ktor.server.plugins.requestvalidation.*
 import io.ktor.server.response.*
 import org.slf4j.Logger
 import java.sql.SQLException
-
-fun cookieError(cookieName: String): Nothing {
-    throw CookieException("Cookie name $cookieName was not found")
-}
 
 fun checkJwtToken(call: ApplicationCall, intendedOperation: String) {
     val principal = call.principal<JWTPrincipal>()
@@ -41,7 +38,7 @@ suspend inline fun <reified TType : Any> handleResult(
             is SQLException -> HttpStatusCode.BadGateway
             is CookieException -> HttpStatusCode.UnprocessableEntity
             is JwtException -> HttpStatusCode.Unauthorized
-            is NullPointerException -> HttpStatusCode.BadRequest
+            is NullPointerException, is RequestValidationException -> HttpStatusCode.BadRequest
             else -> HttpStatusCode.InternalServerError
         }
 
