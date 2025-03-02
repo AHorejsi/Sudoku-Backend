@@ -16,7 +16,7 @@ fun configureEndpointsForGeneratingPuzzles(app: Application) {
             this.get(Endpoints.GENERATE) {
                 val result = generatePuzzle(this.call)
 
-                handleResult(result, this.call, logger, "Successfully generated Sudoku")
+                handleResult(result, this.call, logger, "Successful call to ${Endpoints.GENERATE}")
             }
         }
     }
