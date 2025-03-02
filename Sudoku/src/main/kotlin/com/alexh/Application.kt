@@ -25,4 +25,5 @@ fun Application.setupModule() {
 fun Application.endpointModule() {
     configureEndpointsForGeneratingPuzzles(this)
     configureEndpointsForUsers(this)
+    configureEndpointsForShutdown(this)
 }

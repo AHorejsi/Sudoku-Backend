@@ -80,6 +80,7 @@ class Endpoints private constructor() {
         val CREATE_PUZZLE: String
         val UPDATE_PUZZLE: String
         val DELETE_PUZZLE: String
+        val SHUTDOWN: String
 
         init {
             val doc = parseXmlConstants("endpoints")
@@ -95,6 +96,7 @@ class Endpoints private constructor() {
             this.CREATE_PUZZLE = (children.item(11) as Element).getAttribute("value")
             this.UPDATE_PUZZLE = (children.item(13) as Element).getAttribute("value")
             this.DELETE_PUZZLE = (children.item(15) as Element).getAttribute("value")
+            this.SHUTDOWN = (children.item(17) as Element).getAttribute("value")
         }
     }
 }
@@ -118,6 +120,8 @@ class JwtClaims private constructor() {
         val UPDATE_PUZZLE_VALUE: String
         val DELETE_PUZZLE_VALUE: String
 
+        val SHUTDOWN_VALUE: String
+
         init {
             val doc = parseXmlConstants("jwt_claims")
             val root = doc.documentElement
@@ -136,6 +140,8 @@ class JwtClaims private constructor() {
             this.CREATE_PUZZLE_VALUE = (children.item(17) as Element).getAttribute("value")
             this.UPDATE_PUZZLE_VALUE = (children.item(19) as Element).getAttribute("value")
             this.DELETE_PUZZLE_VALUE = (children.item(21) as Element).getAttribute("value")
+
+            this.SHUTDOWN_VALUE = (children.item(23) as Element).getAttribute("value")
         }
     }
 }

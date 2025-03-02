@@ -11,4 +11,6 @@
     <createPuzzle value="CREATE PUZZLE" />
     <updatePuzzle value="UPDATE PUZZLE" />
     <deletePuzzle value="DELETE PUZZLE" />
+
+    <shutdown value="SHUTDOWN SERVER" />
 </JwtClaims>

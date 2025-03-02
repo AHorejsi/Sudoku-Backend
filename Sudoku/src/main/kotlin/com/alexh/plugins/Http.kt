@@ -38,14 +38,6 @@ fun configureHttp(app: Application) {
         }
     }
 
-    app.install(Compression) {
-        this.gzip {
-            this.matchContentType(ContentType.Application.Any)
-            this.minimumSize(1024)
-            this.priority = 1.0
-        }
-    }
-
     app.install(RequestValidation) {
         this.validate<CreateUserRequest> { req ->
             if (!isValidPassword(req.password)) {
@@ -66,6 +58,14 @@ fun configureHttp(app: Application) {
             return@validate ValidationResult.Valid
         }
     }
+
+    app.install(Compression) {
+        this.gzip {
+            this.matchContentType(ContentType.Application.Any)
+            this.minimumSize(1024)
+            this.priority = 1.0
+        }
+    }
 }
 
 private fun isValidPassword(password: String): Boolean {
@@ -75,9 +75,9 @@ private fun isValidPassword(password: String): Boolean {
         return false
     }
 
-    val letterCount = password.count{ it.isLetter() }
-    val digitCount = password.count{ it.isDigit() }
-    val symbolCount = password.count{ !it.isLetterOrDigit() }
+    val letterCount = password.count { it.isLetter() }
+    val digitCount = password.count { it.isDigit() }
+    val symbolCount = password.count { !it.isLetterOrDigit() }
 
     if (0 == letterCount || 0 == digitCount || 0 == symbolCount) {
         return false

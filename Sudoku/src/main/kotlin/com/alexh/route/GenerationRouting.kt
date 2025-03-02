@@ -1,6 +1,7 @@
 package com.alexh.route
 
 import com.alexh.game.*
+import com.alexh.models.GenerateRequest
 import com.alexh.utils.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -25,8 +26,14 @@ fun configureEndpointsForGeneratingPuzzles(app: Application) {
 private suspend fun generatePuzzle(call: ApplicationCall): Result<SudokuJson> = runCatching {
     checkJwtToken(call, JwtClaims.GENERATE_PUZZLE_VALUE)
 
-    val request = call.receive(MakeSudokuCommand::class)
-    val sudoku = makeSudoku(request)
+    val request = call.receive(GenerateRequest::class)
+
+    val dimension = Dimension.valueOf(request.dimension)
+    val difficulty = Difficulty.valueOf(request.difficulty)
+    val games = request.games.map{ Game.valueOf(it) }.toSortedSet()
+    val info = MakeSudokuCommand(dimension, difficulty, games)
+
+    val sudoku = makeSudoku(info)
 
     return@runCatching sudoku
 }

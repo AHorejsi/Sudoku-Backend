@@ -7,4 +7,5 @@
     <createPuzzle value="/createPuzzle" />
     <updatePuzzle value="/updatePuzzle" />
     <deletePuzzle value="/deletePuzzle" />
+    <shutdown value="/shutdown" />
 </Endpoints>

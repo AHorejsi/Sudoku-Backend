@@ -17,6 +17,13 @@ class User(
 )
 
 @Serializable
+class GenerateRequest(
+    val dimension: String,
+    val difficulty: String,
+    val games: Set<String>
+)
+
+@Serializable
 class CreateUserRequest(
     val username: String,
     val password: String,

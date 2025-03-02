@@ -11,6 +11,20 @@ import io.ktor.server.response.*
 
 fun configureSecurity(app: Application) {
     app.install(Authentication) {
+        this.basic("auth-shutdown") {
+            val config = app.environment.config
+
+            val adminUser = config.property("ktor.deployment.shutdown.adminUser").getString()
+            val adminPassword = config.property("ktor.deployment.shutdown.adminPassword").getString()
+
+            this.validate { credentials ->
+                if (credentials.name == adminUser && credentials.password == adminPassword)
+                    UserIdPrincipal(credentials.name)
+                else
+                    null
+            }
+        }
+
         this.jwt("auth-jwt") {
             val config = app.environment.config
 
