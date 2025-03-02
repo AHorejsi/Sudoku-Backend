@@ -12,47 +12,21 @@ private val logger = LoggerFactory.getLogger("Puzzle-Generation-Routing")
 
 fun configureEndpointsForGeneratingPuzzles(app: Application) {
     app.routing {
-        this.authenticate("auth-jwt") {
-            this.get(Endpoints.GENERATE) {
+        //this.authenticate("auth-jwt") {
+            this.post(Endpoints.GENERATE) {
                 val result = generatePuzzle(this.call)
 
                 handleResult(result, this.call, logger, "Successful call to ${Endpoints.GENERATE}")
             }
-        }
+        //}
     }
 }
 
-private fun generatePuzzle(call: ApplicationCall): Result<SudokuJson> = runCatching {
-    checkJwtToken(call, JwtClaims.GENERATE_PUZZLE_VALUE)
+private suspend fun generatePuzzle(call: ApplicationCall): Result<SudokuJson> = runCatching {
+    //checkJwtToken(call, JwtClaims.GENERATE_PUZZLE_VALUE)
 
-    val cookies = call.request.cookies
-
-    val dimension = getDimension(cookies)
-    val difficulty = getDifficulty(cookies)
-    val games = getGames(cookies)
-
-    val info = MakeSudokuCommand(dimension, difficulty, games)
-    val sudoku = makeSudoku(info)
+    val request = call.receive(MakeSudokuCommand::class)
+    val sudoku = makeSudoku(request)
 
     return@runCatching sudoku
 }
-
-private fun getDimension(cookies: RequestCookies): Dimension =
-    cookies[Cookies.DIMENSION]?.let {
-        return Dimension.valueOf(it)
-    } ?: cookieError(Cookies.DIMENSION)
-
-private fun getDifficulty(cookies: RequestCookies): Difficulty =
-    cookies[Cookies.DIFFICULTY]?.let {
-        return Difficulty.valueOf(it)
-    } ?: cookieError(Cookies.DIFFICULTY)
-
-private fun getGames(cookies: RequestCookies): Set<Game> =
-    cookies[Cookies.GAMES]?.run {
-        val values = this.split(",")
-
-        return if (values.firstOrNull().isNullOrEmpty())
-            emptySet()
-        else
-            values.map{ Game.valueOf(it) }.toSortedSet()
-    } ?: cookieError(Cookies.GAMES)

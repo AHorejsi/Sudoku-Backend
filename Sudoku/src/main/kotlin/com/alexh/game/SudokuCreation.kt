@@ -3,6 +3,7 @@ package com.alexh.game
 import com.alexh.utils.Position
 import com.alexh.utils.unflatten
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlin.random.Random
 
 enum class Game {
@@ -35,11 +36,12 @@ enum class Difficulty(
     MASTER(0.21f, 0.33f, 0.0f, 0.66f, 0.88f)
 }
 
+@Serializable
 data class MakeSudokuCommand(
     val dimension: Dimension,
     val difficulty: Difficulty,
     val games: Set<Game>,
-    val random: Random = Random.Default
+    @Transient val random: Random = Random.Default
 )
 
 internal class SudokuNode(
