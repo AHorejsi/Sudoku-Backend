@@ -86,17 +86,17 @@ private suspend fun readUser(app: Application, call: ApplicationCall): Result<Re
 private suspend fun updateUser(app: Application, call: ApplicationCall): Result<UpdateUserResponse> = runCatching {
     checkJwtToken(call, JwtClaims.UPDATE_USER_VALUE)
 
-    val cookies = call.request.cookies
-    val request = call.receive(UpdateUserRequest::class)
-
-    val userId = cookies[Cookies.USER_ID]!!.toInt()
-    val oldUsername = cookies[Cookies.USERNAME]!!
-    val oldEmail = cookies[Cookies.EMAIL]!!
-
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
 
     db.use {
+        val cookies = call.request.cookies
+        val request = call.receive(UpdateUserRequest::class)
+
+        val userId = getCookie(cookies, Cookies.USER_ID).toInt()
+        val oldUsername = getCookie(cookies, Cookies.USERNAME)
+        val oldEmail = getCookie(cookies, Cookies.EMAIL)
+
         val service = UserService(it)
 
         return@runCatching service.updateUser(
@@ -113,15 +113,15 @@ private suspend fun updateUser(app: Application, call: ApplicationCall): Result<
 private suspend fun deleteUser(app: Application, call: ApplicationCall): Result<DeleteUserResponse> = runCatching {
     checkJwtToken(call, JwtClaims.DELETE_USER_VALUE)
 
-    val cookies = call.request.cookies
-    val request = call.receive(DeleteUserRequest::class)
-
-    val userId = cookies[Cookies.USER_ID]!!.toInt()
-
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
 
     db.use {
+        val cookies = call.request.cookies
+        val request = call.receive(DeleteUserRequest::class)
+
+        val userId = getCookie(cookies, Cookies.USER_ID).toInt()
+
         val service = UserService(it)
 
         return@runCatching service.deleteUser(userId, request.usernameOrEmail, request.password)
@@ -131,15 +131,15 @@ private suspend fun deleteUser(app: Application, call: ApplicationCall): Result<
 private suspend fun createPuzzle(app: Application, call: ApplicationCall): Result<Puzzle> = runCatching {
     checkJwtToken(call, JwtClaims.CREATE_PUZZLE_VALUE)
 
-    val cookies = call.request.cookies
-
-    val json = cookies[Cookies.JSON]!!
-    val userId = cookies[Cookies.USER_ID]!!.toInt()
-
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
 
     db.use {
+        val cookies = call.request.cookies
+
+        val json = getCookie(cookies, Cookies.JSON)
+        val userId = getCookie(cookies, Cookies.USER_ID).toInt()
+
         val service = UserService(it)
 
         return@runCatching service.createPuzzle(json, userId)
@@ -149,15 +149,15 @@ private suspend fun createPuzzle(app: Application, call: ApplicationCall): Resul
 private suspend fun updatePuzzle(app: Application, call: ApplicationCall): Result<Unit> = runCatching {
     checkJwtToken(call, JwtClaims.UPDATE_PUZZLE_VALUE)
 
-    val cookies = call.request.cookies
-
-    val puzzleId = cookies[Cookies.PUZZLE_ID]!!.toInt()
-    val json = cookies[Cookies.JSON]!!
-
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
 
     db.use {
+        val cookies = call.request.cookies
+
+        val puzzleId = getCookie(cookies, Cookies.PUZZLE_ID).toInt()
+        val json = getCookie(cookies, Cookies.JSON)
+
         val service = UserService(it)
 
         service.updatePuzzle(puzzleId, json)
@@ -167,17 +167,27 @@ private suspend fun updatePuzzle(app: Application, call: ApplicationCall): Resul
 private suspend fun deletePuzzle(app: Application, call: ApplicationCall): Result<Unit> = runCatching {
     checkJwtToken(call, JwtClaims.DELETE_PUZZLE_VALUE)
 
-    val cookies = call.request.cookies
-
-    val userId = cookies[Cookies.USER_ID]!!.toInt()
-    val puzzleId = cookies[Cookies.PUZZLE_ID]!!.toInt()
-
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
 
     db.use {
+        val cookies = call.request.cookies
+
+        val userId = getCookie(cookies, Cookies.USER_ID).toInt()
+        val puzzleId = getCookie(cookies, Cookies.PUZZLE_ID).toInt()
+
         val service = UserService(it)
 
         service.deletePuzzle(puzzleId, userId)
     }
+}
+
+private fun getCookie(cookies: RequestCookies, cookieName: String): String {
+    val cookieValue = cookies[cookieName]
+
+    if (null === cookieValue) {
+        throw CookieException("Cookie $cookieName not found")
+    }
+
+    return cookieValue
 }

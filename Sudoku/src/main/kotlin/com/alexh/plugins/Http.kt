@@ -1,7 +1,7 @@
 package com.alexh.plugins
 
 import com.alexh.models.CreateUserRequest
-import com.alexh.models.ReadUserRequest
+import com.alexh.models.UpdateUserRequest
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.compression.*
@@ -52,6 +52,14 @@ fun configureHttp(app: Application) {
                 return@validate ValidationResult.Invalid("Password requirements have not been met")
             }
             if (!isValidEmail(req.email)) {
+                return@validate ValidationResult.Invalid("Email format is incorrect")
+            }
+
+            return@validate ValidationResult.Valid
+        }
+
+        this.validate<UpdateUserRequest> { req ->
+            if (!isValidEmail(req.newEmail)) {
                 return@validate ValidationResult.Invalid("Email format is incorrect")
             }
 

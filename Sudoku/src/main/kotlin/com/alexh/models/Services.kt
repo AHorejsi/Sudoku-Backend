@@ -6,18 +6,17 @@ import java.sql.*
 
 @Suppress("RemoveRedundantQualifierName")
 class UserService(private val dbConn: Connection) {
-    @Suppress("MemberVisibilityCanBePrivate")
     companion object {
         const val USER_TABLE = "Users"
         const val USER_TABLE_ID = "id"
         const val USERNAME = "username"
-        const val PASSWORD = "password"
+        @Suppress("MemberVisibilityCanBePrivate") const val PASSWORD = "password"
         const val EMAIL = "email"
 
         const val PUZZLE_TABLE = "Puzzles"
         const val PUZZLE_TABLE_ID = "id"
         const val JSON = "json"
-        const val USER_ID = "userId"
+        @Suppress("MemberVisibilityCanBePrivate") const val USER_ID = "userId"
 
         private const val CREATE_USER_TABLE =
             "CREATE TABLE IF NOT EXISTS $USER_TABLE (" +
