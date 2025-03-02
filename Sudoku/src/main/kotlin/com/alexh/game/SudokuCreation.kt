@@ -159,17 +159,24 @@ fun makeSudoku(info: MakeSudokuCommand): SudokuJson {
     val difficulty = info.difficulty
     val games = info.games
 
+    // Build table representing the sudoku and connect each cell in a graph
     val (neighborhoods, boxes) = initializeBoard(info)
 
+    // Fill entire table with values
     initializeValues(neighborhoods, info)
 
+    // Generate cages if killer sudoku is being played
     val cages = makeCages(neighborhoods, info)
 
+    // Save solved state of the sudoku for later checking
     val solved = neighborhoods.map{ it.value!! }.unflatten(length)
 
+    // Remove values from the sudoku in such a way that ensures there is only one solution
     adjustForDifficulty(neighborhoods, info)
 
+    // Save unsolved state of the sudoku for playing
     val board = neighborhoods.map{ it.value }.unflatten(length)
 
+    // Save all above information as JSON
     return SudokuJson(board, solved, cages, boxes, length, difficulty, games)
 }
