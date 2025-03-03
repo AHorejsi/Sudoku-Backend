@@ -6,31 +6,6 @@ import org.w3c.dom.Document
 import org.w3c.dom.Element
 import kotlin.reflect.KClass
 
-class FormFields private constructor() {
-    init {
-        noInstances(FormFields::class)
-    }
-
-    companion object {
-        val USERNAME: String
-        val EMAIL: String
-        val USERNAME_OR_EMAIL: String
-        val PASSWORD: String
-
-        init {
-            val doc = parseXmlConstants("form_fields")
-            val root = doc.documentElement
-
-            val children = root.childNodes
-
-            this.USERNAME = (children.item(1) as Element).tagName
-            this.EMAIL = (children.item(3) as Element).tagName
-            this.USERNAME_OR_EMAIL = (children.item(5) as Element).tagName
-            this.PASSWORD = (children.item(7) as Element).tagName
-        }
-    }
-}
-
 class Cookies private constructor() {
     init {
         noInstances(Cookies::class)
