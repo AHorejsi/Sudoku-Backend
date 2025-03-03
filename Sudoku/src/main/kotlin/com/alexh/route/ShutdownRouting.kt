@@ -3,6 +3,7 @@ package com.alexh.route
 import com.alexh.utils.Endpoints
 import com.alexh.utils.JwtClaims
 import com.alexh.utils.checkJwtToken
+import com.alexh.utils.checkShutdown
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.engine.*
@@ -20,8 +21,9 @@ fun configureEndpointsForShutdown(app: Application) {
     }
 }
 
-private suspend fun performShutdown(call: ApplicationCall, shutdown: ShutDownUrl) {
+private suspend fun performShutdown(call: ApplicationCall, shutdown: ShutDownUrl) = runCatching {
     checkJwtToken(call, JwtClaims.SHUTDOWN_VALUE)
+    checkShutdown(call)
 
     shutdown.doShutdown(call)
 }

@@ -23,6 +23,14 @@ fun checkJwtToken(call: ApplicationCall, intendedOperation: String) {
     }
 }
 
+fun checkShutdown(call: ApplicationCall) {
+    val principal = call.principal<UserIdPrincipal>()
+
+    if (null === principal) {
+        throw RuntimeException("Invalid Shutdown")
+    }
+}
+
 suspend inline fun <reified TType : Any> handleResult(
     result: Result<TType>,
     call: ApplicationCall,
