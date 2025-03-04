@@ -24,7 +24,7 @@ fun configureEndpointsForGeneratingPuzzles(app: Application) {
 }
 
 private suspend fun generatePuzzle(call: ApplicationCall): Result<SudokuJson> = runCatching {
-    checkJwtToken(call, JwtClaims.GENERATE_PUZZLE_VALUE)
+    jwt(call)
 
     val request = call.receive(GenerateRequest::class)
 
@@ -36,4 +36,10 @@ private suspend fun generatePuzzle(call: ApplicationCall): Result<SudokuJson> = 
     val sudoku = makeSudoku(info)
 
     return@runCatching sudoku
+}
+
+private fun jwt(call: ApplicationCall) {
+    val operations = mapOf(JwtClaims.OP_KEY to JwtClaims.GENERATE_PUZZLE_VALUE)
+
+    checkJwtToken(call, operations)
 }

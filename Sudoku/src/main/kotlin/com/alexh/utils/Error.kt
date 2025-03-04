@@ -9,25 +9,19 @@ import io.ktor.server.response.*
 import org.slf4j.Logger
 import java.sql.SQLException
 
-fun checkJwtToken(call: ApplicationCall, intendedOperation: String) {
+fun checkJwtToken(call: ApplicationCall, operations: Map<String, String>) {
     val principal = call.principal<JWTPrincipal>()
 
     if (null === principal) {
         throw JwtException("Invalid JWT Token")
     }
 
-    val actualOperation = principal.payload.getClaim(JwtClaims.OP_KEY).asString()
+    for ((op, expected) in operations) {
+        val actual = principal.payload.getClaim(op).asString()
 
-    if (actualOperation != intendedOperation) {
-        throw JwtException("Invalid JWT token operation")
-    }
-}
-
-fun checkShutdown(call: ApplicationCall) {
-    val principal = call.principal<UserIdPrincipal>()
-
-    if (null === principal) {
-        throw RuntimeException("Invalid Shutdown")
+        if (expected != actual) {
+            throw JwtException("Invalid JWT token operation")
+        }
     }
 }
 

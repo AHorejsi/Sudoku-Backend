@@ -2,6 +2,8 @@
     <operation key="op" />
     <issuer key="iss" />
     <audience key="aud" />
+    <adminUser key="adminUser" />
+    <adminPassword key="adminPassword" />
 
     <generatePuzzle value="GENERATE PUZZLE" />
     <createUser value="CREATE USER" />

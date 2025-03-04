@@ -85,6 +85,8 @@ class JwtClaims private constructor() {
         val OP_KEY: String
         val ISS_KEY: String
         val AUD_KEY: String
+        val ADMIN_USER_KEY: String
+        val ADMIN_PASSWORD_KEY: String
 
         val GENERATE_PUZZLE_VALUE: String
         val CREATE_USER_VALUE: String
@@ -106,17 +108,18 @@ class JwtClaims private constructor() {
             this.OP_KEY = (children.item(1) as Element).getAttribute("key")
             this.ISS_KEY = (children.item(3) as Element).getAttribute("key")
             this.AUD_KEY = (children.item(5) as Element).getAttribute("key")
+            this.ADMIN_USER_KEY = (children.item(7) as Element).getAttribute("key")
+            this.ADMIN_PASSWORD_KEY = (children.item(9) as Element).getAttribute("key")
 
-            this.GENERATE_PUZZLE_VALUE = (children.item(7) as Element).getAttribute("value")
-            this.CREATE_USER_VALUE = (children.item(9) as Element).getAttribute("value")
-            this.READ_USER_VALUE = (children.item(11) as Element).getAttribute("value")
-            this.UPDATE_USER_VALUE = (children.item(13) as Element).getAttribute("value")
-            this.DELETE_USER_VALUE = (children.item(15) as Element).getAttribute("value")
-            this.CREATE_PUZZLE_VALUE = (children.item(17) as Element).getAttribute("value")
-            this.UPDATE_PUZZLE_VALUE = (children.item(19) as Element).getAttribute("value")
-            this.DELETE_PUZZLE_VALUE = (children.item(21) as Element).getAttribute("value")
-
-            this.SHUTDOWN_VALUE = (children.item(23) as Element).getAttribute("value")
+            this.GENERATE_PUZZLE_VALUE = (children.item(11) as Element).getAttribute("value")
+            this.CREATE_USER_VALUE = (children.item(13) as Element).getAttribute("value")
+            this.READ_USER_VALUE = (children.item(15) as Element).getAttribute("value")
+            this.UPDATE_USER_VALUE = (children.item(17) as Element).getAttribute("value")
+            this.DELETE_USER_VALUE = (children.item(19) as Element).getAttribute("value")
+            this.CREATE_PUZZLE_VALUE = (children.item(21) as Element).getAttribute("value")
+            this.UPDATE_PUZZLE_VALUE = (children.item(23) as Element).getAttribute("value")
+            this.DELETE_PUZZLE_VALUE = (children.item(25) as Element).getAttribute("value")
+            this.SHUTDOWN_VALUE = (children.item(27) as Element).getAttribute("value")
         }
     }
 }

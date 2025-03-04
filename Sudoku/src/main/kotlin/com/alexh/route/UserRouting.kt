@@ -54,7 +54,7 @@ fun configureEndpointsForUsers(app: Application) {
 }
 
 private suspend fun createUser(app: Application, call: ApplicationCall): Result<CreateUserResponse> = runCatching {
-    checkJwtToken(call, JwtClaims.CREATE_USER_VALUE)
+    jwtForCreateUser(call)
 
     val request = call.receive(CreateUserRequest::class)
 
@@ -68,8 +68,14 @@ private suspend fun createUser(app: Application, call: ApplicationCall): Result<
     }
 }
 
+private fun jwtForCreateUser(call: ApplicationCall) {
+    val operations = mapOf(JwtClaims.OP_KEY to JwtClaims.CREATE_USER_VALUE)
+
+    checkJwtToken(call, operations)
+}
+
 private suspend fun readUser(app: Application, call: ApplicationCall): Result<ReadUserResponse> = runCatching {
-    checkJwtToken(call, JwtClaims.READ_USER_VALUE)
+    jwtForReadUser(call)
 
     val request = call.receive(ReadUserRequest::class)
 
@@ -83,8 +89,14 @@ private suspend fun readUser(app: Application, call: ApplicationCall): Result<Re
     }
 }
 
+private fun jwtForReadUser(call: ApplicationCall) {
+    val operations = mapOf(JwtClaims.OP_KEY to JwtClaims.READ_USER_VALUE)
+
+    checkJwtToken(call, operations)
+}
+
 private suspend fun updateUser(app: Application, call: ApplicationCall): Result<UpdateUserResponse> = runCatching {
-    checkJwtToken(call, JwtClaims.UPDATE_USER_VALUE)
+    jwtForUpdateUser(call)
 
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
@@ -110,8 +122,14 @@ private suspend fun updateUser(app: Application, call: ApplicationCall): Result<
     }
 }
 
+private fun jwtForUpdateUser(call: ApplicationCall) {
+    val operations = mapOf(JwtClaims.OP_KEY to JwtClaims.UPDATE_USER_VALUE)
+
+    checkJwtToken(call, operations)
+}
+
 private suspend fun deleteUser(app: Application, call: ApplicationCall): Result<DeleteUserResponse> = runCatching {
-    checkJwtToken(call, JwtClaims.DELETE_USER_VALUE)
+    jwtForDeleteUser(call)
 
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
@@ -128,8 +146,14 @@ private suspend fun deleteUser(app: Application, call: ApplicationCall): Result<
     }
 }
 
+private fun jwtForDeleteUser(call: ApplicationCall) {
+    val operations = mapOf(JwtClaims.OP_KEY to JwtClaims.DELETE_USER_VALUE)
+
+    checkJwtToken(call, operations)
+}
+
 private suspend fun createPuzzle(app: Application, call: ApplicationCall): Result<Puzzle> = runCatching {
-    checkJwtToken(call, JwtClaims.CREATE_PUZZLE_VALUE)
+    jwtForCreatePuzzle(call)
 
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
@@ -146,8 +170,14 @@ private suspend fun createPuzzle(app: Application, call: ApplicationCall): Resul
     }
 }
 
+private fun jwtForCreatePuzzle(call: ApplicationCall) {
+    val operations = mapOf(JwtClaims.OP_KEY to JwtClaims.CREATE_PUZZLE_VALUE)
+
+    checkJwtToken(call, operations)
+}
+
 private suspend fun updatePuzzle(app: Application, call: ApplicationCall): Result<Unit> = runCatching {
-    checkJwtToken(call, JwtClaims.UPDATE_PUZZLE_VALUE)
+    jwtForUpdatePuzzle(call)
 
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
@@ -164,8 +194,14 @@ private suspend fun updatePuzzle(app: Application, call: ApplicationCall): Resul
     }
 }
 
+private fun jwtForUpdatePuzzle(call: ApplicationCall) {
+    val operations = mapOf(JwtClaims.OP_KEY to JwtClaims.UPDATE_PUZZLE_VALUE)
+
+    checkJwtToken(call, operations)
+}
+
 private suspend fun deletePuzzle(app: Application, call: ApplicationCall): Result<Unit> = runCatching {
-    checkJwtToken(call, JwtClaims.DELETE_PUZZLE_VALUE)
+    jwtForDeletePuzzle(call)
 
     val useEmbeddedDatabase = app.environment.developmentMode
     val db = connect(useEmbeddedDatabase, app)
@@ -180,6 +216,12 @@ private suspend fun deletePuzzle(app: Application, call: ApplicationCall): Resul
 
         service.deletePuzzle(puzzleId, userId)
     }
+}
+
+private fun jwtForDeletePuzzle(call: ApplicationCall) {
+    val operations = mapOf(JwtClaims.OP_KEY to JwtClaims.DELETE_PUZZLE_VALUE)
+
+    checkJwtToken(call, operations)
 }
 
 private fun getCookie(cookies: RequestCookies, cookieName: String): String {
