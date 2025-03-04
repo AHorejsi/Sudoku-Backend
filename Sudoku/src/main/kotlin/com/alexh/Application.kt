@@ -3,6 +3,7 @@ package com.alexh
 import io.ktor.server.netty.*
 import com.alexh.plugins.*
 import com.alexh.route.*
+import com.alexh.utils.connect
 import io.ktor.server.application.*
 import org.slf4j.LoggerFactory
 
@@ -23,7 +24,10 @@ fun Application.setupModule() {
 // Specified to be called in configurations
 @Suppress("UNUSED")
 fun Application.endpointModule() {
+    val useEmbeddedDatabase = this.environment.developmentMode
+    val source = connect(useEmbeddedDatabase, this)
+
     configureEndpointsForGeneratingPuzzles(this)
-    configureEndpointsForUsers(this)
+    configureEndpointsForUsers(this, source)
     configureEndpointsForShutdown(this)
 }

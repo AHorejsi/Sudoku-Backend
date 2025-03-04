@@ -10,13 +10,15 @@ class UserService(private val dbConn: Connection) {
         const val USER_TABLE = "Users"
         const val USER_TABLE_ID = "id"
         const val USERNAME = "username"
-        @Suppress("MemberVisibilityCanBePrivate") const val PASSWORD = "password"
+        const val PASSWORD = "password"
         const val EMAIL = "email"
 
         const val PUZZLE_TABLE = "Puzzles"
         const val PUZZLE_TABLE_ID = "id"
         const val JSON = "json"
-        @Suppress("MemberVisibilityCanBePrivate") const val USER_ID = "userId"
+
+        const val USER_ID = "userId"
+        const val PUZZLE_ID = "puzzleId"
 
         private const val CREATE_USER_TABLE =
             "CREATE TABLE IF NOT EXISTS $USER_TABLE (" +
@@ -38,7 +40,8 @@ class UserService(private val dbConn: Connection) {
             "INSERT INTO $USER_TABLE ($USERNAME, $PASSWORD, $EMAIL) " +
             "VALUES (?, ?, ?);"
         private const val GET_USER =
-            "SELECT $USER_TABLE.$USER_TABLE_ID, $USERNAME, $EMAIL, $PUZZLE_TABLE.$PUZZLE_TABLE_ID, $JSON " +
+            "SELECT $USER_TABLE.$USER_TABLE_ID AS $USER_ID, $USERNAME, $EMAIL, " +
+                    "$PUZZLE_TABLE.$PUZZLE_TABLE_ID AS $PUZZLE_ID, $JSON " +
             "FROM $USER_TABLE " +
             "LEFT JOIN $PUZZLE_TABLE ON $USER_TABLE.$USER_TABLE_ID = $PUZZLE_TABLE.$USER_ID " +
             "WHERE ($USERNAME = ? OR $EMAIL = ?) AND $PASSWORD = ?;"
@@ -60,25 +63,13 @@ class UserService(private val dbConn: Connection) {
         private const val DELETE_PUZZLE =
             "DELETE FROM $PUZZLE_TABLE " +
             "WHERE $PUZZLE_TABLE_ID = ? AND $USER_ID = ?;"
-
-        private var alreadyInitialized: Boolean = false
     }
 
     init {
-        this.initializeTables()
-    }
-
-    private fun initializeTables() {
-        if (UserService.alreadyInitialized) {
-            return
-        }
-
         this.dbConn.createStatement().use { stmt ->
             stmt.executeUpdate(CREATE_USER_TABLE)
             stmt.executeUpdate(CREATE_PUZZLE_TABLE)
         }
-
-        UserService.alreadyInitialized = true
     }
 
     suspend fun createUser(username: String, password: String, email: String): CreateUserResponse = withContext(Dispatchers.IO) {
@@ -95,11 +86,7 @@ class UserService(private val dbConn: Connection) {
         runCatching {
             stmt.executeUpdate()
         }.onFailure { ex->
-            val attempt = checkForExpectedUserCreationErrors(ex)
-
-            if (null !== attempt) {
-                return attempt
-            }
+            return checkForExpectedUserCreationErrors(ex)
         }
 
         // Serves to check for errors that were not expected
@@ -112,11 +99,11 @@ class UserService(private val dbConn: Connection) {
         return CreateUserResponse.Success
     }
 
-    private fun checkForExpectedUserCreationErrors(ex: Throwable): CreateUserResponse? =
+    private fun checkForExpectedUserCreationErrors(ex: Throwable): CreateUserResponse =
         if (ex is SQLException && ex.message!!.startsWith("Unique"))
             CreateUserResponse.DuplicateFound
         else
-            null
+            throw ex
 
     suspend fun readUser(usernameOrEmail: String, password: String): ReadUserResponse = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(GET_USER).use { stmt ->
@@ -143,10 +130,10 @@ class UserService(private val dbConn: Connection) {
     }
 
     private fun buildUserWithPotentiallyNoPuzzles(results: ResultSet): User {
-        val userId = results.getInt("$USER_TABLE.$USER_TABLE_ID")
+        val userId = results.getInt(UserService.USER_ID)
         val username = results.getString(UserService.USERNAME)
         val email = results.getString(UserService.EMAIL)
-        val puzzleId = results.getInt("$PUZZLE_TABLE.$USER_TABLE_ID")
+        val puzzleId = results.getInt(UserService.PUZZLE_ID)
         val json = results.getString(UserService.JSON)
 
         val puzzles = mutableListOf<Puzzle>()
@@ -161,15 +148,14 @@ class UserService(private val dbConn: Connection) {
     }
 
     private fun buildUserWithManyPuzzles(results: ResultSet): User {
-        val userId = results.getInt("$USER_TABLE.$USER_TABLE_ID")
+        val userId = results.getInt(UserService.USER_ID)
         val username = results.getString(UserService.USERNAME)
         val email = results.getString(UserService.EMAIL)
 
-        val puzzleIdField = "$PUZZLE_TABLE.$PUZZLE_TABLE_ID"
         val puzzles = mutableListOf<Puzzle>()
 
         do {
-            val puzzleId = results.getInt(puzzleIdField)
+            val puzzleId = results.getInt(UserService.PUZZLE_ID)
             val json = results.getString(UserService.JSON)
 
             val newPuzzle = Puzzle(puzzleId, json)

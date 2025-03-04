@@ -1,51 +1,51 @@
 package com.alexh.route
 
 import com.alexh.models.*
-import com.alexh.plugins.connect
 import com.alexh.utils.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
+import javax.sql.DataSource
 
 private val logger = LoggerFactory.getLogger("User-Routing")
 
-fun configureEndpointsForUsers(app: Application) {
+fun configureEndpointsForUsers(app: Application, source: DataSource) {
     app.routing {
         this.authenticate("auth-jwt") {
             this.put(Endpoints.CREATE_USER) {
-                val result = createUser(app, this.call)
+                val result = createUser(source, this.call)
 
                 handleResult(result, this.call, logger, "Successful call to ${Endpoints.CREATE_USER}")
             }
             this.post(Endpoints.READ_USER) {
-                val result = readUser(app, this.call)
+                val result = readUser(source, this.call)
 
                 handleResult(result, this.call, logger, "Successful call to ${Endpoints.READ_USER}")
             }
             this.put(Endpoints.UPDATE_USER) {
-                val result = updateUser(app, this.call)
+                val result = updateUser(source, this.call)
 
                 handleResult(result, this.call, logger, "Successful call to ${Endpoints.UPDATE_USER}")
             }
             this.delete(Endpoints.DELETE_USER) {
-                val result = deleteUser(app, this.call)
+                val result = deleteUser(source, this.call)
 
                 handleResult(result, this.call, logger, "Successful call to ${Endpoints.DELETE_USER}")
             }
             this.put(Endpoints.CREATE_PUZZLE) {
-                val result = createPuzzle(app, this.call)
+                val result = createPuzzle(source, this.call)
 
                 handleResult(result, this.call, logger, "Successful call to ${Endpoints.CREATE_PUZZLE}")
             }
             this.put(Endpoints.UPDATE_PUZZLE) {
-                val result = updatePuzzle(app, this.call)
+                val result = updatePuzzle(source, this.call)
 
                 handleResult(result, this.call, logger, "Successful call to ${Endpoints.UPDATE_PUZZLE}")
             }
             this.delete(Endpoints.DELETE_PUZZLE) {
-                val result = deletePuzzle(app, this.call)
+                val result = deletePuzzle(source, this.call)
 
                 handleResult(result, this.call, logger, "Successful call to ${Endpoints.DELETE_PUZZLE}")
             }
@@ -53,16 +53,12 @@ fun configureEndpointsForUsers(app: Application) {
     }
 }
 
-private suspend fun createUser(app: Application, call: ApplicationCall): Result<CreateUserResponse> = runCatching {
+private suspend fun createUser(source: DataSource, call: ApplicationCall): Result<CreateUserResponse> = runCatching {
     jwtForCreateUser(call)
 
-    val request = call.receive(CreateUserRequest::class)
-
-    val useEmbeddedDatabase = app.environment.developmentMode
-    val db = connect(useEmbeddedDatabase, app)
-
-    db.use {
+    source.connection.use {
         val service = UserService(it)
+        val request = call.receive(CreateUserRequest::class)
 
         return@runCatching service.createUser(request.username, request.password, request.email)
     }
@@ -74,16 +70,12 @@ private fun jwtForCreateUser(call: ApplicationCall) {
     checkJwtToken(call, operations)
 }
 
-private suspend fun readUser(app: Application, call: ApplicationCall): Result<ReadUserResponse> = runCatching {
+private suspend fun readUser(source: DataSource, call: ApplicationCall): Result<ReadUserResponse> = runCatching {
     jwtForReadUser(call)
 
-    val request = call.receive(ReadUserRequest::class)
-
-    val useEmbeddedDatabase = app.environment.developmentMode
-    val db = connect(useEmbeddedDatabase, app)
-
-    db.use {
+    source.connection.use {
         val service = UserService(it)
+        val request = call.receive(ReadUserRequest::class)
 
         return@runCatching service.readUser(request.usernameOrEmail, request.password)
     }
@@ -95,13 +87,10 @@ private fun jwtForReadUser(call: ApplicationCall) {
     checkJwtToken(call, operations)
 }
 
-private suspend fun updateUser(app: Application, call: ApplicationCall): Result<UpdateUserResponse> = runCatching {
+private suspend fun updateUser(source: DataSource, call: ApplicationCall): Result<UpdateUserResponse> = runCatching {
     jwtForUpdateUser(call)
 
-    val useEmbeddedDatabase = app.environment.developmentMode
-    val db = connect(useEmbeddedDatabase, app)
-
-    db.use {
+    source.connection.use {
         val cookies = call.request.cookies
         val request = call.receive(UpdateUserRequest::class)
 
@@ -128,13 +117,10 @@ private fun jwtForUpdateUser(call: ApplicationCall) {
     checkJwtToken(call, operations)
 }
 
-private suspend fun deleteUser(app: Application, call: ApplicationCall): Result<DeleteUserResponse> = runCatching {
+private suspend fun deleteUser(source: DataSource, call: ApplicationCall): Result<DeleteUserResponse> = runCatching {
     jwtForDeleteUser(call)
 
-    val useEmbeddedDatabase = app.environment.developmentMode
-    val db = connect(useEmbeddedDatabase, app)
-
-    db.use {
+    source.connection.use {
         val cookies = call.request.cookies
         val request = call.receive(DeleteUserRequest::class)
 
@@ -152,13 +138,10 @@ private fun jwtForDeleteUser(call: ApplicationCall) {
     checkJwtToken(call, operations)
 }
 
-private suspend fun createPuzzle(app: Application, call: ApplicationCall): Result<Puzzle> = runCatching {
+private suspend fun createPuzzle(source: DataSource, call: ApplicationCall): Result<Puzzle> = runCatching {
     jwtForCreatePuzzle(call)
 
-    val useEmbeddedDatabase = app.environment.developmentMode
-    val db = connect(useEmbeddedDatabase, app)
-
-    db.use {
+    source.connection.use {
         val cookies = call.request.cookies
 
         val json = getCookie(cookies, Cookies.JSON)
@@ -176,13 +159,10 @@ private fun jwtForCreatePuzzle(call: ApplicationCall) {
     checkJwtToken(call, operations)
 }
 
-private suspend fun updatePuzzle(app: Application, call: ApplicationCall): Result<Unit> = runCatching {
+private suspend fun updatePuzzle(source: DataSource, call: ApplicationCall): Result<Unit> = runCatching {
     jwtForUpdatePuzzle(call)
 
-    val useEmbeddedDatabase = app.environment.developmentMode
-    val db = connect(useEmbeddedDatabase, app)
-
-    db.use {
+    source.connection.use {
         val cookies = call.request.cookies
 
         val puzzleId = getCookie(cookies, Cookies.PUZZLE_ID).toInt()
@@ -200,13 +180,10 @@ private fun jwtForUpdatePuzzle(call: ApplicationCall) {
     checkJwtToken(call, operations)
 }
 
-private suspend fun deletePuzzle(app: Application, call: ApplicationCall): Result<Unit> = runCatching {
+private suspend fun deletePuzzle(source: DataSource, call: ApplicationCall): Result<Unit> = runCatching {
     jwtForDeletePuzzle(call)
 
-    val useEmbeddedDatabase = app.environment.developmentMode
-    val db = connect(useEmbeddedDatabase, app)
-
-    db.use {
+    source.connection.use {
         val cookies = call.request.cookies
 
         val userId = getCookie(cookies, Cookies.USER_ID).toInt()

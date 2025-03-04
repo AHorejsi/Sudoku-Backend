@@ -17,7 +17,7 @@ repositories {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    implementation "org.postgresql:postgresql:42.7.2"
+    implementation "org.postgresql:postgresql:$postgres_version"
     implementation "io.ktor:ktor-server-core-jvm:$ktor_version"
     implementation "io.ktor:ktor-server-auth-jvm:$ktor_version"
     implementation "io.ktor:ktor-server-auth-jwt:$ktor_version"
@@ -33,8 +33,9 @@ dependencies {
     implementation "io.ktor:ktor-server-request-validation:$ktor_version"
     implementation "io.ktor:ktor-serialization-kotlinx-json-jvm:$ktor_version"
     implementation "io.ktor:ktor-network-tls-certificates:$ktor_version"
-    implementation "com.h2database:h2:2.2.220"
-    implementation "ch.qos.logback:logback-classic:1.4.12"
+    implementation "com.h2database:h2:$h2_version"
+    implementation "com.zaxxer:HikariCP:6.2.1"
+    implementation "ch.qos.logback:logback-classic:$logback_version"
 
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
     testImplementation "io.ktor:ktor-server-tests-jvm:$ktor_version"
