@@ -19,7 +19,7 @@ fun configureEndpointsForUsers(app: Application) {
 
                 handleResult(result, this.call, logger, "Successful call to ${Endpoints.CREATE_USER}")
             }
-            this.get(Endpoints.READ_USER) {
+            this.post(Endpoints.READ_USER) {
                 val result = readUser(app, this.call)
 
                 handleResult(result, this.call, logger, "Successful call to ${Endpoints.READ_USER}")
