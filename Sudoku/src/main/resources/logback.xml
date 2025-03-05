@@ -1,12 +1,27 @@
 <configuration>
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %X{call-id} %-5level %logger{36} - "%msg"%n</pattern>
         </encoder>
     </appender>
 
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeCallerData>true</includeCallerData>
+
+            <jsonGeneratorDecorator class="net.logstash.logback.decorate.CompositeJsonGeneratorDecorator">
+                <decorator class="net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator"/>
+                <decorator class="net.logstash.logback.mask.MaskingJsonGeneratorDecorator">
+                    <defaultMask>XXXX</defaultMask>
+                    <path>password</path>
+                </decorator>
+            </jsonGeneratorDecorator>
+        </encoder>
+    </appender>
+
     <root level="trace">
-        <appender-ref ref="STDOUT" />
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="JSON" />
     </root>
 
     <logger name="org.eclipse.jetty" level="INFO"/>
