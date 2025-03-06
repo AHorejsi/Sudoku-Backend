@@ -31,10 +31,13 @@ private suspend fun performShutdown(
 private fun jwt(app: Application, call: ApplicationCall) {
     val config = app.environment.config
 
+    val adminUser = config.property("ktor.deployment.shutdown.adminUser").getString()
+    val adminPass = config.property("ktor.deployment.shutdown.adminPassword").getString()
+
     val operations = mapOf(
         JwtClaims.OP_KEY to JwtClaims.SHUTDOWN_VALUE,
-        JwtClaims.ADMIN_USER_KEY to config.property("ktor.deployment.shutdown.adminUser").getString(),
-        JwtClaims.ADMIN_PASSWORD_KEY to config.property("ktor.deployment.shutdown.adminPassword").getString()
+        JwtClaims.ADMIN_USER_KEY to adminUser,
+        JwtClaims.ADMIN_PASSWORD_KEY to adminPass
     )
 
     checkJwtToken(call, operations)
