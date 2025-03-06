@@ -7,10 +7,6 @@
 
                     <jsonGeneratorDecorator class='net.logstash.logback.decorate.CompositeJsonGeneratorDecorator'>
                         <decorator class='net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator'/>
-                        <decorator class='net.logstash.logback.mask.MaskingJsonGeneratorDecorator'>
-                            <defaultMask>XXXX</defaultMask>
-                            <path>password</path>
-                        </decorator>
                     </jsonGeneratorDecorator>
                 </encoder>
 
