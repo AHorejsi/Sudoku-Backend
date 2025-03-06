@@ -17,7 +17,7 @@
         </then>
     </if>
 
-    <if condition='property("IS_DEV_END").equals("false")'>
+    <if condition='property("IS_DEV_ENV").equals("false")'>
         <appender name='JSON' class='ch.qos.logback.core.rolling.RollingFileAppender'>
             <rollingPolicy class='ch.qos.logback.core.rolling.TimeBasedRollingPolicy'>
                 <fileNamePattern>logs/logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
