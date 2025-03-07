@@ -1,5 +1,5 @@
 <configuration>
-    <if condition='property("IS_DEV_ENV").equals("true")'>
+    <if condition='property("RUNTIME_ENVIRONMENT").equals("DEV")'>
         <then>
             <appender name='CONSOLE' class='ch.qos.logback.core.ConsoleAppender'>
                 <encoder class='net.logstash.logback.encoder.LogstashEncoder'>
@@ -17,7 +17,25 @@
         </then>
     </if>
 
-    <if condition='property("IS_DEV_ENV").equals("false")'>
+    <if condition='property("RUNTIME_ENVIRONMENT").equals("TEST")'>
+        <appender name='JSON' class='ch.qos.logback.core.rolling.RollingFileAppender'>
+            <rollingPolicy class='ch.qos.logback.core.rolling.TimeBasedRollingPolicy'>
+                <fileNamePattern>logs/logFile.test.%d{yyyy-MM-dd}.log</fileNamePattern>
+            </rollingPolicy>
+
+            <encoder class='net.logstash.logback.encoder.LogstashEncoder'>
+                <jsonGeneratorDecorator class='net.logstash.logback.decorate.CompositeJsonGeneratorDecorator'>
+                    <decorator class='net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator'/>
+                </jsonGeneratorDecorator>
+            </encoder>
+
+            <filter class='ch.qos.logback.classic.filter.ThresholdFilter'>
+                <level>INFO</level>
+            </filter>
+        </appender>
+    </if>
+
+    <if condition='property("RUNTIME_ENVIRONMENT").equals("PROD")'>
         <appender name='JSON' class='ch.qos.logback.core.rolling.RollingFileAppender'>
             <rollingPolicy class='ch.qos.logback.core.rolling.TimeBasedRollingPolicy'>
                 <fileNamePattern>logs/logFile.%d{yyyy-MM-dd}.log</fileNamePattern>

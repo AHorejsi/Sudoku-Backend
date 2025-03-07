@@ -22,10 +22,7 @@ fun configureMonitoring(app: Application, logger: Logger) {
         val counter = AtomicInteger(0)
         val config = app.environment.config
 
-        val isDev = config.property("ktor.development").getString().toBoolean()
-        val isTest = config.property("ktor.testing").getString().toBoolean()
-
-        val env = if (isDev) "DEV" else if (isTest) "TEST" else "PROD"
+        val env = config.property("ktor.deployment.environment").getString()
 
         this.header(HttpHeaders.XRequestId)
         this.generate { "AUTO:$env-${counter.getAndIncrement()}" }
