@@ -1,5 +1,5 @@
 <configuration>
-    <if condition='property("RUNTIME_ENVIRONMENT").equals("DEV")'>
+    <if condition='property("IS_DEV_ENV").equals("true")'>
         <then>
             <appender name='CONSOLE' class='ch.qos.logback.core.ConsoleAppender'>
                 <encoder class='net.logstash.logback.encoder.LogstashEncoder'>
@@ -14,57 +14,37 @@
                     <level>TRACE</level>
                 </filter>
             </appender>
+
+            <root>
+                <appender-ref ref='CONSOLE' />
+            </root>
         </then>
+        <else>
+            <appender name='JSON' class='ch.qos.logback.core.rolling.RollingFileAppender'>
+                <rollingPolicy class='ch.qos.logback.core.rolling.TimeBasedRollingPolicy'>
+                    <fileNamePattern>logs/logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
+                </rollingPolicy>
+
+                <encoder class='net.logstash.logback.encoder.LogstashEncoder'>
+                    <jsonGeneratorDecorator class='net.logstash.logback.decorate.CompositeJsonGeneratorDecorator'>
+                        <decorator class='net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator'/>
+                    </jsonGeneratorDecorator>
+                </encoder>
+
+                <filter class='ch.qos.logback.classic.filter.ThresholdFilter'>
+                    <level>INFO</level>
+                </filter>
+            </appender>
+
+            <appender name='JSON_ASYNC' class='ch.qos.logback.classic.AsyncAppender'>
+                <appender-ref ref='JSON' />
+            </appender>
+
+            <root>
+                <appender-ref ref='JSON_ASYNC' />
+            </root>
+        </else>
     </if>
-
-    <if condition='property("RUNTIME_ENVIRONMENT").equals("TEST")'>
-        <appender name='JSON' class='ch.qos.logback.core.rolling.RollingFileAppender'>
-            <rollingPolicy class='ch.qos.logback.core.rolling.TimeBasedRollingPolicy'>
-                <fileNamePattern>logs/logFile.test.%d{yyyy-MM-dd}.log</fileNamePattern>
-            </rollingPolicy>
-
-            <encoder class='net.logstash.logback.encoder.LogstashEncoder'>
-                <jsonGeneratorDecorator class='net.logstash.logback.decorate.CompositeJsonGeneratorDecorator'>
-                    <decorator class='net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator'/>
-                </jsonGeneratorDecorator>
-            </encoder>
-
-            <filter class='ch.qos.logback.classic.filter.ThresholdFilter'>
-                <level>INFO</level>
-            </filter>
-        </appender>
-    </if>
-
-    <if condition='property("RUNTIME_ENVIRONMENT").equals("PROD")'>
-        <appender name='JSON' class='ch.qos.logback.core.rolling.RollingFileAppender'>
-            <rollingPolicy class='ch.qos.logback.core.rolling.TimeBasedRollingPolicy'>
-                <fileNamePattern>logs/logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
-            </rollingPolicy>
-
-            <encoder class='net.logstash.logback.encoder.LogstashEncoder'>
-                <jsonGeneratorDecorator class='net.logstash.logback.decorate.CompositeJsonGeneratorDecorator'>
-                    <decorator class='net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator'/>
-                    <decorator class='net.logstash.logback.mask.MaskingJsonGeneratorDecorator'>
-                        <defaultMask>?</defaultMask>
-                        <path>password</path>
-                    </decorator>
-                </jsonGeneratorDecorator>
-            </encoder>
-
-            <filter class='ch.qos.logback.classic.filter.ThresholdFilter'>
-                <level>INFO</level>
-            </filter>
-        </appender>
-    </if>
-
-    <appender name='JSON_ASYNC' class='ch.qos.logback.classic.AsyncAppender'>
-        <appender-ref ref='JSON' />
-    </appender>
-
-    <root>
-        <appender-ref ref='CONSOLE' />
-        <appender-ref ref='JSON_ASYNC' />
-    </root>
 
     <logger name='org.eclipse.jetty' level='INFO'/>
     <logger name='io.netty' level='INFO'/>
