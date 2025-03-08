@@ -19,7 +19,40 @@
                 <appender-ref ref='CONSOLE' />
             </root>
         </then>
-        <else>
+    </if>
+
+    <if condition='property("IS_TEST_ENV").equals("true")'>
+        <then>
+            <appender name='JSON' class='ch.qos.logback.core.rolling.RollingFileAppender'>
+                <rollingPolicy class='ch.qos.logback.core.rolling.TimeBasedRollingPolicy'>
+                    <fileNamePattern>logs/test/logFile.test.%d{yyyy-MM-dd}.log</fileNamePattern>
+                </rollingPolicy>
+
+                <encoder class='net.logstash.logback.encoder.LogstashEncoder'>
+                    <includeCallerData>true</includeCallerData>
+
+                    <jsonGeneratorDecorator class='net.logstash.logback.decorate.CompositeJsonGeneratorDecorator'>
+                        <decorator class='net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator'/>
+                    </jsonGeneratorDecorator>
+                </encoder>
+
+                <filter class='ch.qos.logback.classic.filter.ThresholdFilter'>
+                    <level>TRACE</level>
+                </filter>
+            </appender>
+
+            <appender name='JSON_ASYNC' class='ch.qos.logback.classic.AsyncAppender'>
+                <appender-ref ref='JSON' />
+            </appender>
+
+            <root>
+                <appender-ref ref='JSON_ASYNC' />
+            </root>
+        </then>
+    </if>
+
+    <if condition='property("IS_PROD_ENV").equals("true")'>
+        <then>
             <appender name='JSON' class='ch.qos.logback.core.rolling.RollingFileAppender'>
                 <rollingPolicy class='ch.qos.logback.core.rolling.TimeBasedRollingPolicy'>
                     <fileNamePattern>logs/logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
@@ -43,7 +76,7 @@
             <root>
                 <appender-ref ref='JSON_ASYNC' />
             </root>
-        </else>
+        </then>
     </if>
 
     <logger name='org.eclipse.jetty' level='INFO'/>
