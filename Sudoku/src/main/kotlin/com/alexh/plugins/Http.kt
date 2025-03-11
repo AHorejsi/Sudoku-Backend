@@ -37,7 +37,7 @@ fun configureHttp(app: Application) {
             this.anyHost() // Don't do this in production!
         }
         else {
-            this.allowHost("http://localhost:1234")
+            this.allowHost("localhost:1234", listOf("http"))
         }
     }
 
