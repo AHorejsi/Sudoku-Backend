@@ -2,12 +2,8 @@
     <if condition='property("IS_DEV_ENV").equals("true")'>
         <then>
             <appender name='CONSOLE' class='ch.qos.logback.core.ConsoleAppender'>
-                <encoder class='net.logstash.logback.encoder.LogstashEncoder'>
-                    <includeCallerData>true</includeCallerData>
-
-                    <jsonGeneratorDecorator class='net.logstash.logback.decorate.CompositeJsonGeneratorDecorator'>
-                        <decorator class='net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator'/>
-                    </jsonGeneratorDecorator>
+                <encoder>
+                    <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %X{call-id} %-5level %logger{36} - %msg%n</pattern>
                 </encoder>
 
                 <filter class='ch.qos.logback.classic.filter.ThresholdFilter'>

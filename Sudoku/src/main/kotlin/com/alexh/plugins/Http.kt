@@ -18,6 +18,7 @@ fun configureHttp(app: Application) {
 
         this.allowHeader(HttpHeaders.Authorization)
         this.allowHeader(HttpHeaders.AccessControlAllowOrigin)
+        this.allowHeader(HttpHeaders.AcceptCharset)
         this.allowHeader(HttpHeaders.Cookie)
         this.allowHeader(HttpHeaders.Connection)
         this.allowHeader(HttpHeaders.Accept)
@@ -34,8 +35,9 @@ fun configureHttp(app: Application) {
 
         if (app.environment.developmentMode) {
             this.anyHost() // Don't do this in production!
-        } else {
-            this.allowHost(app.environment.config.host)
+        }
+        else {
+            this.allowHost("http://localhost:1234")
         }
     }
 

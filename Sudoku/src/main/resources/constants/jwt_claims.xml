@@ -1,7 +1,5 @@
 <JwtClaims>
     <operation key="op" />
-    <issuer key="iss" />
-    <audience key="aud" />
     <adminUser key="adminUser" />
     <adminPassword key="adminPassword" />
 

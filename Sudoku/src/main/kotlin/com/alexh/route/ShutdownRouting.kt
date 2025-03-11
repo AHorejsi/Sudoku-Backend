@@ -10,11 +10,11 @@ fun configureEndpointsForShutdown(app: Application) {
     val shutdown = ShutDownUrl(Endpoints.SHUTDOWN) { 0 }
 
     app.routing {
-        this.authenticate("auth-jwt") {
+        //this.authenticate("auth-jwt") {
             this.get(Endpoints.SHUTDOWN) {
                 performShutdown(app, this.call, shutdown)
             }
-        }
+        //}
     }
 }
 
@@ -23,7 +23,7 @@ private suspend fun performShutdown(
     call: ApplicationCall,
     shutdown: ShutDownUrl
 ) = runCatching {
-    jwt(app, call)
+    //jwt(app, call)
 
     shutdown.doShutdown(call)
 }

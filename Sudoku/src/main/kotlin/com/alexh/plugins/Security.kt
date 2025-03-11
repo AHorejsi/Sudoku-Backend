@@ -29,8 +29,6 @@ fun configureSecurity(app: Application) {
                     .withIssuer(jwtIssuer)
                     .withAudience(jwtAudience)
                     .withClaimPresence(JwtClaims.OP_KEY)
-                    .withClaimPresence(JwtClaims.ISS_KEY)
-                    .withClaimPresence(JwtClaims.AUD_KEY)
                     .acceptExpiresAt(expiration)
                     .build()
             )

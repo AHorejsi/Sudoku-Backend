@@ -13,18 +13,18 @@ private val logger = LoggerFactory.getLogger("Puzzle-Generation-Routing")
 
 fun configureEndpointsForGeneratingPuzzles(app: Application) {
     app.routing {
-        this.authenticate("auth-jwt") {
+        //this.authenticate("auth-jwt") {
             this.post(Endpoints.GENERATE) {
                 val result = generatePuzzle(this.call)
 
                 handleResult(result, this.call, logger, "Successful call to ${Endpoints.GENERATE}")
             }
-        }
+        //}
     }
 }
 
 private suspend fun generatePuzzle(call: ApplicationCall): Result<SudokuJson> = runCatching {
-    jwt(call)
+    //jwt(call)
 
     val request = call.receive(GenerateRequest::class)
 

@@ -13,7 +13,7 @@ private val logger = LoggerFactory.getLogger("User-Routing")
 
 fun configureEndpointsForUsers(app: Application, source: DataSource) {
     app.routing {
-        this.authenticate("auth-jwt") {
+        //this.authenticate("auth-jwt") {
             this.put(Endpoints.CREATE_USER) {
                 val result = createUser(source, this.call)
 
@@ -49,12 +49,12 @@ fun configureEndpointsForUsers(app: Application, source: DataSource) {
 
                 handleResult(result, this.call, logger, "Successful call to ${Endpoints.DELETE_PUZZLE}")
             }
-        }
+        //}
     }
 }
 
 private suspend fun createUser(source: DataSource, call: ApplicationCall): Result<CreateUserResponse> = runCatching {
-    jwtForCreateUser(call)
+    //jwtForCreateUser(call)
 
     source.connection.use {
         val service = UserService(it)
@@ -71,7 +71,7 @@ private fun jwtForCreateUser(call: ApplicationCall) {
 }
 
 private suspend fun readUser(source: DataSource, call: ApplicationCall): Result<ReadUserResponse> = runCatching {
-    jwtForReadUser(call)
+    //jwtForReadUser(call)
 
     source.connection.use {
         val service = UserService(it)
@@ -88,7 +88,7 @@ private fun jwtForReadUser(call: ApplicationCall) {
 }
 
 private suspend fun updateUser(source: DataSource, call: ApplicationCall): Result<UpdateUserResponse> = runCatching {
-    jwtForUpdateUser(call)
+    //jwtForUpdateUser(call)
 
     source.connection.use {
         val cookies = call.request.cookies
@@ -118,7 +118,7 @@ private fun jwtForUpdateUser(call: ApplicationCall) {
 }
 
 private suspend fun deleteUser(source: DataSource, call: ApplicationCall): Result<DeleteUserResponse> = runCatching {
-    jwtForDeleteUser(call)
+    //jwtForDeleteUser(call)
 
     source.connection.use {
         val cookies = call.request.cookies
@@ -139,7 +139,7 @@ private fun jwtForDeleteUser(call: ApplicationCall) {
 }
 
 private suspend fun createPuzzle(source: DataSource, call: ApplicationCall): Result<Puzzle> = runCatching {
-    jwtForCreatePuzzle(call)
+    //jwtForCreatePuzzle(call)
 
     source.connection.use {
         val cookies = call.request.cookies
@@ -160,7 +160,7 @@ private fun jwtForCreatePuzzle(call: ApplicationCall) {
 }
 
 private suspend fun updatePuzzle(source: DataSource, call: ApplicationCall): Result<Unit> = runCatching {
-    jwtForUpdatePuzzle(call)
+    //jwtForUpdatePuzzle(call)
 
     source.connection.use {
         val cookies = call.request.cookies
@@ -181,7 +181,7 @@ private fun jwtForUpdatePuzzle(call: ApplicationCall) {
 }
 
 private suspend fun deletePuzzle(source: DataSource, call: ApplicationCall): Result<Unit> = runCatching {
-    jwtForDeletePuzzle(call)
+    //jwtForDeletePuzzle(call)
 
     source.connection.use {
         val cookies = call.request.cookies
