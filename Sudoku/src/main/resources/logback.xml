@@ -21,7 +21,7 @@
         <then>
             <appender name='JSON' class='ch.qos.logback.core.rolling.RollingFileAppender'>
                 <rollingPolicy class='ch.qos.logback.core.rolling.TimeBasedRollingPolicy'>
-                    <fileNamePattern>logs/test/logFile.test.%d{yyyy-MM-dd}.log</fileNamePattern>
+                    <fileNamePattern>logs/logFile.test.%d{yyyy-MM-dd}.log</fileNamePattern>
                 </rollingPolicy>
 
                 <encoder class='net.logstash.logback.encoder.LogstashEncoder'>
@@ -33,7 +33,7 @@
                 </encoder>
 
                 <filter class='ch.qos.logback.classic.filter.ThresholdFilter'>
-                    <level>TRACE</level>
+                    <level>INFO</level>
                 </filter>
             </appender>
 
