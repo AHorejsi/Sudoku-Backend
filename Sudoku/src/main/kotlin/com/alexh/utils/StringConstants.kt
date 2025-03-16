@@ -76,50 +76,6 @@ class Endpoints private constructor() {
     }
 }
 
-class JwtClaims private constructor() {
-    init {
-        noInstances(JwtClaims::class)
-    }
-
-    companion object {
-        val OP_KEY: String
-        val ADMIN_USER_KEY: String
-        val ADMIN_PASSWORD_KEY: String
-
-        val GENERATE_PUZZLE_VALUE: String
-        val CREATE_USER_VALUE: String
-        val READ_USER_VALUE: String
-        val UPDATE_USER_VALUE: String
-        val DELETE_USER_VALUE: String
-        val CREATE_PUZZLE_VALUE: String
-        val UPDATE_PUZZLE_VALUE: String
-        val DELETE_PUZZLE_VALUE: String
-
-        val SHUTDOWN_VALUE: String
-
-        init {
-            val doc = parseXmlConstants("jwt_claims")
-            val root = doc.documentElement
-
-            val children = root.childNodes
-
-            this.OP_KEY = (children.item(1) as Element).getAttribute("key")
-            this.ADMIN_USER_KEY = (children.item(3) as Element).getAttribute("key")
-            this.ADMIN_PASSWORD_KEY = (children.item(5) as Element).getAttribute("key")
-
-            this.GENERATE_PUZZLE_VALUE = (children.item(7) as Element).getAttribute("value")
-            this.CREATE_USER_VALUE = (children.item(9) as Element).getAttribute("value")
-            this.READ_USER_VALUE = (children.item(11) as Element).getAttribute("value")
-            this.UPDATE_USER_VALUE = (children.item(13) as Element).getAttribute("value")
-            this.DELETE_USER_VALUE = (children.item(15) as Element).getAttribute("value")
-            this.CREATE_PUZZLE_VALUE = (children.item(17) as Element).getAttribute("value")
-            this.UPDATE_PUZZLE_VALUE = (children.item(19) as Element).getAttribute("value")
-            this.DELETE_PUZZLE_VALUE = (children.item(21) as Element).getAttribute("value")
-            this.SHUTDOWN_VALUE = (children.item(23) as Element).getAttribute("value")
-        }
-    }
-}
-
 private fun parseXmlConstants(fileName: String): Document {
     val factory = DocumentBuilderFactory.newInstance()
     val builder = factory.newDocumentBuilder()
