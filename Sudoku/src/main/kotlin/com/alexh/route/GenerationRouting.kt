@@ -2,6 +2,7 @@ package com.alexh.route
 
 import com.alexh.game.*
 import com.alexh.models.GenerateRequest
+import com.alexh.models.GenerateResponse
 import com.alexh.utils.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -20,7 +21,7 @@ fun configureEndpointsForGeneratingPuzzles(app: Application) {
     }
 }
 
-private suspend fun generatePuzzle(call: ApplicationCall): Result<SudokuJson> = runCatching {
+private suspend fun generatePuzzle(call: ApplicationCall): Result<GenerateResponse> = runCatching {
     val request = call.receive(GenerateRequest::class)
 
     val dimension = Dimension.valueOf(request.dimension)
@@ -30,5 +31,5 @@ private suspend fun generatePuzzle(call: ApplicationCall): Result<SudokuJson> = 
 
     val sudoku = makeSudoku(info)
 
-    return@runCatching sudoku
+    return@runCatching GenerateResponse(sudoku)
 }

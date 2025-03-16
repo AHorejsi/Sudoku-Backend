@@ -1,5 +1,6 @@
 package com.alexh.models
 
+import com.alexh.game.SudokuJson
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -22,6 +23,9 @@ class GenerateRequest(
     val difficulty: String,
     val games: Set<String>
 )
+
+@Serializable
+class GenerateResponse(@Suppress("UNUSED") val puzzle: SudokuJson)
 
 @Serializable
 class CreateUserRequest(
