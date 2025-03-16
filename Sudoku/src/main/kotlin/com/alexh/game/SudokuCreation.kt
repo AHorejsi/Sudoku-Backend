@@ -8,7 +8,6 @@ import kotlin.random.Random
 
 enum class Game {
     HYPER,
-    JIGSAW,
     KILLER
 }
 
