@@ -21,8 +21,6 @@ dependencies {
     implementation "org.slf4j:slf4j-api:1.7.25"
     implementation "org.codehaus.janino:janino:3.1.8"
     implementation "io.ktor:ktor-server-core-jvm:$ktor_version"
-    implementation "io.ktor:ktor-server-auth-jvm:$ktor_version"
-    implementation "io.ktor:ktor-server-auth-jwt:$ktor_version"
     implementation "io.ktor:ktor-server-compression:$ktor_version"
     implementation "io.ktor:ktor-server-content-negotiation-jvm:$ktor_version"
     implementation "io.ktor:ktor-server-cors:$ktor_version"
@@ -41,6 +39,7 @@ dependencies {
     implementation "ch.qos.logback:logback-core:$logback_version"
     implementation "ch.qos.logback:logback-access:$logback_version"
     implementation "net.logstash.logback:logstash-logback-encoder:7.4"
+    implementation "at.favre.lib:bcrypt:0.10.2"
 
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
     testImplementation "io.ktor:ktor-server-tests-jvm:$ktor_version"

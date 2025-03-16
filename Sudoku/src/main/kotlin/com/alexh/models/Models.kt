@@ -2,20 +2,18 @@ package com.alexh.models
 
 import kotlinx.serialization.Serializable
 
-@Suppress("UNUSED")
 @Serializable
 class Puzzle(
-    val id: Int,
-    val json: String
+    @Suppress("UNUSED") val id: Int,
+    @Suppress("UNUSED") val json: String
 )
 
-@Suppress("UNUSED")
 @Serializable
 class User(
-    val id: Int,
-    val username: String,
-    val email: String,
-    val puzzles: List<Puzzle>
+    @Suppress("UNUSED") val id: Int,
+    @Suppress("UNUSED") val username: String,
+    @Suppress("UNUSED") val email: String,
+    @Suppress("UNUSED") val puzzles: List<Puzzle>
 )
 
 @Serializable
@@ -58,19 +56,19 @@ sealed class ReadUserResponse {
 
 @Serializable
 class UpdateUserRequest(
+    val userId: Int,
+    val oldUsername: String,
     val newUsername: String,
-    val newEmail: String,
-    val password: String
+    val oldEmail: String,
+    val newEmail: String
 )
 
 @Serializable
 sealed class UpdateUserResponse {
     @Serializable
     class Success(
-        @Suppress("UNUSED")
-        val newUsername: String,
-        @Suppress("UNUSED")
-        val newEmail: String
+        @Suppress("UNUSED") val newUsername: String,
+        @Suppress("UNUSED") val newEmail: String
     ) : UpdateUserResponse()
 
     @Serializable
@@ -79,8 +77,8 @@ sealed class UpdateUserResponse {
 
 @Serializable
 class DeleteUserRequest(
-    val usernameOrEmail: String,
-    val password: String
+    val userId: Int,
+    val usernameOrEmail: String
 )
 
 @Serializable

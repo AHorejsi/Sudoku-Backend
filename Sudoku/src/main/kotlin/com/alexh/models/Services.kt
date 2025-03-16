@@ -1,5 +1,6 @@
 package com.alexh.models
 
+import at.favre.lib.crypto.bcrypt.BCrypt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.*
@@ -40,18 +41,18 @@ class UserService(private val dbConn: Connection) {
             "INSERT INTO $USER_TABLE ($USERNAME, $PASSWORD, $EMAIL) " +
             "VALUES (?, ?, ?);"
         private const val GET_USER =
-            "SELECT $USER_TABLE.$USER_TABLE_ID AS $USER_ID, $USERNAME, $EMAIL, " +
+            "SELECT $USER_TABLE.$USER_TABLE_ID AS $USER_ID, $USERNAME, $EMAIL, $PASSWORD, " +
                     "$PUZZLE_TABLE.$PUZZLE_TABLE_ID AS $PUZZLE_ID, $JSON " +
             "FROM $USER_TABLE " +
             "LEFT JOIN $PUZZLE_TABLE ON $USER_TABLE.$USER_TABLE_ID = $PUZZLE_TABLE.$USER_ID " +
-            "WHERE ($USERNAME = ? OR $EMAIL = ?) AND $PASSWORD = ?;"
+            "WHERE ($USERNAME = ? OR $EMAIL = ?);"
         private const val UPDATE_USER =
             "UPDATE $USER_TABLE " +
             "SET $USERNAME = ?, $EMAIL = ? " +
-            "WHERE $USER_TABLE_ID = ? AND $USERNAME = ? AND $EMAIL = ? AND $PASSWORD = ?;"
+            "WHERE $USER_TABLE_ID = ? AND $USERNAME = ? AND $EMAIL = ?;"
         private const val DELETE_USER =
             "DELETE FROM $USER_TABLE " +
-            "WHERE $USER_TABLE_ID = ? AND ($USERNAME = ? OR $EMAIL = ?) AND $PASSWORD = ?;"
+            "WHERE $USER_TABLE_ID = ? AND ($USERNAME = ? OR $EMAIL = ?);"
 
         private const val CREATE_PUZZLE =
             "INSERT INTO $PUZZLE_TABLE ($JSON, $USER_ID)" +
@@ -105,28 +106,36 @@ class UserService(private val dbConn: Connection) {
         else
             throw ex
 
-    suspend fun readUser(usernameOrEmail: String, password: String): ReadUserResponse = withContext(Dispatchers.IO) {
+    suspend fun readUser(
+        usernameOrEmail: String,
+        password: String,
+        hashedPassword: String
+    ): ReadUserResponse = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(GET_USER).use { stmt ->
             stmt.setString(1, usernameOrEmail)
             stmt.setString(2, usernameOrEmail)
-            stmt.setString(3, password)
 
             stmt.executeQuery().use { results ->
                 return@withContext if (results.next())
-                    this@UserService.buildUser(results)
+                    this@UserService.buildUser(results, password, hashedPassword)
                 else
                     ReadUserResponse.FailedToFind
             }
         }
     }
 
-    private fun buildUser(results: ResultSet): ReadUserResponse {
+    private fun buildUser(results: ResultSet, password: String, hashedPassword: String): ReadUserResponse {
         val user = if (results.isLast)
             this.buildUserWithPotentiallyNoPuzzles(results)
         else
             this.buildUserWithManyPuzzles(results)
 
-        return ReadUserResponse.Success(user)
+        val login = BCrypt.verifyer().verify(password.toCharArray(), hashedPassword)
+
+        return if (login.verified)
+            ReadUserResponse.Success(user)
+        else
+            ReadUserResponse.FailedToFind
     }
 
     private fun buildUserWithPotentiallyNoPuzzles(results: ResultSet): User {
@@ -169,7 +178,6 @@ class UserService(private val dbConn: Connection) {
         userId: Int,
         oldUsername: String,
         oldEmail: String,
-        password: String,
         newUsername: String,
         newEmail: String
     ): UpdateUserResponse = withContext(Dispatchers.IO) {
@@ -179,7 +187,6 @@ class UserService(private val dbConn: Connection) {
             stmt.setInt(3, userId)
             stmt.setString(4, oldUsername)
             stmt.setString(5, oldEmail)
-            stmt.setString(6, password)
 
             val amountOfRowsUpdated = stmt.executeUpdate()
 
@@ -191,12 +198,14 @@ class UserService(private val dbConn: Connection) {
         }
     }
 
-    suspend fun deleteUser(userId: Int, usernameOrEmail: String, password: String): DeleteUserResponse = withContext(Dispatchers.IO) {
+    suspend fun deleteUser(
+        userId: Int,
+        usernameOrEmail: String
+    ): DeleteUserResponse = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(DELETE_USER).use { stmt ->
             stmt.setInt(1, userId)
             stmt.setString(2, usernameOrEmail)
             stmt.setString(3, usernameOrEmail)
-            stmt.setString(4, password)
 
             val amountOfRowsDeleted = stmt.executeUpdate()
 

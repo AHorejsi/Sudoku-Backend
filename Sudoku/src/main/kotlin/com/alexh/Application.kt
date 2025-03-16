@@ -15,7 +15,6 @@ fun main(args: Array<String>) =
 // Specified to be called in configurations
 @Suppress("UNUSED")
 fun Application.setupModule() {
-    configureSecurity(this)
     configureSerialization(this)
     configureHttp(this)
     configureMonitoring(this, logger)
