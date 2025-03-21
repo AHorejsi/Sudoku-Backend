@@ -1,11 +1,5 @@
 <Cookies>
-    <dimension />
-    <difficulty />
-    <games />
     <userId />
-    <username />
-    <email />
-    <password />
     <puzzleId />
     <json />
 </Cookies>

@@ -12,13 +12,7 @@ class Cookies private constructor() {
     }
 
     companion object {
-        val DIMENSION: String
-        val DIFFICULTY: String
-        val GAMES: String
         val USER_ID: String
-        val USERNAME: String
-        val EMAIL: String
-        val PASSWORD: String
         val PUZZLE_ID: String
         val JSON: String
 
@@ -28,15 +22,9 @@ class Cookies private constructor() {
 
             val children = root.childNodes
 
-            this.DIMENSION = (children.item(1) as Element).tagName
-            this.DIFFICULTY = (children.item(3) as Element).tagName
-            this.GAMES = (children.item(5) as Element).tagName
-            this.USER_ID = (children.item(7) as Element).tagName
-            this.USERNAME = (children.item(9) as Element).tagName
-            this.EMAIL = (children.item(11) as Element).tagName
-            this.PASSWORD = (children.item(13) as Element).tagName
-            this.PUZZLE_ID = (children.item(15) as Element).tagName
-            this.JSON = (children.item(17) as Element).tagName
+            this.USER_ID = (children.item(1) as Element).tagName
+            this.PUZZLE_ID = (children.item(3) as Element).tagName
+            this.JSON = (children.item(5) as Element).tagName
         }
     }
 }
@@ -77,8 +65,7 @@ class Endpoints private constructor() {
 }
 
 private fun parseXmlConstants(fileName: String): Document {
-    val factory = DocumentBuilderFactory.newInstance()
-    val builder = factory.newDocumentBuilder()
+    val builder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
     val file = File("C:/Users/alexh/IdeaProjects/Sudoku-Backend/Sudoku/src/main/resources/constants/${fileName}.xml")
 
     return builder.parse(file)
