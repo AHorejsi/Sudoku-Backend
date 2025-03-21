@@ -7,7 +7,7 @@ import com.alexh.utils.connect
 import io.ktor.server.application.*
 import org.slf4j.LoggerFactory
 
-private val logger = LoggerFactory.getLogger("Application-Main")
+private val logger = LoggerFactory.getLogger("Main")
 
 fun main(args: Array<String>) =
     EngineMain.main(args)

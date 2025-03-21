@@ -80,10 +80,7 @@ sealed class UpdateUserResponse {
 }
 
 @Serializable
-class DeleteUserRequest(
-    val userId: Int,
-    val usernameOrEmail: String
-)
+class DeleteUserRequest(val userId: Int)
 
 @Serializable
 sealed class DeleteUserResponse {

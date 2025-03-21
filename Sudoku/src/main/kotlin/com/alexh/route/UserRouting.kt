@@ -125,9 +125,8 @@ private suspend fun deleteUser(
         val request = call.receive(DeleteUserRequest::class)
 
         val userId = request.userId
-        val usernameOrEmail = request.usernameOrEmail
 
-        return@runCatching service.deleteUser(userId, usernameOrEmail)
+        return@runCatching service.deleteUser(userId)
     }
 }
 

@@ -52,7 +52,7 @@ class UserService(private val dbConn: Connection) {
             "WHERE $USER_TABLE_ID = ? AND $USERNAME = ? AND $EMAIL = ?;"
         private const val DELETE_USER =
             "DELETE FROM $USER_TABLE " +
-            "WHERE $USER_TABLE_ID = ? AND ($USERNAME = ? OR $EMAIL = ?);"
+            "WHERE $USER_TABLE_ID = ?;"
 
         private const val CREATE_PUZZLE =
             "INSERT INTO $PUZZLE_TABLE ($JSON, $USER_ID)" +
@@ -198,14 +198,9 @@ class UserService(private val dbConn: Connection) {
         }
     }
 
-    suspend fun deleteUser(
-        userId: Int,
-        usernameOrEmail: String
-    ): DeleteUserResponse = withContext(Dispatchers.IO) {
+    suspend fun deleteUser(userId: Int): DeleteUserResponse = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(DELETE_USER).use { stmt ->
             stmt.setInt(1, userId)
-            stmt.setString(2, usernameOrEmail)
-            stmt.setString(3, usernameOrEmail)
 
             val amountOfRowsDeleted = stmt.executeUpdate()
 

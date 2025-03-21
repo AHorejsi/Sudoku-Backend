@@ -5,10 +5,6 @@
                 <encoder>
                     <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %X{call-id} %-5level %logger{36} - %msg%n</pattern>
                 </encoder>
-
-                <filter class='ch.qos.logback.classic.filter.ThresholdFilter'>
-                    <level>TRACE</level>
-                </filter>
             </appender>
 
             <root>

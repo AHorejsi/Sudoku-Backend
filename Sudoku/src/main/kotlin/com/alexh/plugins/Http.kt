@@ -82,11 +82,7 @@ private fun isValidPassword(password: String): Boolean {
     val digitCount = password.count { it.isDigit() }
     val symbolCount = password.count { !it.isLetterOrDigit() }
 
-    if (0 == letterCount || 0 == digitCount || 0 == symbolCount) {
-        return false
-    }
-
-    return true
+    return !(0 == letterCount || 0 == digitCount || 0 == symbolCount)
 }
 
 private fun isValidEmail(email: String): Boolean {
