@@ -41,6 +41,9 @@ sealed class CreateUserResponse {
 
     @Serializable
     object DuplicateFound : CreateUserResponse()
+
+    @Serializable
+    object ConditionsFailed : CreateUserResponse()
 }
 
 @Serializable

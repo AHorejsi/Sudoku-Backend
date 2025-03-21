@@ -5,6 +5,7 @@ import com.alexh.models.*
 import com.alexh.utils.*
 import io.ktor.server.application.*
 import io.ktor.server.config.*
+import io.ktor.server.plugins.requestvalidation.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
@@ -60,18 +61,30 @@ private suspend fun createUser(
 ): Result<CreateUserResponse> = runCatching {
     source.connection.use {
         val service = UserService(it)
-        val request = call.receive(CreateUserRequest::class)
+        val request = getUserRegistration(call)
         val salt = config.property("ktor.security.encryption.salt").getString()
 
-        val username = request.username
-        val password = request.password + salt
-        val email = request.email
+        if (null !== request) {
+            val username = request.username
+            val password = request.password + salt
+            val email = request.email
 
-        val hashedPassword = BCrypt.withDefaults().hashToString(cost, password.toCharArray())
+            val hashedPassword = BCrypt.withDefaults().hashToString(cost, password.toCharArray())
 
-        return@runCatching service.createUser(username, hashedPassword, email)
+            return@runCatching service.createUser(username, hashedPassword, email)
+        }
+
+        return Result.success(CreateUserResponse.ConditionsFailed)
     }
 }
+
+private suspend fun getUserRegistration(call: ApplicationCall): CreateUserRequest? =
+    try {
+        call.receive(CreateUserRequest::class)
+    }
+    catch (ex: RequestValidationException) {
+        null
+    }
 
 private suspend fun readUser(
     source: DataSource,
