@@ -5,7 +5,6 @@ import com.alexh.models.*
 import com.alexh.utils.*
 import io.ktor.server.application.*
 import io.ktor.server.config.*
-import io.ktor.server.plugins.requestvalidation.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
@@ -61,30 +60,22 @@ private suspend fun createUser(
 ): Result<CreateUserResponse> = runCatching {
     source.connection.use {
         val service = UserService(it)
-        val request = getUserRegistration(call)
         val salt = config.property("ktor.security.encryption.salt").getString()
+        val request = call.receive(CreateUserRequest::class)
 
-        if (null !== request) {
-            val username = request.username
-            val password = request.password + salt
-            val email = request.email
-
-            val hashedPassword = BCrypt.withDefaults().hashToString(cost, password.toCharArray())
-
-            return@runCatching service.createUser(username, hashedPassword, email)
+        if (!request.valid) {
+            return@runCatching CreateUserResponse.ConditionsFailed
         }
 
-        return Result.success(CreateUserResponse.ConditionsFailed)
+        val username = request.username.trim()
+        val password = request.password + salt
+        val email = request.email.trim()
+
+        val hashedPassword = BCrypt.withDefaults().hashToString(cost, password.toCharArray())
+
+        return@runCatching service.createUser(username, hashedPassword, email)
     }
 }
-
-private suspend fun getUserRegistration(call: ApplicationCall): CreateUserRequest? =
-    try {
-        call.receive(CreateUserRequest::class)
-    }
-    catch (ex: RequestValidationException) {
-        null
-    }
 
 private suspend fun readUser(
     source: DataSource,
@@ -96,7 +87,7 @@ private suspend fun readUser(
         val request = call.receive(ReadUserRequest::class)
         val salt = config.property("ktor.security.encryption.salt").getString()
 
-        val usernameOrEmail = request.usernameOrEmail
+        val usernameOrEmail = request.usernameOrEmail.trim()
         val password = request.password + salt
 
         val hashedPassword = BCrypt.withDefaults().hashToString(cost, password.toCharArray())
@@ -115,9 +106,9 @@ private suspend fun updateUser(
 
         val userId = request.userId
         val oldUsername = request.oldUsername
-        val newUsername = request.newUsername
+        val newUsername = request.newUsername.trim()
         val oldEmail = request.oldEmail
-        val newEmail = request.newEmail
+        val newEmail = request.newEmail.trim()
 
         return@runCatching service.updateUser(
             userId,

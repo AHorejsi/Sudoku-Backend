@@ -1,12 +1,9 @@
 package com.alexh.plugins
 
-import com.alexh.models.CreateUserRequest
-import com.alexh.models.UpdateUserRequest
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.cors.routing.*
-import io.ktor.server.plugins.requestvalidation.*
 
 fun configureHttp(app: Application) {
     app.install(CORS) {
@@ -41,27 +38,6 @@ fun configureHttp(app: Application) {
         }
     }
 
-    app.install(RequestValidation) {
-        this.validate<CreateUserRequest> { req ->
-            if (!isValidPassword(req.password)) {
-                return@validate ValidationResult.Invalid("Password requirements have not been met")
-            }
-            if (!isValidEmail(req.email)) {
-                return@validate ValidationResult.Invalid("Email format is incorrect")
-            }
-
-            return@validate ValidationResult.Valid
-        }
-
-        this.validate<UpdateUserRequest> { req ->
-            if (!isValidEmail(req.newEmail)) {
-                return@validate ValidationResult.Invalid("Email format is incorrect")
-            }
-
-            return@validate ValidationResult.Valid
-        }
-    }
-
     app.install(Compression) {
         this.gzip {
             this.matchContentType(ContentType.Application.Any)
@@ -69,26 +45,4 @@ fun configureHttp(app: Application) {
             this.priority = 1.0
         }
     }
-}
-
-private fun isValidPassword(password: String): Boolean {
-    val minLength = 16
-
-    if (password.length < minLength) {
-        return false
-    }
-
-    val letterCount = password.count { it.isLetter() }
-    val digitCount = password.count { it.isDigit() }
-    val symbolCount = password.count { !it.isLetterOrDigit() }
-
-    return !(0 == letterCount || 0 == digitCount || 0 == symbolCount)
-}
-
-private fun isValidEmail(email: String): Boolean {
-    val pattern = "[a-zA-Z0-9\\+\\.\\_\\%\\-\\+]{1,256}" +
-                        "\\@[a-zA-Z0-9][a-zA-Z0-9\\-]{0,64}" +
-                        "(\\.[a-zA-Z0-9][a-zA-Z0-9\\-]{0,25})+"
-
-    return pattern.toRegex().matches(email)
 }

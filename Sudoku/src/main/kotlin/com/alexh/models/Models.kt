@@ -1,6 +1,8 @@
 package com.alexh.models
 
 import com.alexh.game.SudokuJson
+import com.alexh.utils.isValidEmail
+import com.alexh.utils.isValidPassword
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -32,7 +34,14 @@ class CreateUserRequest(
     val username: String,
     val password: String,
     val email: String
-)
+) {
+    companion object {
+        val MIN_PASSWORD_LENGTH = 12
+    }
+
+    val valid: Boolean
+        get() = isValidPassword(this.password, CreateUserRequest.MIN_PASSWORD_LENGTH) && isValidEmail(this.email)
+}
 
 @Serializable
 sealed class CreateUserResponse {

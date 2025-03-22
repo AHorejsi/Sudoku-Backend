@@ -2,7 +2,6 @@ package com.alexh.utils
 
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.plugins.requestvalidation.*
 import io.ktor.server.response.*
 import org.slf4j.Logger
 import java.sql.SQLException
@@ -22,7 +21,7 @@ suspend inline fun <reified TType : Any> handleResult(
             is SQLException -> HttpStatusCode.BadGateway
             is CookieException -> HttpStatusCode.UnprocessableEntity
             is JwtException -> HttpStatusCode.Unauthorized
-            is NullPointerException, is RequestValidationException -> HttpStatusCode.BadRequest
+            is NullPointerException -> HttpStatusCode.BadRequest
             else -> HttpStatusCode.InternalServerError
         }
 
