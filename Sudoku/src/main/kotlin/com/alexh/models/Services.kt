@@ -27,7 +27,7 @@ class UserService(private val dbConn: Connection) {
                 "$USERNAME TEXT UNIQUE NOT NULL," +
                 "$PASSWORD TEXT NOT NULL," +
                 "$EMAIL TEXT UNIQUE NOT NULL" +
-            ")"
+            ");"
         private const val CREATE_PUZZLE_TABLE =
             "CREATE TABLE IF NOT EXISTS $PUZZLE_TABLE (" +
                 "$PUZZLE_TABLE_ID SERIAL PRIMARY KEY," +
@@ -35,7 +35,7 @@ class UserService(private val dbConn: Connection) {
                 "$USER_ID INT REFERENCES $USER_TABLE($USER_TABLE_ID) " +
                     "ON UPDATE CASCADE " +
                     "ON DELETE CASCADE" +
-            ")"
+            ");"
 
         private const val CREATE_USER =
             "INSERT INTO $USER_TABLE ($USERNAME, $PASSWORD, $EMAIL) " +
