@@ -63,7 +63,7 @@ class UserService(private val dbConn: Connection) {
             "WHERE $PUZZLE_TABLE_ID = ?;"
         private const val DELETE_PUZZLE =
             "DELETE FROM $PUZZLE_TABLE " +
-            "WHERE $PUZZLE_TABLE_ID = ? AND $USER_ID = ?;"
+            "WHERE $PUZZLE_TABLE_ID = ?;"
     }
 
     init {
@@ -84,13 +84,18 @@ class UserService(private val dbConn: Connection) {
     }
 
     private fun doUserCreation(stmt: PreparedStatement): CreateUserResponse {
-        runCatching {
+        try {
             stmt.executeUpdate()
-        }.onFailure { ex->
-            return checkForExpectedUserCreationErrors(ex)
+        }
+        catch (ex: SQLException) { // check for expected errors
+            val result = ex.message?.startsWith("Unique")
+
+            if (true == result) {
+                return CreateUserResponse.DuplicateFound
+            }
         }
 
-        // Serves to check for errors that were not expected
+        // Check for errors that were not expected
         stmt.generatedKeys.use { keys ->
             if (!keys.next()) {
                 throw SQLException("Failed to create User")
@@ -99,12 +104,6 @@ class UserService(private val dbConn: Connection) {
 
         return CreateUserResponse.Success
     }
-
-    private fun checkForExpectedUserCreationErrors(ex: Throwable): CreateUserResponse =
-        if (ex is SQLException && ex.message!!.startsWith("Unique"))
-            CreateUserResponse.DuplicateFound
-        else
-            throw ex
 
     suspend fun readUser(
         usernameOrEmail: String,
@@ -193,7 +192,7 @@ class UserService(private val dbConn: Connection) {
             return@withContext when (amountOfRowsUpdated) {
                 0 -> UpdateUserResponse.FailedToFind
                 1 -> UpdateUserResponse.Success(newUsername, newEmail)
-                else -> throw SQLException("More than one user updated")
+                else -> throw RuntimeException("More than one user updated")
             }
         }
     }
@@ -207,12 +206,12 @@ class UserService(private val dbConn: Connection) {
             return@withContext when (amountOfRowsDeleted) {
                 0 -> DeleteUserResponse.FailedToFind
                 1 -> DeleteUserResponse.Success
-                else -> throw SQLException("More than one user deleted")
+                else -> throw RuntimeException("More than one user deleted")
             }
         }
     }
 
-    suspend fun createPuzzle(json: String, userId: Int): Puzzle = withContext(Dispatchers.IO) {
+    suspend fun createPuzzle(json: String, userId: Int): CreatePuzzleResponse = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(CREATE_PUZZLE, Statement.RETURN_GENERATED_KEYS).use { stmt ->
             stmt.setString(1, json)
             stmt.setInt(2, userId)
@@ -225,28 +224,40 @@ class UserService(private val dbConn: Connection) {
                 }
                 else {
                     val id = keys.getInt(UserService.PUZZLE_TABLE_ID)
+                    val puzzle = Puzzle(id, json)
 
-                    return@withContext Puzzle(id, json)
+                    return@withContext CreatePuzzleResponse.Success(puzzle)
                 }
             }
         }
     }
 
-    suspend fun updatePuzzle(puzzleId: Int, json: String): Unit = withContext(Dispatchers.IO) {
+    suspend fun updatePuzzle(puzzleId: Int, json: String): UpdatePuzzleResponse = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(UPDATE_PUZZLE).use { stmt ->
             stmt.setString(1, json)
             stmt.setInt(2, puzzleId)
 
-            stmt.executeUpdate()
+            val amountOfRowsChanged = stmt.executeUpdate()
+
+            return@withContext when (amountOfRowsChanged) {
+                0 -> UpdatePuzzleResponse.FailedToFind
+                1 -> UpdatePuzzleResponse.Success
+                else -> throw RuntimeException("More than one puzzle updated")
+            }
         }
     }
 
-    suspend fun deletePuzzle(puzzleId: Int, userId: Int): Unit = withContext(Dispatchers.IO) {
+    suspend fun deletePuzzle(puzzleId: Int): DeletePuzzleResponse = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(DELETE_PUZZLE).use { stmt ->
             stmt.setInt(1, puzzleId)
-            stmt.setInt(2, userId)
 
-            stmt.executeUpdate()
+            val amountOfRowsDeleted = stmt.executeUpdate()
+
+            return@withContext when (amountOfRowsDeleted) {
+                0 -> DeletePuzzleResponse.FailedToFind
+                1 -> DeletePuzzleResponse.Success
+                else -> throw RuntimeException("More than one puzzle deleted")
+            }
         }
     }
 }

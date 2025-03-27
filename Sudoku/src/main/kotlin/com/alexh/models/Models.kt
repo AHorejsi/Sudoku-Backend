@@ -1,23 +1,7 @@
 package com.alexh.models
 
 import com.alexh.game.SudokuJson
-import com.alexh.utils.isValidEmail
-import com.alexh.utils.isValidPassword
 import kotlinx.serialization.Serializable
-
-@Serializable
-class Puzzle(
-    @Suppress("UNUSED") val id: Int,
-    @Suppress("UNUSED") val json: String
-)
-
-@Serializable
-class User(
-    @Suppress("UNUSED") val id: Int,
-    @Suppress("UNUSED") val username: String,
-    @Suppress("UNUSED") val email: String,
-    @Suppress("UNUSED") val puzzles: List<Puzzle>
-)
 
 @Serializable
 class GenerateRequest(
@@ -34,14 +18,7 @@ class CreateUserRequest(
     val username: String,
     val password: String,
     val email: String
-) {
-    companion object {
-        val MIN_PASSWORD_LENGTH = 12
-    }
-
-    val valid: Boolean
-        get() = isValidPassword(this.password, CreateUserRequest.MIN_PASSWORD_LENGTH) && isValidEmail(this.email)
-}
+)
 
 @Serializable
 sealed class CreateUserResponse {
@@ -101,4 +78,37 @@ sealed class DeleteUserResponse {
 
     @Serializable
     object FailedToFind : DeleteUserResponse()
+}
+
+@Serializable
+class CreatePuzzleRequest(val json: String, val userId: Int)
+
+@Serializable
+sealed class CreatePuzzleResponse {
+    @Serializable
+    class Success(@Suppress("UNUSED") val puzzle: Puzzle) : CreatePuzzleResponse()
+}
+
+@Serializable
+class UpdatePuzzleRequest(val puzzleId: Int, val json: String)
+
+@Serializable
+sealed class UpdatePuzzleResponse {
+    @Serializable
+    object Success : UpdatePuzzleResponse()
+
+    @Serializable
+    object FailedToFind : UpdatePuzzleResponse()
+}
+
+@Serializable
+class DeletePuzzleRequest(val puzzleId: Int)
+
+@Serializable
+sealed class DeletePuzzleResponse {
+    @Serializable
+    object Success : DeletePuzzleResponse()
+
+    @Serializable
+    object FailedToFind : DeletePuzzleResponse()
 }

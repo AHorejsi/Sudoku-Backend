@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
 private val logger = LoggerFactory.getLogger("User-Routing")
-private val cost = 12
+private const val cost = 12
 
 fun configureEndpointsForUsers(app: Application, source: DataSource) {
     app.routing {
@@ -58,18 +58,19 @@ private suspend fun createUser(
     config: ApplicationConfig,
     call: ApplicationCall
 ): Result<CreateUserResponse> = runCatching {
+    val request = call.receive(CreateUserRequest::class)
+
+    if (!isValidPassword(request.password, 12) || !isValidEmail(request.email)) {
+        return@runCatching CreateUserResponse.ConditionsFailed
+    }
+
     source.connection.use {
-        val service = UserService(it)
         val salt = config.property("ktor.security.encryption.salt").getString()
-        val request = call.receive(CreateUserRequest::class)
+        val service = UserService(it)
 
-        if (!request.valid) {
-            return@runCatching CreateUserResponse.ConditionsFailed
-        }
-
-        val username = request.username.trim()
+        val username = request.username.lowercase().trim()
         val password = request.password + salt
-        val email = request.email.trim()
+        val email = request.email.lowercase().trim()
 
         val hashedPassword = BCrypt.withDefaults().hashToString(cost, password.toCharArray())
 
@@ -82,12 +83,13 @@ private suspend fun readUser(
     config: ApplicationConfig,
     call: ApplicationCall
 ): Result<ReadUserResponse> = runCatching {
+    val request = call.receive(ReadUserRequest::class)
+
     source.connection.use {
         val service = UserService(it)
-        val request = call.receive(ReadUserRequest::class)
         val salt = config.property("ktor.security.encryption.salt").getString()
 
-        val usernameOrEmail = request.usernameOrEmail.trim()
+        val usernameOrEmail = request.usernameOrEmail.lowercase().trim()
         val password = request.password + salt
 
         val hashedPassword = BCrypt.withDefaults().hashToString(cost, password.toCharArray())
@@ -100,15 +102,16 @@ private suspend fun updateUser(
     source: DataSource,
     call: ApplicationCall
 ): Result<UpdateUserResponse> = runCatching {
+    val request = call.receive(UpdateUserRequest::class)
+
     source.connection.use {
         val service = UserService(it)
-        val request = call.receive(UpdateUserRequest::class)
 
         val userId = request.userId
         val oldUsername = request.oldUsername
-        val newUsername = request.newUsername.trim()
+        val newUsername = request.newUsername.lowercase().trim()
         val oldEmail = request.oldEmail
-        val newEmail = request.newEmail.trim()
+        val newEmail = request.newEmail.lowercase().trim()
 
         return@runCatching service.updateUser(
             userId,
@@ -124,9 +127,10 @@ private suspend fun deleteUser(
     source: DataSource,
     call: ApplicationCall
 ): Result<DeleteUserResponse> = runCatching {
+    val request = call.receive(DeleteUserRequest::class)
+
     source.connection.use {
         val service = UserService(it)
-        val request = call.receive(DeleteUserRequest::class)
 
         val userId = request.userId
 
@@ -134,51 +138,40 @@ private suspend fun deleteUser(
     }
 }
 
-private suspend fun createPuzzle(source: DataSource, call: ApplicationCall): Result<Puzzle> = runCatching {
+private suspend fun createPuzzle(source: DataSource, call: ApplicationCall): Result<CreatePuzzleResponse> = runCatching {
+    val request = call.receive(CreatePuzzleRequest::class)
+
     source.connection.use {
-        val cookies = call.request.cookies
-
-        val json = getCookie(cookies, Cookies.JSON)
-        val userId = getCookie(cookies, Cookies.USER_ID).toInt()
-
         val service = UserService(it)
+
+        val json = request.json
+        val userId = request.userId
 
         return@runCatching service.createPuzzle(json, userId)
     }
 }
 
-private suspend fun updatePuzzle(source: DataSource, call: ApplicationCall): Result<Unit> = runCatching {
+private suspend fun updatePuzzle(source: DataSource, call: ApplicationCall): Result<UpdatePuzzleResponse> = runCatching {
+    val request = call.receive(UpdatePuzzleRequest::class)
+
     source.connection.use {
-        val cookies = call.request.cookies
-
-        val puzzleId = getCookie(cookies, Cookies.PUZZLE_ID).toInt()
-        val json = getCookie(cookies, Cookies.JSON)
-
         val service = UserService(it)
 
-        service.updatePuzzle(puzzleId, json)
+        val puzzleId = request.puzzleId
+        val json = request.json
+
+        return@runCatching service.updatePuzzle(puzzleId, json)
     }
 }
 
-private suspend fun deletePuzzle(source: DataSource, call: ApplicationCall): Result<Unit> = runCatching {
+private suspend fun deletePuzzle(source: DataSource, call: ApplicationCall): Result<DeletePuzzleResponse> = runCatching {
+    val request = call.receive(DeletePuzzleRequest::class)
+
     source.connection.use {
-        val cookies = call.request.cookies
-
-        val userId = getCookie(cookies, Cookies.USER_ID).toInt()
-        val puzzleId = getCookie(cookies, Cookies.PUZZLE_ID).toInt()
-
         val service = UserService(it)
 
-        service.deletePuzzle(puzzleId, userId)
+        val puzzleId = request.puzzleId
+
+        return@runCatching service.deletePuzzle(puzzleId)
     }
-}
-
-private fun getCookie(cookies: RequestCookies, cookieName: String): String {
-    val cookieValue = cookies[cookieName]
-
-    if (null === cookieValue) {
-        throw CookieException("Cookie $cookieName not found")
-    }
-
-    return cookieValue
 }
