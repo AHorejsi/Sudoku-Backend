@@ -51,7 +51,7 @@ internal class SudokuNode(
     private val _col: MutableSet<SudokuNode> = HashSet(length)
     private val _box: MutableSet<SudokuNode> = HashSet(length)
     private val _hyper: MutableSet<SudokuNode> = HashSet(length)
-    private lateinit var _all: Set<SudokuNode>
+    private var _all: Set<SudokuNode> = emptySet()
 
     var value: Int? = null
     private var changed: Boolean = false
