@@ -11,7 +11,13 @@ class GenerateRequest(
 )
 
 @Serializable
-class GenerateResponse(@Suppress("UNUSED") val puzzle: SudokuJson)
+sealed class GenerateResponse {
+    @Serializable
+    class Success(@Suppress("UNUSED") val puzzle: SudokuJson) : GenerateResponse()
+
+    @Serializable
+    object UnfilledFields : GenerateResponse()
+}
 
 @Serializable
 class CreateUserRequest(

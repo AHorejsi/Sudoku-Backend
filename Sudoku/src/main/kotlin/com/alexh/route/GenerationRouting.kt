@@ -24,6 +24,10 @@ fun configureEndpointsForGeneratingPuzzles(app: Application) {
 private suspend fun generatePuzzle(call: ApplicationCall): Result<GenerateResponse> = runCatching {
     val request = call.receive(GenerateRequest::class)
 
+    if (request.dimension.isEmpty() || request.difficulty.isEmpty()) {
+        return@runCatching GenerateResponse.UnfilledFields
+    }
+
     val dimension = Dimension.valueOf(request.dimension)
     val difficulty = Difficulty.valueOf(request.difficulty)
     val games = request.games.map{ Game.valueOf(it) }.toSortedSet()
@@ -31,5 +35,5 @@ private suspend fun generatePuzzle(call: ApplicationCall): Result<GenerateRespon
 
     val sudoku = makeSudoku(info)
 
-    return@runCatching GenerateResponse(sudoku)
+    return@runCatching GenerateResponse.Success(sudoku)
 }
