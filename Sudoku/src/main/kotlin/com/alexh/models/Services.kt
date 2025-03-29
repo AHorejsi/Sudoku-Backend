@@ -91,9 +91,9 @@ class UserService(private val dbConn: Connection) {
             stmt.executeUpdate()
         }
         catch (ex: SQLException) { // check for expected errors
-            val result = ex.message?.startsWith("Unique")
+            val result = ex.message?.startsWith("Unique") ?: false
 
-            if (true == result) {
+            if (result) {
                 return CreateUserResponse.DuplicateFound
             }
         }
