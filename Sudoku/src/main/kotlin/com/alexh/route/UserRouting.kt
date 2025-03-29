@@ -1,10 +1,8 @@
 package com.alexh.route
 
-import at.favre.lib.crypto.bcrypt.BCrypt
 import com.alexh.models.*
 import com.alexh.utils.*
 import io.ktor.server.application.*
-import io.ktor.server.config.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
@@ -16,12 +14,12 @@ private const val cost = 12
 fun configureEndpointsForUsers(app: Application, source: DataSource) {
     app.routing {
         this.put(Endpoints.CREATE_USER) {
-            val result = createUser(source, app.environment.config, this.call)
+            val result = createUser(source, this.call)
 
             handleResult(result, this.call, logger, "Successful call to ${Endpoints.CREATE_USER}")
         }
         this.post(Endpoints.READ_USER) {
-            val result = readUser(source, app.environment.config, this.call)
+            val result = readUser(source, this.call)
 
             handleResult(result, this.call, logger, "Successful call to ${Endpoints.READ_USER}")
         }
@@ -55,7 +53,6 @@ fun configureEndpointsForUsers(app: Application, source: DataSource) {
 
 private suspend fun createUser(
     source: DataSource,
-    config: ApplicationConfig,
     call: ApplicationCall
 ): Result<CreateUserResponse> = runCatching {
     val request = call.receive(CreateUserRequest::class)
@@ -65,36 +62,29 @@ private suspend fun createUser(
     }
 
     source.connection.use {
-        val salt = config.property("ktor.security.encryption.salt").getString()
         val service = UserService(it)
 
         val username = request.username.lowercase().trim()
-        val password = request.password + salt
+        val password = request.password
         val email = request.email.lowercase().trim()
 
-        val hashedPassword = BCrypt.withDefaults().hashToString(cost, password.toCharArray())
-
-        return@runCatching service.createUser(username, hashedPassword, email)
+        return@runCatching service.createUser(username, password, email)
     }
 }
 
 private suspend fun readUser(
     source: DataSource,
-    config: ApplicationConfig,
     call: ApplicationCall
 ): Result<ReadUserResponse> = runCatching {
     val request = call.receive(ReadUserRequest::class)
 
     source.connection.use {
         val service = UserService(it)
-        val salt = config.property("ktor.security.encryption.salt").getString()
 
         val usernameOrEmail = request.usernameOrEmail.lowercase().trim()
-        val password = request.password + salt
+        val password = request.password
 
-        val hashedPassword = BCrypt.withDefaults().hashToString(cost, password.toCharArray())
-
-        return@runCatching service.readUser(usernameOrEmail, password, hashedPassword)
+        return@runCatching service.readUser(usernameOrEmail, password)
     }
 }
 

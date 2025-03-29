@@ -1,6 +1,5 @@
 package com.alexh.models
 
-import at.favre.lib.crypto.bcrypt.BCrypt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.*
@@ -45,7 +44,7 @@ class UserService(private val dbConn: Connection) {
                     "$PUZZLE_TABLE.$PUZZLE_TABLE_ID AS $PUZZLE_ID, $JSON " +
             "FROM $USER_TABLE " +
             "LEFT JOIN $PUZZLE_TABLE ON $USER_TABLE.$USER_TABLE_ID = $PUZZLE_TABLE.$USER_ID " +
-            "WHERE ($USERNAME = ? OR $EMAIL = ?);"
+            "WHERE ($USERNAME = ? OR $EMAIL = ?) AND $PASSWORD = ?;"
         private const val UPDATE_USER =
             "UPDATE $USER_TABLE " +
             "SET $USERNAME = ?, $EMAIL = ? " +
@@ -73,7 +72,11 @@ class UserService(private val dbConn: Connection) {
         }
     }
 
-    suspend fun createUser(username: String, password: String, email: String): CreateUserResponse = withContext(Dispatchers.IO) {
+    suspend fun createUser(
+        username: String,
+        password: String,
+        email: String
+    ): CreateUserResponse = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(CREATE_USER, Statement.RETURN_GENERATED_KEYS).use { stmt ->
             stmt.setString(1, username)
             stmt.setString(2, password)
@@ -107,34 +110,29 @@ class UserService(private val dbConn: Connection) {
 
     suspend fun readUser(
         usernameOrEmail: String,
-        password: String,
-        hashedPassword: String
+        password: String
     ): ReadUserResponse = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(GET_USER).use { stmt ->
             stmt.setString(1, usernameOrEmail)
             stmt.setString(2, usernameOrEmail)
+            stmt.setString(3, password)
 
             stmt.executeQuery().use { results ->
                 return@withContext if (results.next())
-                    this@UserService.buildUser(results, password, hashedPassword)
+                    this@UserService.buildUser(results)
                 else
                     ReadUserResponse.FailedToFind
             }
         }
     }
 
-    private fun buildUser(results: ResultSet, password: String, hashedPassword: String): ReadUserResponse {
+    private fun buildUser(results: ResultSet): ReadUserResponse {
         val user = if (results.isLast)
             this.buildUserWithPotentiallyNoPuzzles(results)
         else
             this.buildUserWithManyPuzzles(results)
 
-        val login = BCrypt.verifyer().verify(password.toCharArray(), hashedPassword)
-
-        return if (login.verified)
-            ReadUserResponse.Success(user)
-        else
-            ReadUserResponse.FailedToFind
+        return ReadUserResponse.Success(user)
     }
 
     private fun buildUserWithPotentiallyNoPuzzles(results: ResultSet): User {
