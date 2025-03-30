@@ -1,12 +1,15 @@
 package com.alexh.route
 
+import at.favre.lib.crypto.bcrypt.BCrypt
 import com.alexh.models.*
 import com.alexh.utils.*
 import io.ktor.server.application.*
+import io.ktor.server.config.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
+import kotlin.random.Random
 
 private val logger = LoggerFactory.getLogger("User-Routing")
 private const val cost = 12
@@ -64,12 +67,32 @@ private suspend fun createUser(
     source.connection.use {
         val service = UserService(it)
 
+        val staticSalt = System.getenv("SUDOKU_SALT")
+        val dynamicSalt = generateSalt()
+        val password = createPassword(request.password, staticSalt, dynamicSalt)
+
         val username = request.username.lowercase().trim()
-        val password = request.password
+        val passwordHash = BCrypt.withDefaults().hashToString(cost, password.toCharArray())
         val email = request.email.lowercase().trim()
 
-        return@runCatching service.createUser(username, password, email)
+        return@runCatching service.createUser(username, passwordHash, email, dynamicSalt)
     }
+}
+
+private fun generateSalt(): String {
+    val length = 15
+    val min = Char.MIN_VALUE.code
+    val max = Char.MAX_VALUE.code + 1
+
+    val str = StringBuilder(length)
+
+    repeat(length) { _ ->
+        val char = Random.nextInt(min, max).toChar()
+
+        str.append(char)
+    }
+
+    return str.toString()
 }
 
 private suspend fun readUser(

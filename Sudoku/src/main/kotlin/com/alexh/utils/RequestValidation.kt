@@ -10,3 +10,6 @@ fun isValidEmail(email: String): Boolean {
 
     return pattern.toRegex().matches(email)
 }
+
+fun createPassword(password: String, salt1: String, salt2: String): String =
+    salt1 + password + salt2

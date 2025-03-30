@@ -16,6 +16,7 @@ repositories {
 }
 
 dependencies {
+    implementation "at.favre.lib:bcrypt:0.10.2"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation "org.postgresql:postgresql:$postgres_version"
     implementation "org.slf4j:slf4j-api:1.7.25"

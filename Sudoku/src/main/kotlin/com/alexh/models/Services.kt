@@ -1,5 +1,7 @@
 package com.alexh.models
 
+import at.favre.lib.crypto.bcrypt.BCrypt
+import com.alexh.utils.createPassword
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.*
@@ -12,6 +14,7 @@ class UserService(private val dbConn: Connection) {
         const val USERNAME = "username"
         const val PASSWORD = "password"
         const val EMAIL = "email"
+        const val SALT = "salt"
 
         const val PUZZLE_TABLE = "Puzzles"
         const val PUZZLE_TABLE_ID = "id"
@@ -25,7 +28,8 @@ class UserService(private val dbConn: Connection) {
                 "$USER_TABLE_ID SERIAL PRIMARY KEY," +
                 "$USERNAME TEXT UNIQUE NOT NULL," +
                 "$PASSWORD TEXT NOT NULL," +
-                "$EMAIL TEXT UNIQUE NOT NULL" +
+                "$EMAIL TEXT UNIQUE NOT NULL," +
+                "$SALT TEXT NOT NULL" +
             ");"
         private const val CREATE_PUZZLE_TABLE =
             "CREATE TABLE IF NOT EXISTS $PUZZLE_TABLE (" +
@@ -37,14 +41,14 @@ class UserService(private val dbConn: Connection) {
             ");"
 
         private const val CREATE_USER =
-            "INSERT INTO $USER_TABLE ($USERNAME, $PASSWORD, $EMAIL) " +
-            "VALUES (?, ?, ?);"
+            "INSERT INTO $USER_TABLE ($USERNAME, $PASSWORD, $EMAIL, $SALT) " +
+            "VALUES (?, ?, ?, ?);"
         private const val GET_USER =
-            "SELECT $USER_TABLE.$USER_TABLE_ID AS $USER_ID, $USERNAME, $EMAIL, $PASSWORD, " +
+            "SELECT $USER_TABLE.$USER_TABLE_ID AS $USER_ID, $USERNAME, $EMAIL, $PASSWORD, $SALT, " +
                     "$PUZZLE_TABLE.$PUZZLE_TABLE_ID AS $PUZZLE_ID, $JSON " +
             "FROM $USER_TABLE " +
             "LEFT JOIN $PUZZLE_TABLE ON $USER_TABLE.$USER_TABLE_ID = $PUZZLE_TABLE.$USER_ID " +
-            "WHERE ($USERNAME = ? OR $EMAIL = ?) AND $PASSWORD = ?;"
+            "WHERE $USERNAME = ? OR $EMAIL = ?;"
         private const val UPDATE_USER =
             "UPDATE $USER_TABLE " +
             "SET $USERNAME = ?, $EMAIL = ? " +
@@ -75,12 +79,14 @@ class UserService(private val dbConn: Connection) {
     suspend fun createUser(
         username: String,
         password: String,
-        email: String
+        email: String,
+        salt: String
     ): CreateUserResponse = withContext(Dispatchers.IO) {
         this@UserService.dbConn.prepareStatement(CREATE_USER, Statement.RETURN_GENERATED_KEYS).use { stmt ->
             stmt.setString(1, username)
             stmt.setString(2, password)
             stmt.setString(3, email)
+            stmt.setString(4, salt)
 
             return@withContext this@UserService.doUserCreation(stmt)
         }
@@ -115,18 +121,28 @@ class UserService(private val dbConn: Connection) {
         this@UserService.dbConn.prepareStatement(GET_USER).use { stmt ->
             stmt.setString(1, usernameOrEmail)
             stmt.setString(2, usernameOrEmail)
-            stmt.setString(3, password)
 
             stmt.executeQuery().use { results ->
                 return@withContext if (results.next())
-                    this@UserService.buildUser(results)
+                    this@UserService.buildUser(results, password)
                 else
                     ReadUserResponse.FailedToFind
             }
         }
     }
 
-    private fun buildUser(results: ResultSet): ReadUserResponse {
+    private fun buildUser(results: ResultSet, providedPassword: String): ReadUserResponse {
+        val databasePassword = results.getString(UserService.PASSWORD)
+        val dynamicSalt = results.getString(UserService.SALT)
+        val staticSalt = System.getenv("SUDOKU_SALT")
+
+        val password = createPassword(providedPassword, staticSalt, dynamicSalt)
+        val login = BCrypt.verifyer().verify(password.toCharArray(), databasePassword)
+
+        if (!login.verified) {
+            return ReadUserResponse.FailedToFind
+        }
+
         val user = if (results.isLast)
             this.buildUserWithPotentiallyNoPuzzles(results)
         else
