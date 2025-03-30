@@ -10,12 +10,7 @@ class ApplicationTest {
     }
 
     @Test
-    fun testUsersCRUD() = testApplication {
-        TODO()
-    }
-
-    @Test
-    fun testPuzzlesCRUD() = testApplication {
+    fun testCrud() = testApplication {
         TODO()
     }
 }
