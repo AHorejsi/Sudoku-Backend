@@ -101,7 +101,7 @@ class UserService(private val dbConn: Connection) {
         // Check for errors that were not expected
         stmt.generatedKeys.use { keys ->
             if (!keys.next()) {
-                throw SQLException("Failed to create User")
+                return CreateUserResponse.FailedToCreate
             }
         }
 
@@ -218,14 +218,13 @@ class UserService(private val dbConn: Connection) {
 
             stmt.generatedKeys.use { keys ->
                 if (!keys.next()) {
-                    throw SQLException("Failed to create Puzzle")
+                    return@withContext CreatePuzzleResponse.FailedToCreate
                 }
-                else {
-                    val id = keys.getInt(UserService.PUZZLE_TABLE_ID)
-                    val puzzle = Puzzle(id, json)
 
-                    return@withContext CreatePuzzleResponse.Success(puzzle)
-                }
+                val id = keys.getInt(UserService.PUZZLE_TABLE_ID)
+                val puzzle = Puzzle(id, json)
+
+                return@withContext CreatePuzzleResponse.Success(puzzle)
             }
         }
     }

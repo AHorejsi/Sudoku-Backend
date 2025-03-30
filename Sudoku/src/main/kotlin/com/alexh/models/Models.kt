@@ -35,6 +35,9 @@ sealed class CreateUserResponse {
     object DuplicateFound : CreateUserResponse()
 
     @Serializable
+    object FailedToCreate : CreateUserResponse()
+
+    @Serializable
     object ConditionsFailed : CreateUserResponse()
 }
 
@@ -93,6 +96,9 @@ class CreatePuzzleRequest(val json: String, val userId: Int)
 sealed class CreatePuzzleResponse {
     @Serializable
     class Success(@Suppress("UNUSED") val puzzle: Puzzle) : CreatePuzzleResponse()
+
+    @Serializable
+    object FailedToCreate : CreatePuzzleResponse()
 }
 
 @Serializable
