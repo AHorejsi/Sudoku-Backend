@@ -1,5 +1,10 @@
 package com.alexh.utils
 
+import at.favre.lib.crypto.bcrypt.BCrypt
+import kotlin.random.Random
+
+private const val cost = 12
+
 fun isValidPassword(password: String, minLength: Int): Boolean =
     password.length >= minLength
 
@@ -11,5 +16,39 @@ fun isValidEmail(email: String): Boolean {
     return pattern.toRegex().matches(email)
 }
 
-fun createPassword(password: String, salt1: String, salt2: String): String =
-    salt1 + password + salt2
+fun createPassword(password: String): Pair<String, String> {
+    val staticSalt = System.getenv("SUDOKU_SALT")
+    val dynamicSalt = generateSalt()
+
+    val salted = staticSalt + password + dynamicSalt
+    val hashed = BCrypt.withDefaults().hashToString(cost, salted.toCharArray())
+
+    return hashed to dynamicSalt
+}
+
+private fun generateSalt(): String {
+    val length = 7
+    val min = Char.MIN_VALUE.code
+    val max = Char.MAX_VALUE.code + 1
+
+    val str = StringBuilder(length)
+
+    repeat(length) { _ ->
+        val char = Random.nextInt(min, max).toChar()
+
+        str.append(char)
+    }
+
+    return str.toString()
+}
+
+fun validatePassword(providedPassword: String, databasePassword: String, dynamicSalt: String): Boolean {
+    val staticSalt = System.getenv("SUDOKU_SALT")
+    val salted = staticSalt + providedPassword + dynamicSalt
+
+    val login = BCrypt.verifyer().verify(salted.toCharArray(), databasePassword)
+
+    return login.verified
+}
+
+

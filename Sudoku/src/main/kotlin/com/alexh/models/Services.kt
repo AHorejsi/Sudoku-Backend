@@ -2,6 +2,7 @@ package com.alexh.models
 
 import at.favre.lib.crypto.bcrypt.BCrypt
 import com.alexh.utils.createPassword
+import com.alexh.utils.validatePassword
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.*
@@ -134,12 +135,8 @@ class UserService(private val dbConn: Connection) {
     private fun buildUser(results: ResultSet, providedPassword: String): ReadUserResponse {
         val databasePassword = results.getString(UserService.PASSWORD)
         val dynamicSalt = results.getString(UserService.SALT)
-        val staticSalt = System.getenv("SUDOKU_SALT")
 
-        val password = createPassword(providedPassword, staticSalt, dynamicSalt)
-        val login = BCrypt.verifyer().verify(password.toCharArray(), databasePassword)
-
-        if (!login.verified) {
+        if (!validatePassword(providedPassword, databasePassword, dynamicSalt)) {
             return ReadUserResponse.FailedToFind
         }
 
