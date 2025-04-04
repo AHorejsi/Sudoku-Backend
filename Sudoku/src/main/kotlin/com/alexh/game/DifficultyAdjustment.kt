@@ -44,7 +44,7 @@ private fun checkLowerBound(
     lowerBound: Int
 ): Boolean {
     val rows = node.row.count{ null !== it.value } >= lowerBound
-    val cols = node.col.count{ null !== it.value } >= lowerBound
+    val cols = node.column.count{ null !== it.value } >= lowerBound
     val boxes = node.box.count{ null !== it.value } >= lowerBound
 
     var result = rows && cols && boxes

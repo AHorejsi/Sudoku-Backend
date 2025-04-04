@@ -5,7 +5,7 @@ import com.alexh.utils.get2d
 import com.alexh.utils.up
 import java.util.TreeSet
 
-internal fun initializeBoard(
+internal fun buildBoard(
     info: MakeSudokuCommand
 ): Pair<List<SudokuNode>, Set<Box>> {
     val length = info.dimension.length
@@ -42,19 +42,18 @@ private fun makeRegularNeighborhoods(
 ) {
     val range = 0 until length
 
-    makeNodes(neighborhoods, range, length)
+    makeNodes(neighborhoods, range)
     makeRegularConnections(neighborhoods, range, length, boxRows, boxCols)
 }
 
 private fun makeNodes(
     neighborhoods: MutableList<SudokuNode>,
-    range: IntRange,
-    length: Int
+    range: IntRange
 ) {
     for (rowIndex in range) {
         for (colIndex in range) {
             val place = Position(rowIndex, colIndex)
-            val newNode = SudokuNode(length, place)
+            val newNode = SudokuNode(place)
 
             neighborhoods.add(newNode)
         }
@@ -90,7 +89,7 @@ private fun includeRow(
         val other = neighborhoods.get2d(currentRowIndex, neighborColIndex, length)
 
         if (other !== current) {
-            current.addToRowSet(other)
+            current.addToRow(other)
         }
     }
 }
@@ -108,7 +107,7 @@ private fun includeCol(
         val other = neighborhoods.get2d(neighborRowIndex, currentColIndex, length)
 
         if (other !== current) {
-            current.addToColSet(other)
+            current.addToColumn(other)
         }
     }
 }
@@ -131,7 +130,7 @@ private fun includeBox(
             val other = neighborhoods.get2d(neighborRowIndex, neighborColIndex, length)
 
             if (other !== current) {
-                current.addToBoxSet(other)
+                current.addToBox(other)
             }
         }
     }
@@ -202,7 +201,7 @@ private fun makeIndividualHyperBox(
             val other = neighborhoods.get2d(rowIndex, colIndex, length)
 
             if (other !== current) {
-                current.addToHyperSet(other)
+                current.addToHyper(other)
             }
         }
     }
