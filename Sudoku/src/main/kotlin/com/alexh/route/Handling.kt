@@ -1,4 +1,4 @@
-package com.alexh.utils
+package com.alexh.route
 
 import io.ktor.http.*
 import io.ktor.server.application.*
