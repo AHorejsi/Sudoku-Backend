@@ -16,7 +16,6 @@ fun configureHttp(app: Application) {
         this.allowHeader(HttpHeaders.Authorization)
         this.allowHeader(HttpHeaders.AccessControlAllowOrigin)
         this.allowHeader(HttpHeaders.AcceptCharset)
-        this.allowHeader(HttpHeaders.Cookie)
         this.allowHeader(HttpHeaders.Connection)
         this.allowHeader(HttpHeaders.Accept)
         this.allowHeader(HttpHeaders.AcceptEncoding)
