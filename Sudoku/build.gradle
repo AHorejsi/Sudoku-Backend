@@ -38,11 +38,11 @@ dependencies {
     implementation "ch.qos.logback:logback-core:$logback_version"
     implementation "ch.qos.logback:logback-access:$logback_version"
     implementation "net.logstash.logback:logstash-logback-encoder:7.4"
-    implementation 'io.ktor:ktor-client-encoding:2.2.4'
 
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
     testImplementation "io.ktor:ktor-client-content-negotiation-jvm:$ktor_version"
     testImplementation "io.ktor:ktor-client-logging-jvm:$ktor_version"
+    testImplementation 'io.ktor:ktor-client-encoding:2.2.4'
     testImplementation "io.ktor:ktor-server-tests-jvm:$ktor_version"
 }
 
