@@ -21,10 +21,16 @@ sealed class CreateUserResponse {
     object DuplicateFound : CreateUserResponse()
 
     @Serializable
-    object FailedToCreate : CreateUserResponse()
+    object EmptyUsername : CreateUserResponse()
 
     @Serializable
-    object ConditionsFailed : CreateUserResponse()
+    object InvalidPassword : CreateUserResponse()
+
+    @Serializable
+    object InvalidEmail : CreateUserResponse()
+
+    @Serializable
+    object FailedToCreate : CreateUserResponse()
 }
 
 @Serializable

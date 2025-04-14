@@ -57,8 +57,14 @@ private suspend fun createUser(
     val request = call.receive(CreateUserRequest::class)
     val minPasswordLength = 12
 
-    if (!isValidPassword(request.password, minPasswordLength) || !isValidEmail(request.email)) {
-        return@runCatching CreateUserResponse.ConditionsFailed
+    if (request.username.isEmpty()) {
+        return@runCatching CreateUserResponse.EmptyUsername
+    }
+    if (!isValidPassword(request.password, minPasswordLength)) {
+        return@runCatching  CreateUserResponse.InvalidPassword
+    }
+    if (!isValidEmail(request.email)) {
+        return@runCatching CreateUserResponse.InvalidEmail
     }
 
     source.connection.use {
