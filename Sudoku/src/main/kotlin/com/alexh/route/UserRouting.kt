@@ -58,7 +58,7 @@ private suspend fun createUser(
     val minPasswordLength = 12
 
     if (request.username.isEmpty()) {
-        return@runCatching CreateUserResponse.EmptyUsername
+        return@runCatching CreateUserResponse.InvalidUsername
     }
     if (!isValidPassword(request.password, minPasswordLength)) {
         return@runCatching  CreateUserResponse.InvalidPassword

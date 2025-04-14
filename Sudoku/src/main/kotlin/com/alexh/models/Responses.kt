@@ -21,7 +21,7 @@ sealed class CreateUserResponse {
     object DuplicateFound : CreateUserResponse()
 
     @Serializable
-    object EmptyUsername : CreateUserResponse()
+    object InvalidUsername : CreateUserResponse()
 
     @Serializable
     object InvalidPassword : CreateUserResponse()
