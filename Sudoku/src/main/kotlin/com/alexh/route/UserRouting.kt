@@ -55,8 +55,9 @@ private suspend fun createUser(
     call: ApplicationCall
 ): Result<CreateUserResponse> = runCatching {
     val request = call.receive(CreateUserRequest::class)
+    val minPasswordLength = 12
 
-    if (!isValidPassword(request.password, 12) || !isValidEmail(request.email)) {
+    if (!isValidPassword(request.password, minPasswordLength) || !isValidEmail(request.email)) {
         return@runCatching CreateUserResponse.ConditionsFailed
     }
 
