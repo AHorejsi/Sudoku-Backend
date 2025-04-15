@@ -16,7 +16,7 @@ class XRequestIds private constructor() {
         const val CREATE_PUZZLE = "Create-Puzzle"
         const val UPDATE_PUZZLE = "Update-Puzzle"
         const val DELETE_PUZZLE = "Delete-Puzzle"
-        const val SHUTDOWN = "/shutdown"
+        const val SHUTDOWN = "Shutdown-Server"
     }
 }
 

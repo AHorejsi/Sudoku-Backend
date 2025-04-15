@@ -3,6 +3,8 @@ package com.alexh
 import com.alexh.game.Difficulty
 import com.alexh.game.Dimension
 import com.alexh.game.Game
+import com.alexh.models.CreateUserRequest
+import com.alexh.models.CreateUserResponse
 import com.alexh.models.GenerateRequest
 import com.alexh.models.GenerateResponse
 import com.alexh.utils.Endpoints
@@ -19,36 +21,33 @@ import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import io.ktor.client.*
 import io.ktor.client.plugins.compression.*
+import kotlin.reflect.KClass
 
 class ApplicationTest {
+    private val successfulUsername = "ah15"
+    private val successfulPassword = "3123AsDf!@#$"
+    private val successfulEmail = "ah15@test.com"
+    private val invalidUsername = ""
+    private val invalidPassword = "3123"
+    private val invalidEmail = "ah15@test"
+
+
     @Test
     fun testGenerate() = testApplication {
         this.createClient {
-            this.install(ContentNegotiation) {
-                this.json(Json {
-                    this.prettyPrint = true
-                    this.isLenient = true
-                })
-            }
+            this@ApplicationTest.installJson(this)
+            this@ApplicationTest.installLogging(this)
 
             this.install(ContentEncoding) {
                 this.gzip(1.0f)
-            }
-
-            this.install(Logging) {
-                this.logger = Logger.DEFAULT
-                this.level = LogLevel.ALL
             }
         }.use { client ->
             for (difficulty in Difficulty.values()) {
                 this@ApplicationTest.testGenerateHelper1(client, Dimension.NINE, difficulty)
             }
 
-            client.post(Endpoints.GENERATE) {
-                this@ApplicationTest.setHeaders(this, XRequestIds.GENERATE)
-            }
+            this@ApplicationTest.testUnfilledFieldsOnGenerate(client)
         }
     }
 
@@ -73,10 +72,7 @@ class ApplicationTest {
         val response = client.post(Endpoints.GENERATE) {
             this@ApplicationTest.setHeaders(this, XRequestIds.GENERATE)
 
-            val dimensionName = dimension.name
-            val difficultyName = difficulty.name
-            val gameNames = games.map { it.name }.toSet()
-            val requestBody = GenerateRequest(dimensionName, difficultyName, gameNames)
+            val requestBody = GenerateRequest(dimension.name, difficulty.name, games.map{ it.name }.toSet())
 
             this.setBody(requestBody)
         }
@@ -91,14 +87,93 @@ class ApplicationTest {
         assertEquals(games, puzzle.games)
     }
 
-    @Test
-    fun testCrud() = testApplication {
-        TODO()
+    private suspend fun testUnfilledFieldsOnGenerate(client: HttpClient) {
+        val response = client.post(Endpoints.GENERATE) {
+            this@ApplicationTest.setHeaders(this, XRequestIds.GENERATE)
+
+            val requestBody = GenerateRequest("", "", emptySet())
+
+            this.setBody(requestBody)
+        }
+        assertEquals(HttpStatusCode.OK, response.status)
+
+        val responseBody = response.body<GenerateResponse>()
+        assertIs<GenerateResponse.UnfilledFields>(responseBody)
     }
 
-    private fun setHeaders(builder: HttpRequestBuilder, reqId: String) {
+    @Test
+    fun testUserCrud() = testApplication {
+        this.createClient {
+            this@ApplicationTest.installJson(this)
+            this@ApplicationTest.installLogging(this)
+        }.use { client ->
+            this@ApplicationTest.testCreateUser(client)
+
+            // TODO: Test other CRUD operations
+        }
+    }
+
+    private suspend fun testCreateUser(client: HttpClient) {
+        this.attemptToCreateUser(
+            client,
+            CreateUserResponse.Success::class,
+            this.successfulUsername,
+            this.successfulPassword,
+            this.successfulEmail
+        )
+        this.attemptToCreateUser(
+            client,
+            CreateUserResponse.DuplicateFound::class,
+            this.successfulUsername,
+            this.successfulPassword,
+            this.successfulEmail
+        )
+        this.attemptToCreateUser(
+            client,
+            CreateUserResponse.InvalidUsername::class,
+            this.invalidUsername,
+            this.successfulPassword,
+            this.successfulEmail
+        )
+        this.attemptToCreateUser(
+            client,
+            CreateUserResponse.InvalidPassword::class,
+            this.successfulUsername,
+            this.invalidPassword,
+            this.successfulEmail
+        )
+        this.attemptToCreateUser(
+            client,
+            CreateUserResponse.InvalidEmail::class,
+            this.successfulUsername,
+            this.successfulPassword,
+            this.invalidEmail
+        )
+    }
+
+    private suspend fun attemptToCreateUser(
+        client: HttpClient,
+        cls: KClass<*>,
+        username: String,
+        password: String,
+        email: String
+    ) {
+        val response = client.put(Endpoints.CREATE_USER) {
+            this@ApplicationTest.setHeaders(this, XRequestIds.CREATE_USER)
+
+            val requestBody = CreateUserRequest(username, password, email)
+
+            this.setBody(requestBody)
+        }
+        assertEquals(HttpStatusCode.OK, response.status)
+
+        val responseBody = response.body<CreateUserResponse>()
+        assertEquals(cls, responseBody::class)
+    }
+
+    private fun setHeaders(builder: HttpRequestBuilder, xReqId: String) {
         builder.headers {
-            this.append(HttpHeaders.XRequestId, reqId)
+            this.append(HttpHeaders.XRequestId, xReqId)
             this.append(HttpHeaders.ContentType, "application/json")
             this.append(HttpHeaders.ContentEncoding, "gzip")
             this.append(HttpHeaders.AcceptCharset, "ISO-8859-1")
@@ -106,6 +181,22 @@ class ApplicationTest {
             this.append(HttpHeaders.Connection, "keep-alive")
             this.append(HttpHeaders.AccessControlAllowOrigin, "*")
             this.append(HttpHeaders.UserAgent, "ApplicationTest")
+        }
+    }
+
+    private fun installJson(config: HttpClientConfig<*>) {
+        config.install(ContentNegotiation) {
+            this.json(Json {
+                this.prettyPrint = true
+                this.isLenient = true
+            })
+        }
+    }
+
+    private fun installLogging(config: HttpClientConfig<*>) {
+        config.install(Logging) {
+            this.logger = Logger.DEFAULT
+            this.level = LogLevel.ALL
         }
     }
 }
