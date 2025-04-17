@@ -35,20 +35,20 @@ class ApplicationTest {
 
     @Test
     fun testGenerate() = testApplication {
-        this.createClient {
+        val client = this.createClient {
             this@ApplicationTest.installJson(this)
             this@ApplicationTest.installLogging(this)
 
             this.install(ContentEncoding) {
                 this.gzip(1.0f)
             }
-        }.use { client ->
-            for (difficulty in Difficulty.values()) {
-                this@ApplicationTest.testGenerateHelper1(client, Dimension.NINE, difficulty)
-            }
-
-            this@ApplicationTest.testUnfilledFieldsOnGenerate(client)
         }
+
+        for (difficulty in Difficulty.values()) {
+            this@ApplicationTest.testGenerateHelper1(client, Dimension.NINE, difficulty)
+        }
+
+        this@ApplicationTest.testUnfilledFieldsOnGenerate(client)
     }
 
     private suspend fun testGenerateHelper1(client: HttpClient, dimension: Dimension, difficulty: Difficulty) {
@@ -103,14 +103,14 @@ class ApplicationTest {
 
     @Test
     fun testUserCrud() = testApplication {
-        this.createClient {
+        val client = this.createClient {
             this@ApplicationTest.installJson(this)
             this@ApplicationTest.installLogging(this)
-        }.use { client ->
-            this@ApplicationTest.testCreateUser(client)
-
-            // TODO: Test other CRUD operations
         }
+
+        this@ApplicationTest.testCreateUser(client)
+
+        // TODO: Test other CRUD operations
     }
 
     private suspend fun testCreateUser(client: HttpClient) {
