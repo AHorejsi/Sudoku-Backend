@@ -16,7 +16,6 @@ enum class Dimension(
     val boxRows: Int,
     val boxCols: Int
 ) {
-    FOUR(4, 2, 2),
     NINE(9, 3, 3),
     SIXTEEN(16, 4, 4)
 }
@@ -35,7 +34,6 @@ enum class Difficulty(
     MASTER(0.21f, 0.33f, 0.0f, 0.66f, 0.88f)
 }
 
-@Serializable
 data class MakeSudokuCommand(
     val dimension: Dimension,
     val difficulty: Difficulty,
@@ -43,14 +41,12 @@ data class MakeSudokuCommand(
     @Transient val random: Random = Random.Default
 )
 
-internal class SudokuNode(
-    val place: Position
-) {
-    private val _row: MutableSet<SudokuNode> = mutableSetOf()
-    private val _column: MutableSet<SudokuNode> = mutableSetOf()
-    private val _box: MutableSet<SudokuNode> = mutableSetOf()
-    private val _hyper: MutableSet<SudokuNode> = mutableSetOf()
-    private var _all: Set<SudokuNode> = emptySet()
+internal class SudokuNode(val place: Position) {
+    private val _row = mutableSetOf<SudokuNode>()
+    private val _column = mutableSetOf<SudokuNode>()
+    private val _box = mutableSetOf<SudokuNode>()
+    private val _hyper = mutableSetOf<SudokuNode>()
+    private var _all = emptySet<SudokuNode>()
 
     private var changed: Boolean = false
     var value: Int? = null
