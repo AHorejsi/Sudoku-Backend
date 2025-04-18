@@ -16,10 +16,9 @@ class XRequestIds private constructor() {
         const val CREATE_PUZZLE = "Create-Puzzle"
         const val UPDATE_PUZZLE = "Update-Puzzle"
         const val DELETE_PUZZLE = "Delete-Puzzle"
-        const val SHUTDOWN = "Shutdown-Server"
     }
 }
 
-private fun <T : Any> noInstances(cls: KClass<T>): Nothing {
+private fun noInstances(cls: KClass<*>): Nothing {
     throw RuntimeException("No instances of ${cls.java.name}")
 }

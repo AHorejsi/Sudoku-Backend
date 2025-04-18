@@ -3,10 +3,7 @@ package com.alexh
 import com.alexh.game.Difficulty
 import com.alexh.game.Dimension
 import com.alexh.game.Game
-import com.alexh.models.CreateUserRequest
-import com.alexh.models.CreateUserResponse
-import com.alexh.models.GenerateRequest
-import com.alexh.models.GenerateResponse
+import com.alexh.models.*
 import com.alexh.utils.Endpoints
 import com.alexh.utils.XRequestIds
 import io.ktor.client.*
@@ -22,7 +19,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import io.ktor.client.plugins.compression.*
+import io.ktor.client.statement.*
 import kotlin.reflect.KClass
+import kotlin.test.assertTrue
 
 class ApplicationTest {
     private val successfulUsername = "ah15"
@@ -31,7 +30,6 @@ class ApplicationTest {
     private val invalidUsername = ""
     private val invalidPassword = "3123"
     private val invalidEmail = "ah15@test"
-
 
     @Test
     fun testGenerate() = testApplication {
@@ -108,6 +106,7 @@ class ApplicationTest {
             this@ApplicationTest.installLogging(this)
         }.use { client ->
             this@ApplicationTest.testCreateUser(client)
+            this@ApplicationTest.testReadUser(client)
 
             // TODO: Test other CRUD operations
         }
@@ -169,6 +168,83 @@ class ApplicationTest {
 
         val responseBody = response.body<CreateUserResponse>()
         assertEquals(cls, responseBody::class)
+    }
+
+    private suspend fun testReadUser(client: HttpClient) {
+        this.attemptToReadUserWithSuccess(client)
+        this.attemptToReadUserWithFailure(client)
+    }
+
+    private suspend fun attemptToReadUserWithSuccess(client: HttpClient) {
+        val responseWithUsername = client.post(Endpoints.READ_USER) {
+            this@ApplicationTest.setHeaders(this, XRequestIds.READ_USER)
+
+            val requestBody = ReadUserRequest(
+                this@ApplicationTest.successfulUsername,
+                this@ApplicationTest.successfulPassword,
+            )
+
+            this.setBody(requestBody)
+        }
+        val responseWithEmail = client.post(Endpoints.READ_USER) {
+            this@ApplicationTest.setHeaders(this, XRequestIds.READ_USER)
+
+            val requestBody = ReadUserRequest(
+                this@ApplicationTest.successfulEmail,
+                this@ApplicationTest.successfulPassword,
+            )
+
+            this.setBody(requestBody)
+        }
+
+        this.checkSuccessfulReadUser(responseWithUsername)
+        this.checkSuccessfulReadUser(responseWithEmail)
+    }
+
+    private suspend fun checkSuccessfulReadUser(response: HttpResponse) {
+        assertEquals(HttpStatusCode.OK, response.status)
+
+        val responseBody = response.body<ReadUserResponse>()
+        assertIs<ReadUserResponse.Success>(responseBody)
+
+        val user = responseBody.user
+        assertTrue(user.id > 0)
+        assertEquals(this.successfulUsername, user.username)
+        assertEquals(this.successfulEmail, user.email)
+        assertEquals(0, user.puzzles.size)
+    }
+
+    private suspend fun attemptToReadUserWithFailure(client: HttpClient) {
+        val responseWithUsername = client.post(Endpoints.READ_USER) {
+            this@ApplicationTest.setHeaders(this, XRequestIds.READ_USER)
+
+            val requestBody = ReadUserRequest(
+                this@ApplicationTest.invalidUsername,
+                this@ApplicationTest.invalidPassword
+            )
+
+            this.setBody(requestBody)
+        }
+        val responseWithEmail = client.post(Endpoints.READ_USER) {
+            this@ApplicationTest.setHeaders(this, XRequestIds.READ_USER)
+
+            val requestBody = ReadUserRequest(
+                this@ApplicationTest.invalidEmail,
+                this@ApplicationTest.invalidPassword
+            )
+
+            this.setBody(requestBody)
+        }
+
+        this.checkFailedReadUser(responseWithUsername)
+        this.checkFailedReadUser(responseWithEmail)
+    }
+
+    private suspend fun checkFailedReadUser(response: HttpResponse) {
+        assertEquals(HttpStatusCode.OK, response.status)
+
+        val responseBody = response.body<ReadUserResponse>()
+        assertIs<ReadUserResponse.FailedToFind>(responseBody)
     }
 
     private fun setHeaders(builder: HttpRequestBuilder, xReqId: String) {
