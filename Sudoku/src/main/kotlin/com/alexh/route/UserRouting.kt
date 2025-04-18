@@ -55,12 +55,11 @@ private suspend fun createUser(
     call: ApplicationCall
 ): Result<CreateUserResponse> = runCatching {
     val request = call.receive(CreateUserRequest::class)
-    val minPasswordLength = 12
 
     if (request.username.isEmpty()) {
         return@runCatching CreateUserResponse.InvalidUsername
     }
-    if (!isValidPassword(request.password, minPasswordLength)) {
+    if (!isValidPassword(request.password)) {
         return@runCatching  CreateUserResponse.InvalidPassword
     }
     if (!isValidEmail(request.email)) {
@@ -99,6 +98,13 @@ private suspend fun updateUser(
     call: ApplicationCall
 ): Result<UpdateUserResponse> = runCatching {
     val request = call.receive(UpdateUserRequest::class)
+
+    if (request.newUsername.isEmpty()) {
+        return@runCatching UpdateUserResponse.InvalidUsername
+    }
+    if (!isValidEmail(request.newEmail)) {
+        return@runCatching UpdateUserResponse.InvalidEmail
+    }
 
     source.connection.use {
         val service = UserService(it)

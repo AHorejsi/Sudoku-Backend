@@ -4,9 +4,10 @@ import at.favre.lib.crypto.bcrypt.BCrypt
 import kotlin.random.Random
 
 private const val cost = 12
+private const val minPasswordLength = 12
 
-fun isValidPassword(password: String, minLength: Int): Boolean =
-    password.length >= minLength
+fun isValidPassword(password: String): Boolean =
+    password.length >= minPasswordLength
 
 fun isValidEmail(email: String): Boolean {
     val pattern = "[a-zA-Z0-9\\+\\.\\_\\%\\-\\+]{1,256}" +

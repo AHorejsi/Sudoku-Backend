@@ -48,6 +48,12 @@ sealed class UpdateUserResponse {
     object Success : UpdateUserResponse()
 
     @Serializable
+    object InvalidUsername : UpdateUserResponse()
+
+    @Serializable
+    object InvalidEmail : UpdateUserResponse()
+
+    @Serializable
     object FailedToFind : UpdateUserResponse()
 }
 
