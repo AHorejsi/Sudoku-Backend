@@ -1,7 +1,5 @@
 package com.alexh.models
 
-import at.favre.lib.crypto.bcrypt.BCrypt
-import com.alexh.utils.createPassword
 import com.alexh.utils.validatePassword
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
