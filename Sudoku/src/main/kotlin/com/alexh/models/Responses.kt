@@ -45,10 +45,7 @@ sealed class ReadUserResponse {
 @Serializable
 sealed class UpdateUserResponse {
     @Serializable
-    class Success(
-        @Suppress("UNUSED") val newUsername: String,
-        @Suppress("UNUSED") val newEmail: String
-    ) : UpdateUserResponse()
+    object Success : UpdateUserResponse()
 
     @Serializable
     object FailedToFind : UpdateUserResponse()

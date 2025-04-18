@@ -202,7 +202,7 @@ class UserService(private val dbConn: Connection) {
 
             return@withContext when (amountOfRowsUpdated) {
                 0 -> UpdateUserResponse.FailedToFind
-                1 -> UpdateUserResponse.Success(newUsername, newEmail)
+                1 -> UpdateUserResponse.Success
                 else -> throw RuntimeException("More than one user updated")
             }
         }
