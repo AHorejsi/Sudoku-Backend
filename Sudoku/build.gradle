@@ -25,12 +25,11 @@ dependencies {
     implementation "io.ktor:ktor-server-compression:$ktor_version"
     implementation "io.ktor:ktor-server-content-negotiation:$ktor_version"
     implementation "io.ktor:ktor-server-cors:$ktor_version"
-    implementation "io.ktor:ktor-server-core:$ktor_version"
     implementation "io.ktor:ktor-server-host-common:$ktor_version"
     implementation "io.ktor:ktor-server-call-id:$ktor_version"
     implementation "io.ktor:ktor-server-call-logging:$ktor_version"
     implementation "io.ktor:ktor-server-netty-jvm:$ktor_version"
-    implementation "io.ktor:ktor-serialization-kotlinx-json-jvm:$ktor_version"
+    implementation "io.ktor:ktor-serialization-kotlinx-json:$ktor_version"
     implementation "io.ktor:ktor-network-tls-certificates:$ktor_version"
     implementation "com.h2database:h2:$h2_version"
     implementation "com.zaxxer:HikariCP:6.2.1"
@@ -40,9 +39,9 @@ dependencies {
     implementation "net.logstash.logback:logstash-logback-encoder:7.4"
 
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
-    testImplementation "io.ktor:ktor-client-content-negotiation-jvm:$ktor_version"
-    testImplementation "io.ktor:ktor-client-logging-jvm:$ktor_version"
-    testImplementation 'io.ktor:ktor-client-encoding:2.2.4'
+    testImplementation "io.ktor:ktor-client-content-negotiation:$ktor_version"
+    testImplementation "io.ktor:ktor-client-logging:$ktor_version"
+    testImplementation "io.ktor:ktor-client-encoding:$ktor_version"
     testImplementation "io.ktor:ktor-server-tests-jvm:$ktor_version"
 }
 
