@@ -24,12 +24,15 @@ import kotlin.reflect.KClass
 import kotlin.test.assertTrue
 
 class ApplicationTest {
+    private val userId = 1
     private val successfulUsername = "ah15"
     private val successfulPassword = "3123AsDf!@#$"
     private val successfulEmail = "ah15@test.com"
     private val invalidUsername = ""
     private val invalidPassword = "3123"
     private val invalidEmail = "ah15@test"
+    private val updatedUsername = "jt27"
+    private val updatedEmail = "jt27@try.org"
 
     @Test
     fun testGenerate() = testApplication {
@@ -107,6 +110,7 @@ class ApplicationTest {
         }.use { client ->
             this@ApplicationTest.testCreateUser(client)
             this@ApplicationTest.testReadUser(client)
+            this@ApplicationTest.testUpdateUser(client)
 
             // TODO: Test other CRUD operations
         }
@@ -245,6 +249,68 @@ class ApplicationTest {
 
         val responseBody = response.body<ReadUserResponse>()
         assertIs<ReadUserResponse.FailedToFind>(responseBody)
+    }
+
+    private suspend fun testUpdateUser(client: HttpClient) {
+        this.attemptToUpdateUser(
+            client,
+            UpdateUserResponse.FailedToFind::class,
+            this.updatedUsername,
+            this.updatedUsername,
+            this.updatedEmail,
+            this.updatedEmail
+        )
+        this.attemptToUpdateUser(
+            client,
+            UpdateUserResponse.InvalidUsername::class,
+            this.successfulUsername,
+            this.invalidUsername,
+            this.successfulEmail,
+            this.updatedEmail
+        )
+        this.attemptToUpdateUser(
+            client,
+            UpdateUserResponse.InvalidEmail::class,
+            this.successfulUsername,
+            this.updatedUsername,
+            this.successfulEmail,
+            this.invalidEmail
+        )
+        this.attemptToUpdateUser(
+            client,
+            UpdateUserResponse.Success::class,
+            this.successfulUsername,
+            this.updatedUsername,
+            this.successfulEmail,
+            this.updatedEmail
+        )
+    }
+
+    private suspend fun attemptToUpdateUser(
+        client: HttpClient,
+        cls: KClass<*>,
+        oldUsername: String,
+        newUsername: String,
+        oldEmail: String,
+        newEmail: String
+    ) {
+        val response = client.put(Endpoints.UPDATE_USER) {
+            this@ApplicationTest.setHeaders(this, XRequestIds.UPDATE_USER)
+
+            val requestBody = UpdateUserRequest(
+                this@ApplicationTest.userId,
+                oldUsername,
+                newUsername,
+                oldEmail,
+                newEmail
+            )
+
+            this.setBody(requestBody)
+        }
+        assertEquals(HttpStatusCode.OK, response.status)
+
+        val responseBody = response.body<UpdateUserResponse>()
+        assertEquals(cls, responseBody::class)
     }
 
     private fun setHeaders(builder: HttpRequestBuilder, xReqId: String) {
