@@ -56,22 +56,24 @@ private suspend fun createUser(
 ): Result<CreateUserResponse> = runCatching {
     val request = call.receive(CreateUserRequest::class)
 
-    if (request.username.isEmpty()) {
+    val username = request.username.lowercase().trim()
+    val password = request.password
+    val email = request.email.lowercase().trim()
+
+    if (username.isEmpty()) {
         return@runCatching CreateUserResponse.InvalidUsername
     }
-    if (!isValidPassword(request.password)) {
+    if (!isValidPassword(password)) {
         return@runCatching  CreateUserResponse.InvalidPassword
     }
-    if (!isValidEmail(request.email)) {
+    if (!isValidEmail(email)) {
         return@runCatching CreateUserResponse.InvalidEmail
     }
 
     source.connection.use {
         val service = UserService(it)
 
-        val username = request.username.lowercase().trim()
         val (passwordHash, salt) = createPassword(request.password)
-        val email = request.email.lowercase().trim()
 
         return@runCatching service.createUser(username, passwordHash, email, salt)
     }
@@ -99,10 +101,13 @@ private suspend fun updateUser(
 ): Result<UpdateUserResponse> = runCatching {
     val request = call.receive(UpdateUserRequest::class)
 
-    if (request.newUsername.isEmpty()) {
+    val newUsername = request.newUsername.lowercase().trim()
+    val newEmail = request.newEmail.lowercase().trim()
+
+    if (newUsername.isEmpty()) {
         return@runCatching UpdateUserResponse.InvalidUsername
     }
-    if (!isValidEmail(request.newEmail)) {
+    if (!isValidEmail(newEmail)) {
         return@runCatching UpdateUserResponse.InvalidEmail
     }
 
@@ -111,9 +116,7 @@ private suspend fun updateUser(
 
         val userId = request.userId
         val oldUsername = request.oldUsername
-        val newUsername = request.newUsername.lowercase().trim()
         val oldEmail = request.oldEmail
-        val newEmail = request.newEmail.lowercase().trim()
 
         return@runCatching service.updateUser(
             userId,
