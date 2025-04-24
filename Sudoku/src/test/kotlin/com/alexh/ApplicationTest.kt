@@ -24,10 +24,11 @@ import kotlin.reflect.KClass
 import kotlin.test.assertTrue
 
 class ApplicationTest {
-    private val userId = 1
+    private val successfulUserId = 1
     private val successfulUsername = "ah15"
     private val successfulPassword = "3123AsDf!@#$"
     private val successfulEmail = "ah15@test.com"
+    private val invalidUserId = -1
     private val invalidUsername = ""
     private val invalidPassword = "3123"
     private val invalidEmail = "ah15@test"
@@ -111,8 +112,7 @@ class ApplicationTest {
             this@ApplicationTest.testCreateUser(client)
             this@ApplicationTest.testReadUser(client)
             this@ApplicationTest.testUpdateUser(client)
-
-            // TODO: Test other CRUD operations
+            this@ApplicationTest.testDeleteUser(client)
         }
     }
 
@@ -298,7 +298,7 @@ class ApplicationTest {
             this@ApplicationTest.setHeaders(this, XRequestIds.UPDATE_USER)
 
             val requestBody = UpdateUserRequest(
-                this@ApplicationTest.userId,
+                this@ApplicationTest.successfulUserId,
                 oldUsername,
                 newUsername,
                 oldEmail,
@@ -310,6 +310,29 @@ class ApplicationTest {
         assertEquals(HttpStatusCode.OK, response.status)
 
         val responseBody = response.body<UpdateUserResponse>()
+        assertEquals(cls, responseBody::class)
+    }
+
+    private suspend fun testDeleteUser(client: HttpClient) {
+        this.attemptToDeleteUser(client, this.successfulUserId, DeleteUserResponse.Success::class)
+        this.attemptToDeleteUser(client, this.invalidUserId, DeleteUserResponse.FailedToFind::class)
+    }
+
+    private suspend fun attemptToDeleteUser(
+        client: HttpClient,
+        userId: Int,
+        cls: KClass<*>,
+    ) {
+        val response = client.delete(Endpoints.DELETE_USER) {
+            this@ApplicationTest.setHeaders(this, XRequestIds.DELETE_USER)
+
+            val requestBody = DeleteUserRequest(userId)
+
+            this.setBody(requestBody)
+        }
+        assertEquals(HttpStatusCode.OK, response.status)
+
+        val responseBody = response.body<DeleteUserResponse>()
         assertEquals(cls, responseBody::class)
     }
 
