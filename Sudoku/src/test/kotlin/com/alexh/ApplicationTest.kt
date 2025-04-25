@@ -18,17 +18,19 @@ import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import io.ktor.client.plugins.compression.*
 import io.ktor.client.statement.*
 import kotlin.reflect.KClass
-import kotlin.test.assertTrue
 
 class ApplicationTest {
     private val successfulUserId = 1
+    private val successfulPuzzleId = 1
     private val successfulUsername = "ah15"
     private val successfulPassword = "3123AsDf!@#$"
     private val successfulEmail = "ah15@test.com"
     private val invalidUserId = -1
+    private val invalidPuzzleId = -1
     private val invalidUsername = ""
     private val invalidPassword = "3123"
     private val invalidEmail = "ah15@test"
@@ -112,6 +114,9 @@ class ApplicationTest {
             this@ApplicationTest.testCreateUser(client)
             this@ApplicationTest.testReadUser(client)
             this@ApplicationTest.testUpdateUser(client)
+            this@ApplicationTest.testCreatePuzzle(client)
+            this@ApplicationTest.testUpdatePuzzle(client)
+            this@ApplicationTest.testDeletePuzzle(client)
             this@ApplicationTest.testDeleteUser(client)
         }
     }
@@ -310,6 +315,69 @@ class ApplicationTest {
         assertEquals(HttpStatusCode.OK, response.status)
 
         val responseBody = response.body<UpdateUserResponse>()
+        assertEquals(cls, responseBody::class)
+    }
+
+    private suspend fun testCreatePuzzle(client: HttpClient) {
+        val response = client.put(Endpoints.CREATE_PUZZLE) {
+            this@ApplicationTest.setHeaders(this, XRequestIds.CREATE_PUZZLE)
+
+            val requestBody = CreatePuzzleRequest("{}", this@ApplicationTest.successfulUserId)
+
+            this.setBody(requestBody)
+        }
+        assertEquals(HttpStatusCode.OK, response.status)
+
+        val responseBody = response.body<CreatePuzzleResponse>()
+        assertIs<CreatePuzzleResponse.Success>(responseBody)
+    }
+
+    private suspend fun testUpdatePuzzle(client: HttpClient) {
+        val fakeJson = "{\"puzzle\": {}}"
+
+        this.attemptToUpdatePuzzle(client, this.successfulPuzzleId, fakeJson, UpdatePuzzleResponse.Success::class)
+        this.attemptToUpdatePuzzle(client, this.invalidPuzzleId, fakeJson, UpdatePuzzleResponse.FailedToFind::class)
+    }
+
+    private suspend fun attemptToUpdatePuzzle(
+        client: HttpClient,
+        puzzleId: Int,
+        json: String,
+        cls: KClass<*>
+    ) {
+        val response = client.put(Endpoints.UPDATE_PUZZLE) {
+            this@ApplicationTest.setHeaders(this, XRequestIds.UPDATE_PUZZLE)
+
+            val requestBody = UpdatePuzzleRequest(puzzleId, json)
+
+            this.setBody(requestBody)
+        }
+        assertEquals(HttpStatusCode.OK, response.status)
+
+        val responseBody = response.body<UpdatePuzzleResponse>()
+        assertEquals(cls, responseBody::class)
+    }
+
+    private suspend fun testDeletePuzzle(client: HttpClient) {
+        this.attemptToDeletePuzzle(client, this.successfulPuzzleId, DeletePuzzleResponse.Success::class)
+        this.attemptToDeletePuzzle(client, this.invalidPuzzleId, DeletePuzzleResponse.FailedToFind::class)
+    }
+
+    private suspend fun attemptToDeletePuzzle(
+        client: HttpClient,
+        puzzleId: Int,
+        cls: KClass<*>
+    ) {
+        val response = client.delete(Endpoints.DELETE_PUZZLE) {
+            this@ApplicationTest.setHeaders(this, XRequestIds.DELETE_PUZZLE)
+
+            val requestBody = DeletePuzzleRequest(puzzleId)
+
+            this.setBody(requestBody)
+        }
+        assertEquals(HttpStatusCode.OK, response.status)
+
+        val responseBody = response.body<DeletePuzzleResponse>()
         assertEquals(cls, responseBody::class)
     }
 
