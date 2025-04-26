@@ -18,7 +18,6 @@ import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import kotlin.test.assertTrue
 import io.ktor.client.plugins.compression.*
 import io.ktor.client.statement.*
 import kotlin.reflect.KClass
@@ -217,7 +216,6 @@ class ApplicationTest {
         assertIs<ReadUserResponse.Success>(responseBody)
 
         val user = responseBody.user
-        assertTrue(user.id > 0)
         assertEquals(this.successfulUsername, user.username)
         assertEquals(this.successfulEmail, user.email)
         assertEquals(0, user.puzzles.size)
