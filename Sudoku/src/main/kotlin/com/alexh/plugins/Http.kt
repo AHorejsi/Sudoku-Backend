@@ -4,6 +4,8 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.plugins.ratelimit.*
+import kotlin.time.Duration.Companion.seconds
 
 fun configureHttp(app: Application) {
     app.install(CORS) {
@@ -42,6 +44,12 @@ fun configureHttp(app: Application) {
             this.matchContentType(ContentType.Application.Any)
             this.minimumSize(1024)
             this.priority = 1.0
+        }
+    }
+
+    app.install(RateLimit) {
+        this.global {
+            this.rateLimiter(limit = 10, refillPeriod = 60.seconds)
         }
     }
 }
