@@ -14,14 +14,14 @@ private val logger = LoggerFactory.getLogger("Puzzle-Generation-Routing")
 fun configureEndpointsForGeneratingPuzzles(app: Application) {
     app.routing {
         this.post(Endpoints.GENERATE) {
-            val result = generatePuzzle(this.call)
+            val result = generateSudoku(this.call)
 
             handleResult(result, this.call, logger, "Successful call to ${Endpoints.GENERATE}")
         }
     }
 }
 
-private suspend fun generatePuzzle(call: ApplicationCall): Result<GenerateResponse> = runCatching {
+private suspend fun generateSudoku(call: ApplicationCall): Result<GenerateResponse> = runCatching {
     val request = call.receive(GenerateRequest::class)
 
     if (request.dimension.isEmpty() || request.difficulty.isEmpty()) {
