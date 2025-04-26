@@ -9,7 +9,7 @@ import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
 
-private val logger = LoggerFactory.getLogger("Puzzle-Generation-Routing")
+private val logger = LoggerFactory.getLogger(Loggers.GENERATION_ROUTING)
 
 fun configureEndpointsForGeneratingPuzzles(app: Application) {
     app.routing {

@@ -8,7 +8,7 @@ import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
-private val logger = LoggerFactory.getLogger("User-Routing")
+private val logger = LoggerFactory.getLogger(Loggers.USER_ROUTING)
 
 fun configureEndpointsForUsers(app: Application, source: DataSource) {
     app.routing {

@@ -20,6 +20,18 @@ class Endpoints private constructor() {
     }
 }
 
+class Loggers private constructor() {
+    init {
+        noInstances(Loggers::class)
+    }
+
+    companion object {
+        const val MAIN_APPLICATION = "Main"
+        const val GENERATION_ROUTING = "Generate-Sudoku-Routing"
+        const val USER_ROUTING = "User-Routing"
+    }
+}
+
 private fun <T : Any> noInstances(cls: KClass<T>): Nothing {
     throw RuntimeException("No instances of ${cls.java.name}")
 }
