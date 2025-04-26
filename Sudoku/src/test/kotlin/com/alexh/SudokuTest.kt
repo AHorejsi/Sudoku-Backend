@@ -4,15 +4,19 @@ import com.alexh.game.*
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class SudokuTest {
     @Test
     fun testMakeSudoku() {
+        val dimensions = Dimension.values()
         val difficulties = Difficulty.values()
-        val rand = Random(0)
+        val rand = Random(-1)
 
-        for (difficulty in difficulties) {
-            this.testMakeSudokuHelper(Dimension.NINE, difficulty, rand)
+        for (dimension in dimensions) {
+            for (difficulty in difficulties) {
+                this.testMakeSudokuHelper(dimension, difficulty, rand)
+            }
         }
     }
 
@@ -26,12 +30,12 @@ class SudokuTest {
                 val info = MakeSudokuCommand(dimension, difficulty, selectedGames, rand)
                 val sudoku = makeSudoku(info)
 
-                this.testSudoku(sudoku)
+                this.testSudokuProperties(sudoku)
             }
         }
     }
 
-    private fun testSudoku(sudoku: SudokuJson) {
+    private fun testSudokuProperties(sudoku: SudokuJson) {
         this.checkIfMatching(sudoku)
         this.checkIfValuesAreValid(sudoku)
         this.checkIfCagesAreValid(sudoku)
@@ -72,7 +76,9 @@ class SudokuTest {
         val set = mutableSetOf<Int>()
 
         for (colIndex in range) {
-            set.add(sudoku.solved[rowIndex][colIndex])
+            val result = set.add(sudoku.solved[rowIndex][colIndex])
+
+            assertTrue(result)
         }
 
         assertEquals(sudoku.length, set.size)
@@ -82,7 +88,9 @@ class SudokuTest {
         val set = mutableSetOf<Int>()
 
         for (rowIndex in range) {
-            set.add(sudoku.solved[rowIndex][colIndex])
+            val result = set.add(sudoku.solved[rowIndex][colIndex])
+
+            assertTrue(result)
         }
 
         assertEquals(sudoku.length, set.size)
@@ -92,7 +100,9 @@ class SudokuTest {
         val set = mutableSetOf<Int>()
 
         for (pos in box.positions) {
-            set.add(sudoku.solved[pos.rowIndex][pos.colIndex])
+            val result = set.add(sudoku.solved[pos.rowIndex][pos.colIndex])
+
+            assertTrue(result)
         }
 
         assertEquals(sudoku.length, set.size)
