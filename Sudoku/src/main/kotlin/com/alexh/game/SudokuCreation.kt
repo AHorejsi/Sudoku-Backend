@@ -112,21 +112,18 @@ internal class SudokuNode(val place: Position) {
     }
 }
 
-@Suppress("UNUSED")
 @Serializable
 class Cage(
     val sum: Int,
     val positions: MutableSet<Position>
 )
 
-@Suppress("UNUSED")
 @Serializable
 class Box(
-    val isHyper: Boolean,
+    @Suppress("UNUSED") val isHyper: Boolean,
     val positions: MutableSet<Position>
 )
 
-@Suppress("UNUSED")
 @Serializable
 class SudokuJson(
     val board: List<List<Int?>>,
