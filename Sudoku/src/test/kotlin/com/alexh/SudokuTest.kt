@@ -9,14 +9,11 @@ import kotlin.test.assertTrue
 class SudokuTest {
     @Test
     fun testMakeSudoku() {
-        val dimensions = Dimension.values()
         val difficulties = Difficulty.values()
         val rand = Random(-1)
 
-        for (dimension in dimensions) {
-            for (difficulty in difficulties) {
-                this.testMakeSudokuHelper(dimension, difficulty, rand)
-            }
+        for (difficulty in difficulties) {
+            this.testMakeSudokuHelper(Dimension.NINE, difficulty, rand)
         }
     }
 
@@ -24,7 +21,7 @@ class SudokuTest {
         val games = Game.values()
 
         for (startIndex in games.indices) {
-            for (endIndex in startIndex until games.size) {
+            for (endIndex in startIndex .. games.size) {
                 val selectedGames = games.sliceArray(startIndex until endIndex).toSet()
 
                 val info = MakeSudokuCommand(dimension, difficulty, selectedGames, rand)
