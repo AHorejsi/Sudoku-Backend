@@ -2,6 +2,16 @@ package com.alexh.utils
 
 import kotlin.reflect.KClass
 
+class EnvironmentVariables private constructor() {
+    init {
+        noInstances(EnvironmentVariables::class)
+    }
+
+    companion object {
+        const val STATIC_SALT = "SUDOKU_SALT"
+    }
+}
+
 class Endpoints private constructor() {
     init {
         noInstances(Endpoints::class)
@@ -32,6 +42,6 @@ class Loggers private constructor() {
     }
 }
 
-private fun <T : Any> noInstances(cls: KClass<T>): Nothing {
+private fun noInstances(cls: KClass<*>): Nothing {
     throw RuntimeException("No instances of ${cls.java.name}")
 }
