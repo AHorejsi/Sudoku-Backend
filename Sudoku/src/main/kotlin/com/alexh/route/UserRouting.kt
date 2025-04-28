@@ -64,7 +64,7 @@ private suspend fun createUser(
         return@runCatching CreateUserResponse.InvalidUsername
     }
     if (!isValidPassword(password)) {
-        return@runCatching  CreateUserResponse.InvalidPassword
+        return@runCatching CreateUserResponse.InvalidPassword
     }
     if (!isValidEmail(email)) {
         return@runCatching CreateUserResponse.InvalidEmail
