@@ -47,11 +47,11 @@ class UserService(private val dbConn: Connection) {
                     "$PUZZLE_TABLE.$PUZZLE_TABLE_ID AS $PUZZLE_ID, $JSON " +
             "FROM $USER_TABLE " +
             "LEFT JOIN $PUZZLE_TABLE ON $USER_TABLE.$USER_TABLE_ID = $PUZZLE_TABLE.$USER_ID " +
-            "WHERE $USERNAME = ? OR $EMAIL = ?;"
+            "WHERE LOWER($USERNAME) = LOWER(?) OR LOWER($EMAIL) = LOWER(?);"
         private const val UPDATE_USER =
             "UPDATE $USER_TABLE " +
             "SET $USERNAME = ?, $EMAIL = ? " +
-            "WHERE $USER_TABLE_ID = ? AND $USERNAME = ? AND $EMAIL = ?;"
+            "WHERE $USER_TABLE_ID = ? AND LOWER($USERNAME) = LOWER(?) AND LOWER($EMAIL) = LOWER(?);"
         private const val DELETE_USER =
             "DELETE FROM $USER_TABLE " +
             "WHERE $USER_TABLE_ID = ?;"
