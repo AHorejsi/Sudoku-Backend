@@ -12,13 +12,7 @@ class CreateUserRequest(val username: String, val password: String, val email: S
 class ReadUserRequest(val usernameOrEmail: String, val password: String)
 
 @Serializable
-class UpdateUserRequest(
-    val userId: Int,
-    val oldUsername: String,
-    val newUsername: String,
-    val oldEmail: String,
-    val newEmail: String
-)
+class UpdateUserRequest(val userId: Int, val newUsername: String, val newEmail: String)
 
 @Serializable
 class DeleteUserRequest(val userId: Int)

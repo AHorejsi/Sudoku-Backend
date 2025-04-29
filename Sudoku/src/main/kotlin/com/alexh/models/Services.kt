@@ -1,5 +1,8 @@
 package com.alexh.models
 
+import com.alexh.utils.createPassword
+import com.alexh.utils.isValidEmail
+import com.alexh.utils.isValidPassword
 import com.alexh.utils.validatePassword
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -51,7 +54,7 @@ class UserService(private val dbConn: Connection) {
         private const val UPDATE_USER =
             "UPDATE $USER_TABLE " +
             "SET $USERNAME = ?, $EMAIL = ? " +
-            "WHERE $USER_TABLE_ID = ? AND LOWER($USERNAME) = LOWER(?) AND LOWER($EMAIL) = LOWER(?);"
+            "WHERE $USER_TABLE_ID = ?;"
         private const val DELETE_USER =
             "DELETE FROM $USER_TABLE " +
             "WHERE $USER_TABLE_ID = ?;"
@@ -75,15 +78,26 @@ class UserService(private val dbConn: Connection) {
         }
     }
 
-    suspend fun createUser(
-        username: String,
-        password: String,
-        email: String,
-        salt: String
-    ): CreateUserResponse = withContext(Dispatchers.IO) {
+    suspend fun createUser(request: CreateUserRequest): CreateUserResponse = withContext(Dispatchers.IO) {
+        val username = request.username.trim()
+        val password = request.password
+        val email = request.email.trim()
+
+        if (username.isEmpty()) {
+            return@withContext CreateUserResponse.InvalidUsername
+        }
+        if (!isValidPassword(password)) {
+            return@withContext CreateUserResponse.InvalidPassword
+        }
+        if (!isValidEmail(email)) {
+            return@withContext CreateUserResponse.InvalidEmail
+        }
+
+        val (passwordHash, salt) = createPassword(password)
+
         this@UserService.dbConn.prepareStatement(CREATE_USER, Statement.RETURN_GENERATED_KEYS).use { stmt ->
             stmt.setString(1, username)
-            stmt.setString(2, password)
+            stmt.setString(2, passwordHash)
             stmt.setString(3, email)
             stmt.setString(4, salt)
 
@@ -113,10 +127,10 @@ class UserService(private val dbConn: Connection) {
         return CreateUserResponse.Success
     }
 
-    suspend fun readUser(
-        usernameOrEmail: String,
-        password: String
-    ): ReadUserResponse = withContext(Dispatchers.IO) {
+    suspend fun readUser(request: ReadUserRequest): ReadUserResponse = withContext(Dispatchers.IO) {
+        val usernameOrEmail = request.usernameOrEmail.trim()
+        val password = request.password
+
         this@UserService.dbConn.prepareStatement(GET_USER).use { stmt ->
             stmt.setString(1, usernameOrEmail)
             stmt.setString(2, usernameOrEmail)
@@ -182,19 +196,22 @@ class UserService(private val dbConn: Connection) {
         return User(userId, username, email, puzzles)
     }
 
-    suspend fun updateUser(
-        userId: Int,
-        oldUsername: String,
-        oldEmail: String,
-        newUsername: String,
-        newEmail: String
-    ): UpdateUserResponse = withContext(Dispatchers.IO) {
+    suspend fun updateUser(request: UpdateUserRequest): UpdateUserResponse = withContext(Dispatchers.IO) {
+        val userId = request.userId
+        val newUsername = request.newUsername.trim()
+        val newEmail = request.newEmail.trim()
+
+        if (newUsername.isEmpty()) {
+            return@withContext UpdateUserResponse.InvalidUsername
+        }
+        if (!isValidEmail(newEmail)) {
+            return@withContext UpdateUserResponse.InvalidEmail
+        }
+
         this@UserService.dbConn.prepareStatement(UPDATE_USER).use { stmt ->
             stmt.setString(1, newUsername)
             stmt.setString(2, newEmail)
             stmt.setInt(3, userId)
-            stmt.setString(4, oldUsername)
-            stmt.setString(5, oldEmail)
 
             val amountOfRowsUpdated = stmt.executeUpdate()
 
@@ -206,7 +223,9 @@ class UserService(private val dbConn: Connection) {
         }
     }
 
-    suspend fun deleteUser(userId: Int): DeleteUserResponse = withContext(Dispatchers.IO) {
+    suspend fun deleteUser(request: DeleteUserRequest): DeleteUserResponse = withContext(Dispatchers.IO) {
+        val userId = request.userId
+
         this@UserService.dbConn.prepareStatement(DELETE_USER).use { stmt ->
             stmt.setInt(1, userId)
 
@@ -220,7 +239,10 @@ class UserService(private val dbConn: Connection) {
         }
     }
 
-    suspend fun createPuzzle(json: String, userId: Int): CreatePuzzleResponse = withContext(Dispatchers.IO) {
+    suspend fun createPuzzle(request: CreatePuzzleRequest): CreatePuzzleResponse = withContext(Dispatchers.IO) {
+        val userId = request.userId
+        val json = request.json
+
         this@UserService.dbConn.prepareStatement(CREATE_PUZZLE, Statement.RETURN_GENERATED_KEYS).use { stmt ->
             stmt.setString(1, json)
             stmt.setInt(2, userId)
@@ -240,7 +262,10 @@ class UserService(private val dbConn: Connection) {
         }
     }
 
-    suspend fun updatePuzzle(puzzleId: Int, json: String): UpdatePuzzleResponse = withContext(Dispatchers.IO) {
+    suspend fun updatePuzzle(request: UpdatePuzzleRequest): UpdatePuzzleResponse = withContext(Dispatchers.IO) {
+        val puzzleId = request.puzzleId
+        val json = request.json
+
         this@UserService.dbConn.prepareStatement(UPDATE_PUZZLE).use { stmt ->
             stmt.setString(1, json)
             stmt.setInt(2, puzzleId)
@@ -255,7 +280,9 @@ class UserService(private val dbConn: Connection) {
         }
     }
 
-    suspend fun deletePuzzle(puzzleId: Int): DeletePuzzleResponse = withContext(Dispatchers.IO) {
+    suspend fun deletePuzzle(request: DeletePuzzleRequest): DeletePuzzleResponse = withContext(Dispatchers.IO) {
+        val puzzleId = request.puzzleId
+
         this@UserService.dbConn.prepareStatement(DELETE_PUZZLE).use { stmt ->
             stmt.setInt(1, puzzleId)
 

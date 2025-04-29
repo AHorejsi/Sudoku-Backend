@@ -257,34 +257,20 @@ class ApplicationTest {
     private suspend fun testUpdateUser(client: HttpClient) {
         this.attemptToUpdateUser(
             client,
-            UpdateUserResponse.FailedToFind::class,
-            this.updatedUsername,
-            this.updatedUsername,
-            this.updatedEmail,
-            this.updatedEmail
-        )
-        this.attemptToUpdateUser(
-            client,
             UpdateUserResponse.InvalidUsername::class,
-            this.successfulUsername,
             this.invalidUsername,
-            this.successfulEmail,
             this.updatedEmail
         )
         this.attemptToUpdateUser(
             client,
             UpdateUserResponse.InvalidEmail::class,
-            this.successfulUsername,
             this.updatedUsername,
-            this.successfulEmail,
             this.invalidEmail
         )
         this.attemptToUpdateUser(
             client,
             UpdateUserResponse.Success::class,
-            this.successfulUsername,
             this.updatedUsername,
-            this.successfulEmail,
             this.updatedEmail
         )
     }
@@ -292,9 +278,7 @@ class ApplicationTest {
     private suspend fun attemptToUpdateUser(
         client: HttpClient,
         cls: KClass<*>,
-        oldUsername: String,
         newUsername: String,
-        oldEmail: String,
         newEmail: String
     ) {
         val response = client.put(Endpoints.UPDATE_USER) {
@@ -302,9 +286,7 @@ class ApplicationTest {
 
             val requestBody = UpdateUserRequest(
                 this@ApplicationTest.successfulUserId,
-                oldUsername,
                 newUsername,
-                oldEmail,
                 newEmail
             )
 

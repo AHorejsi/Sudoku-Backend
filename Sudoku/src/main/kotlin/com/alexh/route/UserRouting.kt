@@ -56,26 +56,10 @@ private suspend fun createUser(
 ): Result<CreateUserResponse> = runCatching {
     val request = call.receive(CreateUserRequest::class)
 
-    val username = request.username.trim()
-    val password = request.password
-    val email = request.email.trim()
-
-    if (username.isEmpty()) {
-        return@runCatching CreateUserResponse.InvalidUsername
-    }
-    if (!isValidPassword(password)) {
-        return@runCatching CreateUserResponse.InvalidPassword
-    }
-    if (!isValidEmail(email)) {
-        return@runCatching CreateUserResponse.InvalidEmail
-    }
-
     source.connection.use {
         val service = UserService(it)
 
-        val (passwordHash, salt) = createPassword(request.password)
-
-        return@runCatching service.createUser(username, passwordHash, email, salt)
+        return@runCatching service.createUser(request)
     }
 }
 
@@ -88,10 +72,7 @@ private suspend fun readUser(
     source.connection.use {
         val service = UserService(it)
 
-        val usernameOrEmail = request.usernameOrEmail.trim()
-        val password = request.password
-
-        return@runCatching service.readUser(usernameOrEmail, password)
+        return@runCatching service.readUser(request)
     }
 }
 
@@ -101,30 +82,10 @@ private suspend fun updateUser(
 ): Result<UpdateUserResponse> = runCatching {
     val request = call.receive(UpdateUserRequest::class)
 
-    val newUsername = request.newUsername.trim()
-    val newEmail = request.newEmail.trim()
-
-    if (newUsername.isEmpty()) {
-        return@runCatching UpdateUserResponse.InvalidUsername
-    }
-    if (!isValidEmail(newEmail)) {
-        return@runCatching UpdateUserResponse.InvalidEmail
-    }
-
     source.connection.use {
         val service = UserService(it)
 
-        val userId = request.userId
-        val oldUsername = request.oldUsername
-        val oldEmail = request.oldEmail
-
-        return@runCatching service.updateUser(
-            userId,
-            oldUsername,
-            oldEmail,
-            newUsername,
-            newEmail
-        )
+        return@runCatching service.updateUser(request)
     }
 }
 
@@ -137,9 +98,7 @@ private suspend fun deleteUser(
     source.connection.use {
         val service = UserService(it)
 
-        val userId = request.userId
-
-        return@runCatching service.deleteUser(userId)
+        return@runCatching service.deleteUser(request)
     }
 }
 
@@ -149,10 +108,7 @@ private suspend fun createPuzzle(source: DataSource, call: ApplicationCall): Res
     source.connection.use {
         val service = UserService(it)
 
-        val json = request.json
-        val userId = request.userId
-
-        return@runCatching service.createPuzzle(json, userId)
+        return@runCatching service.createPuzzle(request)
     }
 }
 
@@ -162,10 +118,7 @@ private suspend fun updatePuzzle(source: DataSource, call: ApplicationCall): Res
     source.connection.use {
         val service = UserService(it)
 
-        val puzzleId = request.puzzleId
-        val json = request.json
-
-        return@runCatching service.updatePuzzle(puzzleId, json)
+        return@runCatching service.updatePuzzle(request)
     }
 }
 
@@ -175,8 +128,6 @@ private suspend fun deletePuzzle(source: DataSource, call: ApplicationCall): Res
     source.connection.use {
         val service = UserService(it)
 
-        val puzzleId = request.puzzleId
-
-        return@runCatching service.deletePuzzle(puzzleId)
+        return@runCatching service.deletePuzzle(request)
     }
 }
