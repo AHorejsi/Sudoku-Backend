@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 class Puzzle(
     @Suppress("UNUSED") val id: Int,
-    val json: String
+    @Suppress("UNUSED") val json: String
 )
 
 @Serializable

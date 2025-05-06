@@ -49,7 +49,7 @@ fun configureHttp(app: Application) {
 
     app.install(RateLimit) {
         this.global {
-            this.rateLimiter(limit = 50, refillPeriod = 1.seconds)
+            this.rateLimiter(limit = 50, refillPeriod = 10.seconds)
         }
     }
 }

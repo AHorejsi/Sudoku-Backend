@@ -9,11 +9,14 @@ import kotlin.test.assertTrue
 class SudokuTest {
     @Test
     fun testMakeSudoku() {
-        val difficulties = Difficulty.values()
+        val dimensionArray = Dimension.values()
+        val difficultyArray = Difficulty.values()
         val rand = Random(-1)
 
-        for (difficulty in difficulties) {
-            this.testMakeSudokuHelper(Dimension.NINE, difficulty, rand)
+        for (dimension in dimensionArray) {
+            for (difficulty in difficultyArray) {
+                this.testMakeSudokuHelper(dimension, difficulty, rand)
+            }
         }
     }
 
@@ -106,12 +109,16 @@ class SudokuTest {
     }
 
     private fun checkIfCagesAreValid(sudoku: SudokuJson) {
-        sudoku.cages?.let { cageSet ->
-            for (cage in cageSet) {
-                val actualSum = cage.positions.sumOf{ pos -> sudoku.solved[pos.rowIndex][pos.colIndex] }
+        val cageSet = sudoku.cages
 
-                assertEquals(cage.sum, actualSum)
-            }
+        if (null === cageSet) {
+            return
+        }
+
+        for (cage in cageSet) {
+            val actualSum = cage.positions.sumOf{ pos -> sudoku.solved[pos.rowIndex][pos.colIndex] }
+
+            assertEquals(cage.sum, actualSum)
         }
     }
 }
