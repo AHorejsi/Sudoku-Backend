@@ -3,7 +3,7 @@ package com.alexh.utils
 import kotlinx.serialization.Serializable
 
 @Serializable
-class Position (
+data class Position (
     val rowIndex: Int,
     val colIndex: Int
 ) : Comparable<Position> {
@@ -21,12 +21,6 @@ class Position (
 
     fun outOfBounds(length: Int): Boolean =
         outOfBounds(this.rowIndex, length) || outOfBounds(this.colIndex, length)
-
-    override fun hashCode(): Int =
-        31 * (this.rowIndex + this.colIndex)
-
-    override fun equals(other: Any?): Boolean =
-        other is Position && 0 == this.compareTo(other)
 
     override fun compareTo(other: Position): Int {
         val rowComp = this.rowIndex - other.rowIndex
