@@ -16,8 +16,7 @@ enum class Dimension(
     val boxRows: Int,
     val boxCols: Int
 ) {
-    NINE(9, 3, 3),
-    SIXTEEN(16, 4, 4)
+    NINE(9, 3, 3)
 }
 
 enum class Difficulty(
@@ -125,8 +124,14 @@ class Box(
 )
 
 @Serializable
+class Cell(
+    val value: Int?,
+    val editable: Boolean
+)
+
+@Serializable
 class SudokuJson(
-    val board: List<List<Int?>>,
+    val board: List<List<Cell>>,
     val solved: List<List<Int>>,
     val cages: Set<Cage>?,
     val boxes: Set<Box>,
@@ -156,7 +161,7 @@ fun makeSudoku(info: MakeSudokuCommand): SudokuJson {
     adjustForDifficulty(neighborhoods, info)
 
     // Save unsolved state of the sudoku for playing
-    val board = neighborhoods.map{ it.value }.unflatten(length)
+    val board = neighborhoods.map{ Cell(it.value, null === it.value) }.unflatten(length)
 
     // Save all of the above information as JSON
     return SudokuJson(board, solved, cages, boxes, length, difficulty, games)
