@@ -46,7 +46,7 @@ class SudokuTest {
 
         for (rowIndex in range) {
             for (colIndex in range) {
-                val value1 = sudoku.board[rowIndex][colIndex]
+                val value1 = sudoku.board[rowIndex][colIndex].value
                 val value2 = sudoku.solved[rowIndex][colIndex]
 
                 if (null !== value1) {
