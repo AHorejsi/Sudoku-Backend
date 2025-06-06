@@ -126,7 +126,7 @@ class Box(
 @Serializable
 class Cell(
     val value: Int?,
-    val editable: Boolean
+    @Suppress("UNUSED") val editable: Boolean
 )
 
 @Serializable
