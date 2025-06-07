@@ -69,7 +69,7 @@ sealed class DeleteUserResponse {
 @Serializable
 sealed class CreatePuzzleResponse {
     @Serializable
-    class Success(@Suppress("UNUSED") val puzzle: Puzzle) : CreatePuzzleResponse()
+    class Success(@Suppress("UNUSED") val puzzleId: Int) : CreatePuzzleResponse()
 
     @Serializable
     object FailedToCreate : CreatePuzzleResponse()

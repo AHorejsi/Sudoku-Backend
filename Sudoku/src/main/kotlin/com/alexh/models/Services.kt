@@ -255,9 +255,8 @@ class UserService(private val dbConn: Connection) {
                 }
 
                 val id = keys.getInt(UserService.PUZZLE_TABLE_ID)
-                val puzzle = Puzzle(id, json)
 
-                return@withContext CreatePuzzleResponse.Success(puzzle)
+                return@withContext CreatePuzzleResponse.Success(id)
             }
         }
     }
