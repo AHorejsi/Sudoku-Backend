@@ -20,5 +20,8 @@ fun connect(embedded: Boolean, app: Application): HikariDataSource {
         dbConfig.password = appConfig.property("postgres.password").getString()
     }
 
+    dbConfig.connectionTimeout = 10000
+    dbConfig.maximumPoolSize = 100
+
     return HikariDataSource(dbConfig)
 }

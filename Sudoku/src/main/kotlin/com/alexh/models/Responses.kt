@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed class GenerateResponse {
     @Serializable
-    class Success(val puzzle: SudokuJson) : GenerateResponse()
+    class Success(@Suppress("UNUSED") val sudoku: SudokuJson) : GenerateResponse()
 
     @Serializable
     object UnfilledFields : GenerateResponse()
