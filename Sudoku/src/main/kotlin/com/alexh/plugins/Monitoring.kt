@@ -42,6 +42,10 @@ fun configureMonitoring(app: Application, logger: Logger) {
     app.environment.monitor.subscribe(ApplicationStopping) {
         logger.info("Application Stopped at ${findCurrentDate()}")
     }
+
+    app.environment.monitor.subscribe(ServerReady) {
+        logger.info("Server ready at ${findCurrentDate()}")
+    }
 }
 
 private fun findCurrentDate(): String {
