@@ -39,7 +39,7 @@ fun configureMonitoring(app: Application, logger: Logger) {
         logger.info("Application Started at ${findCurrentDate()}")
     }
 
-    app.environment.monitor.subscribe(ApplicationStopping) {
+    app.environment.monitor.subscribe(ApplicationStopped) {
         logger.info("Application Stopped at ${findCurrentDate()}")
     }
 
