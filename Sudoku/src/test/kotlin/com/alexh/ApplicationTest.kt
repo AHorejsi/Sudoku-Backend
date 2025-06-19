@@ -84,7 +84,7 @@ class ApplicationTest {
         val responseBody = response.body<GenerateResponse>()
         assertIs<GenerateResponse.Success>(responseBody)
 
-        val puzzle = responseBody.puzzle
+        val puzzle = responseBody.sudoku
         assertEquals(dimension.length, puzzle.length)
         assertEquals(difficulty, puzzle.difficulty)
         assertEquals(games, puzzle.games)
