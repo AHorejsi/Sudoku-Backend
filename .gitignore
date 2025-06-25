@@ -1,2 +1,3 @@
 *.jks
 sql_scripts/
+logs/
