@@ -1,5 +1,5 @@
 <configuration>
-    <if condition='property("IS_DEV_ENV").equals("true")'>
+    <if condition='property("IS_DEV_ENV").equals("true") || property("IS_TEST_ENV").equals("true")'>
         <then>
             <appender name='CONSOLE' class='ch.qos.logback.core.ConsoleAppender'>
                 <encoder>

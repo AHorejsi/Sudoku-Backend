@@ -21,7 +21,7 @@ fun connect(embedded: Boolean, app: Application): HikariDataSource {
     }
 
     dbConfig.connectionTimeout = 10000
-    dbConfig.maximumPoolSize = 100
+    dbConfig.maximumPoolSize = 50
 
     return HikariDataSource(dbConfig)
 }
