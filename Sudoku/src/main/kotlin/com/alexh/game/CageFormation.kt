@@ -40,7 +40,7 @@ private fun makeCagesHelper(
     length: Int,
     cageRange: IntRange
 ) {
-    val available = neighborhoods.asSequence().map{ it.place }.toMutableList()
+    val available = neighborhoods.map{ it.place }.toMutableList()
 
     while (available.any()) {
         val cageSize = cageRange.random(rand)

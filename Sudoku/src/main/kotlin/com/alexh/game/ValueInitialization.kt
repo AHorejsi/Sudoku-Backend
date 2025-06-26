@@ -13,11 +13,11 @@ internal fun initializeValues(
     val games = info.games
 
     val length = dimension.length
-    val legal = (1 .. length).asSequence()
+    val legal = 1 .. length
 
     initializeValuesHelper1(neighborhoods, dimension, rand, legal, games)
 
-    val unassigned = neighborhoods.asSequence().filter{ null === it.value }.toMutableList()
+    val unassigned = neighborhoods.filter{ null === it.value }.toMutableList()
     val legalMap = shuffleValues(neighborhoods, length, rand, legal)
 
     initializeValuesHelper2(unassigned, legalMap)
@@ -27,7 +27,7 @@ private fun initializeValuesHelper1(
     neighborhoods: List<SudokuNode>,
     dimension: Dimension,
     rand: Random,
-    legal: Sequence<Int>,
+    legal: IntRange,
     games: Set<Game>
 ) {
     if (Game.HYPER in games) {
@@ -42,14 +42,14 @@ private fun fillRegularDiagonal(
     neighborhoods: List<SudokuNode>,
     dimension: Dimension,
     rand: Random,
-    legal: Sequence<Int>
+    legal: IntRange
 ) {
     val length = dimension.length
     val boxRows = dimension.boxRows
     val boxCols = dimension.boxCols
 
-    val rowRange = (0 until length step boxRows).asSequence()
-    val colRange = (0 until length step boxCols).asSequence()
+    val rowRange = 0 until length step boxRows
+    val colRange = 0 until length step boxCols
 
     for ((startRowIndex, startColIndex) in rowRange.zip(colRange)) {
         val rows = startRowIndex up boxRows
@@ -64,7 +64,7 @@ private fun fillBox(
     length: Int,
     rows: IntRange,
     cols: IntRange,
-    legal: Sequence<Int>,
+    legal: IntRange,
     rand: Random
 ) {
     val iter = legal.shuffled(rand).iterator()
@@ -82,10 +82,10 @@ private fun shuffleValues(
     neighborhoods: List<SudokuNode>,
     length: Int,
     rand: Random,
-    legal: Sequence<Int>
-): Map<SudokuNode, Sequence<Int>> {
+    legal: IntRange
+): Map<SudokuNode, List<Int>> {
     val range = 0 until length
-    val legalMap = HashMap<SudokuNode, Sequence<Int>>()
+    val legalMap = HashMap<SudokuNode, List<Int>>()
 
     for (rowIndex in range) {
         for (colIndex in range) {
@@ -102,7 +102,7 @@ private fun shuffleValues(
 
 private fun initializeValuesHelper2(
     unassigned: MutableList<SudokuNode>,
-    legalMap: Map<SudokuNode, Sequence<Int>>
+    legalMap: Map<SudokuNode, List<Int>>
 ): Boolean {
     if (unassigned.isEmpty()) {
         return true

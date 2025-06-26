@@ -15,7 +15,7 @@ internal fun adjustForDifficulty(
 
     var givenCount = length * length
 
-    for (node in neighborhoods.asSequence().shuffled(rand)) {
+    for (node in neighborhoods.shuffled(rand)) {
         if (checkLowerBound(node, lowerBound) && tryRemove(neighborhoods, length, node)) {
             --givenCount
 

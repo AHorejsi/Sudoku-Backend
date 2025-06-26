@@ -4,7 +4,7 @@ internal fun hasUniqueSolution(
     neighborhoods: List<SudokuNode>,
     length: Int
 ): Boolean {
-    val unassigned = neighborhoods.asSequence().filter{ null === it.value }.toMutableList()
+    val unassigned = neighborhoods.filter{ null === it.value }.toMutableList()
     val values = 1 .. length
 
     return 1 == countSolutions(unassigned, values)
