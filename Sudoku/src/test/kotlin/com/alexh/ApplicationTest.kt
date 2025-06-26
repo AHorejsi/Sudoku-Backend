@@ -46,8 +46,13 @@ class ApplicationTest {
                 this.gzip(1.0f)
             }
         }.use { client ->
-            for (difficulty in Difficulty.values()) {
-                this@ApplicationTest.testGenerateHelper1(client, Dimension.NINE, difficulty)
+            val dimensionArray = Dimension.values()
+            val difficultyArray = Difficulty.values()
+
+            for (dimension in dimensionArray) {
+                for (difficulty in difficultyArray) {
+                    this@ApplicationTest.testGenerateHelper1(client, dimension, difficulty)
+                }
             }
 
             this@ApplicationTest.testUnfilledFieldsOnGenerate(client)
