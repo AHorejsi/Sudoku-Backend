@@ -18,7 +18,8 @@ internal fun makeCages(
     val cageRange = decideCageRange(info, length)
     val cages = HashSet<Cage>(length * length)
 
-    makeCagesHelper(cages, neighborhoods, info.random, length, cageRange)
+    makeCagesHelper1(cages, neighborhoods, info.random, length, cageRange)
+    makeCagesHelper2(cages, neighborhoods, length, cageRange)
 
     return cages
 }
@@ -33,7 +34,7 @@ private fun decideCageRange(
     return minCageCount .. maxCageCount
 }
 
-private fun makeCagesHelper(
+private fun makeCagesHelper1(
     cages: MutableSet<Cage>,
     neighborhoods: List<SudokuNode>,
     rand: Random,
@@ -45,14 +46,15 @@ private fun makeCagesHelper(
     while (available.any()) {
         val cageSize = cageRange.random(rand)
 
-        val cagePos = HashSet<Position>(cageSize)
+        val cagePos = java.util.TreeSet<Position>()
         var pos = available.random(rand)
 
         while (cagePos.size < cageSize) {
             cagePos.add(pos)
             available.remove(pos)
 
-            val adjacent = listOf(pos.up, pos.down, pos.left, pos.right).filter{ !it.outOfBounds(length) && it in available }
+            val adjacent =
+                listOf(pos.up, pos.down, pos.left, pos.right).filter{ !it.outOfBounds(length) && it in available }
 
             if (adjacent.isEmpty()) {
                 break
@@ -65,5 +67,45 @@ private fun makeCagesHelper(
         val newCage = Cage(sum, cagePos)
 
         cages.add(newCage)
+    }
+}
+
+private fun makeCagesHelper2(
+    cages: MutableSet<Cage>,
+    neighborhoods: List<SudokuNode>,
+    length: Int,
+    cageRange: IntRange
+) {
+    // Get all cages with only one position and sort them by row
+    val singles = cages.filter{ 1 == it.positions.size }.sortedBy{ it.positions.single() }
+
+    if (singles.isEmpty()) {
+        return
+    }
+
+    // Remove all cages with single position
+    cages.removeAll(singles)
+
+    val iter = singles.iterator()
+
+    var item = iter.next().positions.single()
+    val cagePos = java.util.TreeSet<Position>()
+
+    cagePos.add(item)
+
+    while (iter.hasNext()) {
+        val nextItem = iter.next().positions.single()
+
+        if (item.isAdjacentTo(nextItem) && cageRange.last >= cagePos.size) {
+            cagePos.add(nextItem)
+        }
+        else {
+            val sum = cagePos.sumOf{ neighborhoods.get2d(it.rowIndex, it.colIndex, length).value!! }
+            val newCage = Cage(sum, cagePos)
+
+            cages.add(newCage)
+        }
+
+        item = nextItem
     }
 }
