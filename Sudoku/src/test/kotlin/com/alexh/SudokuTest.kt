@@ -11,7 +11,7 @@ class SudokuTest {
     fun testMakeSudoku() {
         val dimensionArray = Dimension.values()
         val difficultyArray = Difficulty.values()
-        val rand = Random(-1)
+        val rand = Random(0)
 
         for (dimension in dimensionArray) {
             for (difficulty in difficultyArray) {
@@ -120,5 +120,8 @@ class SudokuTest {
 
             assertEquals(cage.sum, actualSum)
         }
+
+        val cellCount = sudoku.length * sudoku.length
+        assertEquals(cellCount, cageSet.sumOf{ it.positions.size })
     }
 }

@@ -26,11 +26,11 @@ enum class Difficulty(
     val minCageSize: Float,
     val maxCageSize: Float
 ) {
-    BEGINNER(0.58f, 0.68f, 0.55f, 0.22f, 0.44f),
-    EASY(0.44f, 0.57f, 0.44f, 0.33f, 0.55f),
-    MEDIUM(0.40f, 0.43f, 0.33f, 0.44f, 0.66f),
-    HARD(0.35f, 0.38f, 0.22f, 0.55f, 0.77f),
-    MASTER(0.21f, 0.33f, 0.0f, 0.66f, 0.88f)
+    BEGINNER(0.58f, 0.68f, 0.55f, 0.33f, 0.44f),
+    EASY(0.44f, 0.57f, 0.44f, 0.44f, 0.55f),
+    MEDIUM(0.40f, 0.43f, 0.33f, 0.55f, 0.66f),
+    HARD(0.35f, 0.38f, 0.22f, 0.66f, 0.77f),
+    MASTER(0.21f, 0.33f, 0.0f, 0.77f, 0.88f)
 }
 
 data class MakeSudokuCommand(
