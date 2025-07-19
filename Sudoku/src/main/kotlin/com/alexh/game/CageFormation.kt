@@ -62,18 +62,9 @@ private fun makeCagesHelper(
             pos = adjacent.random(rand)
         }
 
-        createCage(neighborhoods, length, cages, cagePos)
+        val sum = cagePos.sumOf{ neighborhoods.get2d(it.rowIndex, it.colIndex, length).value!! }
+        val newCage = Cage(sum, cagePos)
+
+        cages.add(newCage)
     }
-}
-
-private fun createCage(
-    neighborhoods: List<SudokuNode>,
-    length: Int,
-    cages: MutableSet<Cage>,
-    cagePos: MutableSet<Position>
-) {
-    val sum = cagePos.sumOf{ neighborhoods.get2d(it.rowIndex, it.colIndex, length).value!! }
-    val newCage = Cage(sum, cagePos)
-
-    cages.add(newCage)
 }
