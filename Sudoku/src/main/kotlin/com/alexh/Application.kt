@@ -17,7 +17,7 @@ fun main(args: Array<String>) =
 @Suppress("UNUSED")
 fun Application.setupModule() {
     configureSerialization(this)
-    configureHttp(this)
+    configureHttp(this, logger)
     configureMonitoring(this, logger)
 }
 

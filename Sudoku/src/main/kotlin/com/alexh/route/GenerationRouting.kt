@@ -21,11 +21,11 @@ fun configureEndpointsForGeneratingPuzzles(app: Application) {
     }
 }
 
-private suspend fun generateSudoku(call: ApplicationCall): Result<GenerateResponse> = runCatching {
+private suspend fun generateSudoku(call: ApplicationCall): GenerateResponse {
     val request = call.receive(GenerateRequest::class)
 
     if (request.dimension.isEmpty() || request.difficulty.isEmpty()) {
-        return@runCatching GenerateResponse.UnfilledFields
+        return GenerateResponse.UnfilledFields
     }
 
     val dimension = Dimension.valueOf(request.dimension)
@@ -35,5 +35,5 @@ private suspend fun generateSudoku(call: ApplicationCall): Result<GenerateRespon
 
     val sudoku = makeSudoku(info)
 
-    return@runCatching GenerateResponse.Success(sudoku)
+    return GenerateResponse.Success(sudoku)
 }

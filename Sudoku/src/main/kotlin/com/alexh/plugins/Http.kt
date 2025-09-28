@@ -5,9 +5,23 @@ import io.ktor.server.application.*
 import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.ratelimit.*
+import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.response.*
+import org.slf4j.Logger
+import java.sql.SQLException
 import kotlin.time.Duration.Companion.seconds
 
-fun configureHttp(app: Application) {
+fun configureHttp(app: Application, logger: Logger) {
+    app.install(StatusPages) {
+        this.exception<Throwable> { call, cause ->
+            respondToException(app, call, logger, cause, HttpStatusCode.InternalServerError)
+        }
+
+        this.exception<SQLException> { call, cause ->
+            respondToException(app, call, logger, cause, HttpStatusCode.BadGateway)
+        }
+    }
+
     app.install(CORS) {
         this.allowMethod(HttpMethod.Options)
         this.allowMethod(HttpMethod.Get)
@@ -52,4 +66,25 @@ fun configureHttp(app: Application) {
             this.rateLimiter(limit = 50, refillPeriod = 10.seconds)
         }
     }
+}
+
+private suspend fun respondToException(
+    app: Application,
+    call: ApplicationCall,
+    logger: Logger,
+    cause: Throwable,
+    statusCode: HttpStatusCode
+) {
+    val isDevMode = app.environment.config.property("ktor.development").getString().toBoolean()
+    val isTestMode = app.environment.config.property("ktor.testing").getString().toBoolean()
+    val stackTrace = cause.stackTraceToString()
+
+    if (isDevMode || isTestMode) {
+        call.respond(statusCode, stackTrace)
+    }
+    else {
+        call.respond(statusCode)
+    }
+
+    logger.error(stackTrace)
 }

@@ -50,84 +50,72 @@ fun configureEndpointsForUsers(app: Application, source: DataSource) {
     }
 }
 
-private suspend fun createUser(
-    source: DataSource,
-    call: ApplicationCall
-): Result<CreateUserResponse> = runCatching {
+private suspend fun createUser(source: DataSource, call: ApplicationCall): CreateUserResponse {
     val request = call.receive(CreateUserRequest::class)
 
     source.connection.use {
         val service = UserService(it)
 
-        return@runCatching service.createUser(request)
+        return service.createUser(request)
     }
 }
 
-private suspend fun readUser(
-    source: DataSource,
-    call: ApplicationCall
-): Result<ReadUserResponse> = runCatching {
+private suspend fun readUser(source: DataSource, call: ApplicationCall): ReadUserResponse {
     val request = call.receive(ReadUserRequest::class)
 
     source.connection.use {
         val service = UserService(it)
 
-        return@runCatching service.readUser(request)
+        return service.readUser(request)
     }
 }
 
-private suspend fun updateUser(
-    source: DataSource,
-    call: ApplicationCall
-): Result<UpdateUserResponse> = runCatching {
+private suspend fun updateUser(source: DataSource, call: ApplicationCall): UpdateUserResponse {
     val request = call.receive(UpdateUserRequest::class)
 
     source.connection.use {
         val service = UserService(it)
 
-        return@runCatching service.updateUser(request)
+        return service.updateUser(request)
     }
 }
 
-private suspend fun deleteUser(
-    source: DataSource,
-    call: ApplicationCall
-): Result<DeleteUserResponse> = runCatching {
+private suspend fun deleteUser(source: DataSource, call: ApplicationCall): DeleteUserResponse {
     val request = call.receive(DeleteUserRequest::class)
 
     source.connection.use {
         val service = UserService(it)
 
-        return@runCatching service.deleteUser(request)
+        return service.deleteUser(request)
     }
 }
 
-private suspend fun createPuzzle(source: DataSource, call: ApplicationCall): Result<CreatePuzzleResponse> = runCatching {
+private suspend fun createPuzzle(source: DataSource, call: ApplicationCall): CreatePuzzleResponse {
     val request = call.receive(CreatePuzzleRequest::class)
 
     source.connection.use {
         val service = UserService(it)
 
-        return@runCatching service.createPuzzle(request)
+        return service.createPuzzle(request)
     }
 }
 
-private suspend fun updatePuzzle(source: DataSource, call: ApplicationCall): Result<UpdatePuzzleResponse> = runCatching {
+private suspend fun updatePuzzle(source: DataSource, call: ApplicationCall): UpdatePuzzleResponse {
     val request = call.receive(UpdatePuzzleRequest::class)
 
     source.connection.use {
         val service = UserService(it)
 
-        return@runCatching service.updatePuzzle(request)
+        return service.updatePuzzle(request)
     }
 }
 
-private suspend fun deletePuzzle(source: DataSource, call: ApplicationCall): Result<DeletePuzzleResponse> = runCatching {
+private suspend fun deletePuzzle(source: DataSource, call: ApplicationCall): DeletePuzzleResponse {
     val request = call.receive(DeletePuzzleRequest::class)
 
     source.connection.use {
         val service = UserService(it)
 
-        return@runCatching service.deletePuzzle(request)
+        return service.deletePuzzle(request)
     }
 }
