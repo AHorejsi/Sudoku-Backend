@@ -9,7 +9,7 @@ import org.slf4j.Logger
 import org.slf4j.event.Level
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 fun configureMonitoring(app: Application, logger: Logger) {
     app.install(CallLogging) {
@@ -19,7 +19,7 @@ fun configureMonitoring(app: Application, logger: Logger) {
     }
 
     app.install(CallId) {
-        val counter = AtomicInteger(0)
+        val counter = AtomicLong(0)
         val config = app.environment.config
 
         val isDev = config.property("ktor.development").getString().toBoolean()
