@@ -126,6 +126,7 @@ class Box(
 @Serializable
 class Cell(
     val value: Int?,
+    @Suppress("UNUSED") val notes: Int,
     @Suppress("UNUSED") val editable: Boolean
 )
 
@@ -161,7 +162,7 @@ fun makeSudoku(info: MakeSudokuCommand): SudokuJson {
     adjustForDifficulty(neighborhoods, info)
 
     // Save unsolved state of the sudoku for playing
-    val board = neighborhoods.map{ Cell(it.value, null === it.value) }.unflatten(length)
+    val board = neighborhoods.map{ Cell(it.value, 0,null === it.value) }.unflatten(length)
 
     // Save all of the above information as JSON
     return SudokuJson(board, solved, cages, boxes, length, difficulty, games)
