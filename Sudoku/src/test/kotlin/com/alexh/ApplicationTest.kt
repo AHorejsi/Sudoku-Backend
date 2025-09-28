@@ -394,6 +394,7 @@ class ApplicationTest {
             this.append(HttpHeaders.XRequestId, xReqId)
             this.append(HttpHeaders.ContentType, "application/json")
             this.append(HttpHeaders.ContentEncoding, "gzip")
+            this.append(HttpHeaders.Accept, "application/json")
             this.append(HttpHeaders.AcceptCharset, "ISO-8859-1")
             this.append(HttpHeaders.AcceptEncoding, "gzip, deflate, br")
             this.append(HttpHeaders.Connection, "keep-alive")
