@@ -16,7 +16,7 @@ fun configureEndpointsForGeneratingPuzzles(app: Application) {
         this.post(Endpoints.GENERATE) {
             val result = generateSudoku(this.call)
 
-            handleResult(result, this.call, logger, "Successful call to ${Endpoints.GENERATE}")
+            handleResult(result, this.call, logger, Endpoints.GENERATE)
         }
     }
 }

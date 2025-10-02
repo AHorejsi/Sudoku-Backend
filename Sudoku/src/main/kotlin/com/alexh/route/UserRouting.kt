@@ -2,10 +2,8 @@ package com.alexh.route
 
 import com.alexh.models.*
 import com.alexh.utils.*
-import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
-import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
@@ -17,37 +15,37 @@ fun configureEndpointsForUsers(app: Application, source: DataSource) {
         this.put(Endpoints.CREATE_USER) {
             val result = createUser(source, this.call)
 
-            handleResult(result, this.call, Endpoints.CREATE_USER)
+            handleResult(result, this.call, logger, Endpoints.CREATE_USER)
         }
         this.post(Endpoints.READ_USER) {
             val result = readUser(source, this.call)
 
-            handleResult(result, this.call, Endpoints.READ_USER)
+            handleResult(result, this.call, logger, Endpoints.READ_USER)
         }
         this.put(Endpoints.UPDATE_USER) {
             val result = updateUser(source, this.call)
 
-            handleResult(result, this.call, Endpoints.UPDATE_USER)
+            handleResult(result, this.call, logger, Endpoints.UPDATE_USER)
         }
         this.delete(Endpoints.DELETE_USER) {
             val result = deleteUser(source, this.call)
 
-            handleResult(result, this.call, Endpoints.DELETE_USER)
+            handleResult(result, this.call, logger, Endpoints.DELETE_USER)
         }
         this.put(Endpoints.CREATE_PUZZLE) {
             val result = createPuzzle(source, this.call)
 
-            handleResult(result, this.call, Endpoints.CREATE_PUZZLE)
+            handleResult(result, this.call, logger, Endpoints.CREATE_PUZZLE)
         }
         this.put(Endpoints.UPDATE_PUZZLE) {
             val result = updatePuzzle(source, this.call)
 
-            handleResult(result, this.call, Endpoints.UPDATE_PUZZLE)
+            handleResult(result, this.call, logger, Endpoints.UPDATE_PUZZLE)
         }
         this.delete(Endpoints.DELETE_PUZZLE) {
             val result = deletePuzzle(source, this.call)
 
-            handleResult(result, this.call, Endpoints.DELETE_PUZZLE)
+            handleResult(result, this.call, logger, Endpoints.DELETE_PUZZLE)
         }
     }
 }
@@ -120,13 +118,4 @@ private suspend fun deletePuzzle(source: DataSource, call: ApplicationCall): Del
 
         return service.deletePuzzle(request)
     }
-}
-
-private suspend inline fun <reified TType : Any> handleResult(
-    result: TType,
-    call: ApplicationCall,
-    endpoint: String
-) {
-    call.respond(HttpStatusCode.OK, result)
-    logger.info("Successful call to $endpoint")
 }
