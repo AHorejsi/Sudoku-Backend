@@ -21,6 +21,8 @@ dependencies {
     implementation "org.postgresql:postgresql:$postgres_version"
     implementation "org.slf4j:slf4j-api:1.7.25"
     implementation "org.codehaus.janino:janino:3.1.8"
+    implementation "io.ktor:ktor-server-auth:$ktor_version"
+    implementation "io.ktor:ktor-server-auth-jwt:$ktor_version"
     implementation "io.ktor:ktor-server-core-jvm:$ktor_version"
     implementation "io.ktor:ktor-server-compression:$ktor_version"
     implementation "io.ktor:ktor-server-content-negotiation:$ktor_version"

@@ -36,7 +36,7 @@ sealed class CreateUserResponse {
 @Serializable
 sealed class ReadUserResponse {
     @Serializable
-    class Success(val user: User) : ReadUserResponse()
+    class Success(val user: User, val token: String) : ReadUserResponse()
 
     @Serializable
     object FailedToFind : ReadUserResponse()

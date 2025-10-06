@@ -5,6 +5,7 @@ import com.alexh.models.GenerateRequest
 import com.alexh.models.GenerateResponse
 import com.alexh.utils.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
@@ -13,10 +14,12 @@ private val logger = LoggerFactory.getLogger(Loggers.GENERATION_ROUTING)
 
 fun configureEndpointsForGeneratingPuzzles(app: Application) {
     app.routing {
-        this.post(Endpoints.GENERATE) {
-            val result = generateSudoku(this.call)
+        this.authenticate(Auths.JWT) {
+            this.post(Endpoints.GENERATE) {
+                val result = generateSudoku(this.call)
 
-            handleResult(result, this.call, logger, Endpoints.GENERATE)
+                handleResult(result, this.call, logger, Endpoints.GENERATE)
+            }
         }
     }
 }

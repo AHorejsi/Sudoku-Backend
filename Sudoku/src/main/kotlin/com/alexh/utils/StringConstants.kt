@@ -42,6 +42,16 @@ class Loggers private constructor() {
     }
 }
 
+class Auths private constructor() {
+    init {
+        noInstances(Auths::class)
+    }
+
+    companion object {
+        const val JWT = "auth-jwt"
+    }
+}
+
 private fun noInstances(cls: KClass<*>): Nothing {
     throw RuntimeException("No instances of ${cls.java.name}")
 }

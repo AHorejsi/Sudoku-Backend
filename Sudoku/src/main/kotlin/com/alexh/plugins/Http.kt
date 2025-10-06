@@ -1,7 +1,13 @@
 package com.alexh.plugins
 
+import com.alexh.utils.Auths
+import com.alexh.utils.JwtException
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.ratelimit.*
@@ -12,13 +18,33 @@ import java.sql.SQLException
 import kotlin.time.Duration.Companion.seconds
 
 fun configureHttp(app: Application, logger: Logger) {
-    app.install(StatusPages) {
-        this.exception<Throwable> { call, cause ->
-            respondToException(app, call, logger, cause, HttpStatusCode.InternalServerError)
-        }
+    app.install(Authentication) {
+        this.jwt(Auths.JWT) {
+            val config = app.environment.config
 
-        this.exception<SQLException> { call, cause ->
-            respondToException(app, call, logger, cause, HttpStatusCode.BadGateway)
+            val secret = config.property("jwt.secret").getString()
+            val issuer = config.property("jwt.issuer").getString()
+            val audience = config.property("jwt.audience").getString()
+
+            this.realm = config.property("jwt.realm").getString()
+            this.verifier(
+                JWT
+                    .require(Algorithm.HMAC256(secret))
+                    .withIssuer(issuer)
+                    .withAudience(audience)
+                    .build()
+            )
+            this.validate { credentials ->
+                val payload = credentials.payload
+
+                if (payload.issuer == issuer && payload.audience.contains(audience))
+                    JWTPrincipal(credentials.payload)
+                else
+                    null
+            }
+            this.challenge { _, _ ->
+                throw JwtException("Invalid JWT Token")
+            }
         }
     }
 
@@ -50,6 +76,20 @@ fun configureHttp(app: Application, logger: Logger) {
         }
         else {
             this.allowHost("localhost:1234", listOf("http", "https"))
+        }
+    }
+
+    app.install(StatusPages) {
+        this.exception<Throwable> { call, cause ->
+            respondToException(app, call, logger, cause, HttpStatusCode.InternalServerError)
+        }
+
+        this.exception<SQLException> { call, cause ->
+            respondToException(app, call, logger, cause, HttpStatusCode.BadGateway)
+        }
+
+        this.exception<JwtException> { call, cause ->
+            respondToException(app, call, logger, cause, HttpStatusCode.Unauthorized)
         }
     }
 
