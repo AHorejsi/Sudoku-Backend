@@ -5,13 +5,12 @@ import com.alexh.utils.createPassword
 import com.alexh.utils.isValidEmail
 import com.alexh.utils.isValidPassword
 import com.alexh.utils.validatePassword
-import io.ktor.server.application.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.*
 
 @Suppress("RemoveRedundantQualifierName")
-class UserService(private val dbConn: Connection, private val app: Application) {
+class UserService(private val dbConn: Connection) {
     companion object {
         const val USER_TABLE = "Users"
         const val USER_TABLE_ID = "id"
@@ -158,7 +157,7 @@ class UserService(private val dbConn: Connection, private val app: Application) 
             this.buildUserWithPotentiallyNoPuzzles(results)
         else
             this.buildUserWithManyPuzzles(results)
-        val token = createJwtToken(this.app)
+        val token = createJwtToken()
 
         return ReadUserResponse.Success(user, token)
     }

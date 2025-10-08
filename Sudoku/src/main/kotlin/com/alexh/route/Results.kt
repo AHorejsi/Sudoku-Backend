@@ -18,12 +18,10 @@ suspend inline fun <reified TType : Any> handleResult(
     logger.info("Successful call to $endpoint")
 }
 
-fun createJwtToken(app: Application): String {
-    val config = app.environment.config
-
-    val secret = config.property("jwt.secret").getString()
-    val issuer = config.property("jwt.issuer").getString()
-    val audience = config.property("jwt.audience").getString()
+fun createJwtToken(): String {
+    val secret = System.getenv("SUDOKU_JWT_SECRET")
+    val issuer = System.getenv("SUDOKU_JWT_ISSUER")
+    val audience = System.getenv("SUDOKU_JWT_AUDIENCE")
 
     return JWT
         .create()
