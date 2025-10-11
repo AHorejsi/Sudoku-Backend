@@ -6,6 +6,7 @@ import com.alexh.models.GenerateResponse
 import com.alexh.utils.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory

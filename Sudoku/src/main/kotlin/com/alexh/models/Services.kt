@@ -137,29 +137,38 @@ class UserService(private val dbConn: Connection) {
             stmt.setString(2, usernameOrEmail)
 
             stmt.executeQuery().use { results ->
-                return@withContext if (results.next())
-                    this@UserService.buildUser(results, password)
-                else
-                    ReadUserResponse.FailedToFind
+                val user = this@UserService.buildUser(results, password)
+
+                if (null === user) {
+                    return@withContext ReadUserResponse.FailedToFind
+                }
+                else {
+                    val token = createJwtToken(usernameOrEmail)
+
+                    return@withContext ReadUserResponse.Success(user, token)
+                }
             }
         }
     }
 
-    private fun buildUser(results: ResultSet, providedPassword: String): ReadUserResponse {
+    private fun buildUser(results: ResultSet, providedPassword: String): User? {
+        if (!results.next()) {
+            return null
+        }
+
         val databasePassword = results.getString(UserService.PASSWORD)
         val dynamicSalt = results.getString(UserService.SALT)
 
         if (!validatePassword(providedPassword, databasePassword, dynamicSalt)) {
-            return ReadUserResponse.FailedToFind
+            return null
         }
 
         val user = if (results.isLast)
             this.buildUserWithPotentiallyNoPuzzles(results)
         else
             this.buildUserWithManyPuzzles(results)
-        val token = createJwtToken()
 
-        return ReadUserResponse.Success(user, token)
+        return user
     }
 
     private fun buildUserWithPotentiallyNoPuzzles(results: ResultSet): User {

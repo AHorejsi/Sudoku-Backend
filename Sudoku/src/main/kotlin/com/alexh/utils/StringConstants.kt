@@ -52,6 +52,16 @@ class Auths private constructor() {
     }
 }
 
+class JwtClaims private constructor() {
+    init {
+        noInstances(JwtClaims::class)
+    }
+
+    companion object {
+        const val USERNAME_OR_EMAIL = "usernameOrEmail"
+    }
+}
+
 private fun noInstances(cls: KClass<*>): Nothing {
     throw RuntimeException("No instances of ${cls.java.name}")
 }

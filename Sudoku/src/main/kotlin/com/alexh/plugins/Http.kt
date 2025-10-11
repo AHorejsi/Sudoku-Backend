@@ -1,7 +1,7 @@
 package com.alexh.plugins
 
 import com.alexh.utils.Auths
-import com.alexh.utils.JwtException
+import com.alexh.utils.JwtClaims
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.http.*
@@ -32,10 +32,14 @@ fun configureHttp(app: Application, logger: Logger) {
                     .require(Algorithm.HMAC256(secret))
                     .withIssuer(issuer)
                     .withAudience(audience)
+                    .withClaimPresence(JwtClaims.USERNAME_OR_EMAIL)
                     .build()
             )
             this.validate { credentials ->
                 val payload = credentials.payload
+
+                println(payload.audience)
+                println(audience)
 
                 if (payload.issuer == issuer && payload.audience.contains(audience))
                     JWTPrincipal(credentials.payload)
@@ -43,7 +47,7 @@ fun configureHttp(app: Application, logger: Logger) {
                     null
             }
             this.challenge { _, _ ->
-                throw JwtException("Invalid JWT Token")
+                this.call.respond(HttpStatusCode.Unauthorized, "Invalid JWT Token")
             }
         }
     }
@@ -86,10 +90,6 @@ fun configureHttp(app: Application, logger: Logger) {
 
         this.exception<SQLException> { call, cause ->
             respondToException(app, call, logger, cause, HttpStatusCode.BadGateway)
-        }
-
-        this.exception<JwtException> { call, cause ->
-            respondToException(app, call, logger, cause, HttpStatusCode.Unauthorized)
         }
     }
 

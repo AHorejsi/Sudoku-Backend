@@ -3,6 +3,7 @@ package com.alexh.route
 import com.alexh.models.*
 import com.alexh.utils.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
@@ -12,41 +13,52 @@ private val logger = LoggerFactory.getLogger(Loggers.USER_ROUTING)
 
 fun configureEndpointsForUsers(app: Application, source: DataSource) {
     app.routing {
-        this.put(Endpoints.CREATE_USER) {
-            val result = createUser(source, this.call)
+        openUrls(source, this)
 
-            handleResult(result, this.call, logger, Endpoints.CREATE_USER)
+        this.authenticate(Auths.JWT) {
+            authenticatedUrls(source, this)
         }
-        this.post(Endpoints.READ_USER) {
-            val result = readUser(source, this.call)
+    }
+}
 
-            handleResult(result, this.call, logger, Endpoints.READ_USER)
-        }
-        this.put(Endpoints.UPDATE_USER) {
-            val result = updateUser(source, this.call)
+private fun openUrls(source: DataSource, routing: Routing) {
+    routing.put(Endpoints.CREATE_USER) {
+        val result = createUser(source, this.call)
 
-            handleResult(result, this.call, logger, Endpoints.UPDATE_USER)
-        }
-        this.delete(Endpoints.DELETE_USER) {
-            val result = deleteUser(source, this.call)
+        handleResult(result, this.call, logger, Endpoints.CREATE_USER)
+    }
+    routing.post(Endpoints.READ_USER) {
+        val result = readUser(source, this.call)
 
-            handleResult(result, this.call, logger, Endpoints.DELETE_USER)
-        }
-        this.put(Endpoints.CREATE_PUZZLE) {
-            val result = createPuzzle(source, this.call)
+        handleResult(result, this.call, logger, Endpoints.READ_USER)
+    }
+}
 
-            handleResult(result, this.call, logger, Endpoints.CREATE_PUZZLE)
-        }
-        this.put(Endpoints.UPDATE_PUZZLE) {
-            val result = updatePuzzle(source, this.call)
+private fun authenticatedUrls(source: DataSource, route: Route) {
+    route.put(Endpoints.UPDATE_USER) {
+        val result = updateUser(source, this.call)
 
-            handleResult(result, this.call, logger, Endpoints.UPDATE_PUZZLE)
-        }
-        this.delete(Endpoints.DELETE_PUZZLE) {
-            val result = deletePuzzle(source, this.call)
+        handleResult(result, this.call, logger, Endpoints.UPDATE_USER)
+    }
+    route.delete(Endpoints.DELETE_USER) {
+        val result = deleteUser(source, this.call)
 
-            handleResult(result, this.call, logger, Endpoints.DELETE_PUZZLE)
-        }
+        handleResult(result, this.call, logger, Endpoints.DELETE_USER)
+    }
+    route.put(Endpoints.CREATE_PUZZLE) {
+        val result = createPuzzle(source, this.call)
+
+        handleResult(result, this.call, logger, Endpoints.CREATE_PUZZLE)
+    }
+    route.put(Endpoints.UPDATE_PUZZLE) {
+        val result = updatePuzzle(source, this.call)
+
+        handleResult(result, this.call, logger, Endpoints.UPDATE_PUZZLE)
+    }
+    route.delete(Endpoints.DELETE_PUZZLE) {
+        val result = deletePuzzle(source, this.call)
+
+        handleResult(result, this.call, logger, Endpoints.DELETE_PUZZLE)
     }
 }
 

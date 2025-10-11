@@ -1,5 +1,6 @@
 package com.alexh.route
 
+import com.alexh.utils.JwtClaims
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import org.slf4j.Logger
@@ -18,15 +19,17 @@ suspend inline fun <reified TType : Any> handleResult(
     logger.info("Successful call to $endpoint")
 }
 
-fun createJwtToken(): String {
+fun createJwtToken(usernameOrEmail: String): String {
     val secret = System.getenv("SUDOKU_JWT_SECRET")
     val issuer = System.getenv("SUDOKU_JWT_ISSUER")
     val audience = System.getenv("SUDOKU_JWT_AUDIENCE")
+    val timeDeltaInMillis = 604800000 // 1 week
 
     return JWT
         .create()
         .withAudience(audience)
         .withIssuer(issuer)
-        .withExpiresAt(Date(System.currentTimeMillis() + 60000))
+        .withClaim(JwtClaims.USERNAME_OR_EMAIL, usernameOrEmail)
+        .withExpiresAt(Date(System.currentTimeMillis() + timeDeltaInMillis))
         .sign(Algorithm.HMAC256(secret))
 }
