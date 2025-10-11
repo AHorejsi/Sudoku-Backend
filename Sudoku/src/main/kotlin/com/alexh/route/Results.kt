@@ -25,7 +25,7 @@ fun createJwtToken(usernameOrEmail: String): String {
     val audience = System.getenv("SUDOKU_JWT_AUDIENCE")
     val timeDeltaInMillis = 604800000 // 1 week
 
-    return JWT
+    return "Bearer " + JWT
         .create()
         .withAudience(audience)
         .withIssuer(issuer)
