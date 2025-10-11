@@ -1,5 +1,6 @@
 package com.alexh.route
 
+import com.alexh.utils.EnvironmentVariables
 import com.alexh.utils.JwtClaims
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -20,9 +21,9 @@ suspend inline fun <reified TType : Any> handleResult(
 }
 
 fun createJwtToken(usernameOrEmail: String): String {
-    val secret = System.getenv("SUDOKU_JWT_SECRET")
-    val issuer = System.getenv("SUDOKU_JWT_ISSUER")
-    val audience = System.getenv("SUDOKU_JWT_AUDIENCE")
+    val secret = System.getenv(EnvironmentVariables.JWT_SECRET)
+    val issuer = System.getenv(EnvironmentVariables.JWT_ISSUER)
+    val audience = System.getenv(EnvironmentVariables.JWT_AUDIENCE)
     val timeDeltaInMillis = 604800000 // 1 week
 
     return "Bearer " + JWT
