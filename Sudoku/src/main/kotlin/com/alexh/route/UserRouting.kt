@@ -4,6 +4,7 @@ import com.alexh.models.*
 import com.alexh.utils.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
@@ -59,6 +60,11 @@ private fun authenticatedUrls(source: DataSource, route: Route) {
         val result = deletePuzzle(source, this.call)
 
         handleResult(result, this.call, logger, Endpoints.DELETE_PUZZLE)
+    }
+    route.put(Endpoints.RENEW_JWT_TOKEN) {
+        val result = renewJwtToken(this.call)
+
+        handleResult(result, this.call, logger, Endpoints.RENEW_JWT_TOKEN)
     }
 }
 
@@ -130,4 +136,16 @@ private suspend fun deletePuzzle(source: DataSource, call: ApplicationCall): Del
 
         return service.deletePuzzle(request)
     }
+}
+
+private suspend fun renewJwtToken(call: ApplicationCall): RenewJwtTokenResponse {
+    val request = call.receive(RenewJwtTokenRequest::class)
+    val principal = call.principal<JWTPrincipal>()!!
+
+    val token = refreshJwtToken(request.user, principal.payload)
+
+    return if (null !== token)
+        RenewJwtTokenResponse.Success(token)
+    else
+        RenewJwtTokenResponse.InvalidToken
 }

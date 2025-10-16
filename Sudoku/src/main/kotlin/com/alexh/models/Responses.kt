@@ -92,3 +92,12 @@ sealed class DeletePuzzleResponse {
     @Serializable
     object FailedToFind : DeletePuzzleResponse()
 }
+
+@Serializable
+sealed class RenewJwtTokenResponse {
+    @Serializable
+    class Success(@Suppress("UNUSED") val newToken: String) : RenewJwtTokenResponse()
+
+    @Serializable
+    object InvalidToken : RenewJwtTokenResponse()
+}

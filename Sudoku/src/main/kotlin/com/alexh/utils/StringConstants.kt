@@ -29,6 +29,7 @@ class Endpoints private constructor() {
         const val CREATE_PUZZLE = "/createPuzzle"
         const val UPDATE_PUZZLE = "/updatePuzzle"
         const val DELETE_PUZZLE = "/deletePuzzle"
+        const val RENEW_JWT_TOKEN = "/renewToken"
         const val SHUTDOWN = "/shutdown"
     }
 }
