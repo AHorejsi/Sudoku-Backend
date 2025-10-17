@@ -38,7 +38,11 @@ fun configureHttp(app: Application, logger: Logger) {
             this.validate { credentials ->
                 val payload = credentials.payload
 
-                if (payload.issuer == issuer && payload.audience.contains(audience))
+                val isActualIssuer = payload.issuer == issuer
+                val isAllowedAudience = payload.audience.contains(audience)
+                val isAllowedUsernameOrEmail = !payload.getClaim(JwtClaims.USERNAME_OR_EMAIL).asString().isNullOrBlank()
+
+                if (isActualIssuer && isAllowedAudience && isAllowedUsernameOrEmail)
                     JWTPrincipal(credentials.payload)
                 else
                     null
