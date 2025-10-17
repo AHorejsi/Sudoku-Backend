@@ -28,7 +28,7 @@ suspend inline fun <reified TType : Any> handleResult(
 }
 
 fun createJwtToken(usernameOrEmail: String): String =
-    "Bearer " + JWT
+    JWT
         .create()
         .withAudience(audience)
         .withIssuer(issuer)
