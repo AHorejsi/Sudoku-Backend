@@ -5,7 +5,11 @@ import com.alexh.game.Dimension
 import com.alexh.game.Game
 import com.alexh.models.*
 import com.alexh.utils.Endpoints
+import com.alexh.utils.EnvironmentVariables
+import com.alexh.utils.JwtClaims
 import com.alexh.utils.XRequestIds
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -20,6 +24,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import io.ktor.client.plugins.compression.*
 import io.ktor.client.statement.*
+import java.util.*
 import kotlin.reflect.KClass
 
 class ApplicationTest {
@@ -78,7 +83,7 @@ class ApplicationTest {
         games: Set<Game>
     ) {
         val response = client.post(Endpoints.GENERATE) {
-            this@ApplicationTest.setHeaders(this, XRequestIds.GENERATE)
+            this@ApplicationTest.setHeadersWithJwt(this, XRequestIds.GENERATE, this@ApplicationTest.successfulUsername)
 
             val requestBody = GenerateRequest(dimension.name, difficulty.name, games.map{ it.name }.toSet())
 
@@ -97,7 +102,7 @@ class ApplicationTest {
 
     private suspend fun testUnfilledFieldsOnGenerate(client: HttpClient) {
         val response = client.post(Endpoints.GENERATE) {
-            this@ApplicationTest.setHeaders(this, XRequestIds.GENERATE)
+            this@ApplicationTest.setHeadersWithJwt(this, XRequestIds.GENERATE, this@ApplicationTest.successfulEmail)
 
             val requestBody = GenerateRequest("", "", emptySet())
 
@@ -171,7 +176,7 @@ class ApplicationTest {
         email: String
     ) {
         val response = client.put(Endpoints.CREATE_USER) {
-            this@ApplicationTest.setHeaders(this, XRequestIds.CREATE_USER)
+            this@ApplicationTest.setStandardHeaders(this, XRequestIds.CREATE_USER)
 
             val requestBody = CreateUserRequest(username, password, email)
 
@@ -190,7 +195,7 @@ class ApplicationTest {
 
     private suspend fun attemptToReadUserWithSuccess(client: HttpClient) {
         val responseWithUsername = client.post(Endpoints.READ_USER) {
-            this@ApplicationTest.setHeaders(this, XRequestIds.READ_USER)
+            this@ApplicationTest.setStandardHeaders(this, XRequestIds.READ_USER)
 
             val requestBody = ReadUserRequest(
                 this@ApplicationTest.successfulUsername,
@@ -200,7 +205,7 @@ class ApplicationTest {
             this.setBody(requestBody)
         }
         val responseWithEmail = client.post(Endpoints.READ_USER) {
-            this@ApplicationTest.setHeaders(this, XRequestIds.READ_USER)
+            this@ApplicationTest.setStandardHeaders(this, XRequestIds.READ_USER)
 
             val requestBody = ReadUserRequest(
                 this@ApplicationTest.successfulEmail,
@@ -228,7 +233,7 @@ class ApplicationTest {
 
     private suspend fun attemptToReadUserWithFailure(client: HttpClient) {
         val responseWithUsername = client.post(Endpoints.READ_USER) {
-            this@ApplicationTest.setHeaders(this, XRequestIds.READ_USER)
+            this@ApplicationTest.setStandardHeaders(this, XRequestIds.READ_USER)
 
             val requestBody = ReadUserRequest(
                 this@ApplicationTest.invalidUsername,
@@ -238,7 +243,7 @@ class ApplicationTest {
             this.setBody(requestBody)
         }
         val responseWithEmail = client.post(Endpoints.READ_USER) {
-            this@ApplicationTest.setHeaders(this, XRequestIds.READ_USER)
+            this@ApplicationTest.setStandardHeaders(this, XRequestIds.READ_USER)
 
             val requestBody = ReadUserRequest(
                 this@ApplicationTest.invalidEmail,
@@ -287,7 +292,7 @@ class ApplicationTest {
         newEmail: String
     ) {
         val response = client.put(Endpoints.UPDATE_USER) {
-            this@ApplicationTest.setHeaders(this, XRequestIds.UPDATE_USER)
+            this@ApplicationTest.setHeadersWithJwt(this, XRequestIds.UPDATE_USER, this@ApplicationTest.successfulUsername)
 
             val requestBody = UpdateUserRequest(
                 this@ApplicationTest.successfulUserId,
@@ -305,7 +310,7 @@ class ApplicationTest {
 
     private suspend fun testCreatePuzzle(client: HttpClient) {
         val response = client.put(Endpoints.CREATE_PUZZLE) {
-            this@ApplicationTest.setHeaders(this, XRequestIds.CREATE_PUZZLE)
+            this@ApplicationTest.setHeadersWithJwt(this, XRequestIds.CREATE_PUZZLE, this@ApplicationTest.successfulUsername)
 
             val requestBody = CreatePuzzleRequest("{}", this@ApplicationTest.successfulUserId)
 
@@ -331,7 +336,7 @@ class ApplicationTest {
         cls: KClass<*>
     ) {
         val response = client.put(Endpoints.UPDATE_PUZZLE) {
-            this@ApplicationTest.setHeaders(this, XRequestIds.UPDATE_PUZZLE)
+            this@ApplicationTest.setHeadersWithJwt(this, XRequestIds.UPDATE_PUZZLE, this@ApplicationTest.successfulEmail)
 
             val requestBody = UpdatePuzzleRequest(puzzleId, json)
 
@@ -354,7 +359,7 @@ class ApplicationTest {
         cls: KClass<*>
     ) {
         val response = client.delete(Endpoints.DELETE_PUZZLE) {
-            this@ApplicationTest.setHeaders(this, XRequestIds.DELETE_PUZZLE)
+            this@ApplicationTest.setHeadersWithJwt(this, XRequestIds.DELETE_PUZZLE, this@ApplicationTest.successfulUsername)
 
             val requestBody = DeletePuzzleRequest(puzzleId)
 
@@ -377,7 +382,7 @@ class ApplicationTest {
         cls: KClass<*>,
     ) {
         val response = client.delete(Endpoints.DELETE_USER) {
-            this@ApplicationTest.setHeaders(this, XRequestIds.DELETE_USER)
+            this@ApplicationTest.setHeadersWithJwt(this, XRequestIds.DELETE_USER, this@ApplicationTest.successfulEmail)
 
             val requestBody = DeleteUserRequest(userId)
 
@@ -389,7 +394,7 @@ class ApplicationTest {
         assertEquals(cls, responseBody::class)
     }
 
-    private fun setHeaders(builder: HttpRequestBuilder, xReqId: String) {
+    private fun setStandardHeaders(builder: HttpRequestBuilder, xReqId: String) {
         builder.headers {
             this.append(HttpHeaders.XRequestId, xReqId)
             this.append(HttpHeaders.ContentType, "application/json")
@@ -402,6 +407,31 @@ class ApplicationTest {
             this.append(HttpHeaders.UserAgent, "ApplicationTest")
         }
     }
+
+    private fun setHeadersWithJwt(builder: HttpRequestBuilder, xReqId: String, usernameOrEmail: String) {
+        builder.headers {
+            this.append(HttpHeaders.Authorization, "Bearer " + this@ApplicationTest.createJwtToken(usernameOrEmail))
+        }
+
+        this.setStandardHeaders(builder, xReqId)
+    }
+
+    private fun createJwtToken(usernameOrEmail: String): String {
+        val secret = System.getenv(EnvironmentVariables.JWT_SECRET)
+        val issuer = System.getenv(EnvironmentVariables.JWT_ISSUER)
+        val audience = System.getenv(EnvironmentVariables.JWT_AUDIENCE).split(';').toTypedArray()
+
+        return JWT
+            .create()
+            .withAudience(*audience)
+            .withIssuer(issuer)
+            .withClaim(JwtClaims.USERNAME_OR_EMAIL, usernameOrEmail)
+            .withExpiresAt(oneWeekFromNow())
+            .sign(Algorithm.HMAC256(secret))
+    }
+
+    private fun oneWeekFromNow(): Date =
+        Date(System.currentTimeMillis() + 604_800_000)
 
     private fun installJson(config: HttpClientConfig<*>) {
         config.install(ContentNegotiation) {
