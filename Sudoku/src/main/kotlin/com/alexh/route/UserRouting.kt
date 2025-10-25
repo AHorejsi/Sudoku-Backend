@@ -22,13 +22,13 @@ fun configureEndpointsForUsers(app: Application, source: DataSource) {
     }
 }
 
-private fun openUrls(source: DataSource, routing: Routing) {
-    routing.put(Endpoints.CREATE_USER) {
+private fun openUrls(source: DataSource, route: Routing) {
+    route.put(Endpoints.CREATE_USER) {
         val result = createUser(source, this.call)
 
         handleResult(result, this.call, logger, Endpoints.CREATE_USER)
     }
-    routing.post(Endpoints.READ_USER) {
+    route.post(Endpoints.READ_USER) {
         val result = readUser(source, this.call)
 
         handleResult(result, this.call, logger, Endpoints.READ_USER)
@@ -61,6 +61,11 @@ private fun authenticatedUrls(source: DataSource, route: Route) {
 
         handleResult(result, this.call, logger, Endpoints.DELETE_PUZZLE)
     }
+    route.get(Endpoints.TOKEN_LOGIN) {
+        val result = tokenLogin(source, this.call)
+
+        handleResult(result, this.call, logger, Endpoints.TOKEN_LOGIN)
+    }
     route.put(Endpoints.RENEW_JWT_TOKEN) {
         val result = renewJwtToken(this.call)
 
@@ -84,7 +89,7 @@ private suspend fun readUser(source: DataSource, call: ApplicationCall): ReadUse
     source.connection.use {
         val service = UserService(it)
 
-        return service.readUser(request)
+        return service.readUserWithPassword(request)
     }
 }
 
@@ -138,14 +143,24 @@ private suspend fun deletePuzzle(source: DataSource, call: ApplicationCall): Del
     }
 }
 
-private suspend fun renewJwtToken(call: ApplicationCall): RenewJwtTokenResponse {
-    val request = call.receive(RenewJwtTokenRequest::class)
+private suspend fun tokenLogin(source: DataSource, call: ApplicationCall): TokenLoginResponse {
+    val principal = call.principal<JWTPrincipal>()!!
+
+    source.connection.use {
+        val service = UserService(it)
+
+        return service.readUserWithToken(principal)
+    }
+}
+
+private suspend fun renewJwtToken(call: ApplicationCall): RenewTokenResponse {
+    val request = call.receive(RenewTokenRequest::class)
     val principal = call.principal<JWTPrincipal>()!!
 
     val token = refreshJwtToken(request.user, principal.payload)
 
     return if (null !== token)
-        RenewJwtTokenResponse.Success(token)
+        RenewTokenResponse.Success(token)
     else
-        RenewJwtTokenResponse.InvalidToken
+        RenewTokenResponse.InvalidToken
 }

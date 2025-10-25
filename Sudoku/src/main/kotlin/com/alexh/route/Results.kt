@@ -48,7 +48,7 @@ fun refreshJwtToken(user: User, jwtPayload: Payload): String? {
     if (user.username != usernameOrEmail && user.email != usernameOrEmail) {
         return null
     }
-    if (jwtPayload.expiresAt >= Date.from(Instant.now())) {
+    if (jwtPayload.expiresAt <= Date.from(Instant.now())) {
         return null
     }
 

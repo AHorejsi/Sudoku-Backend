@@ -27,4 +27,4 @@ class UpdatePuzzleRequest(val puzzleId: Int, val json: String)
 class DeletePuzzleRequest(val puzzleId: Int)
 
 @Serializable
-class RenewJwtTokenRequest(val user: User)
+class RenewTokenRequest(val user: User)

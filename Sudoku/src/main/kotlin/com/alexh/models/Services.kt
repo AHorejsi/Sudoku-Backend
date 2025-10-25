@@ -1,10 +1,9 @@
 package com.alexh.models
 
 import com.alexh.route.createJwtToken
-import com.alexh.utils.createPassword
-import com.alexh.utils.isValidEmail
-import com.alexh.utils.isValidPassword
-import com.alexh.utils.validatePassword
+import com.alexh.route.refreshJwtToken
+import com.alexh.utils.*
+import io.ktor.server.auth.jwt.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.*
@@ -12,6 +11,8 @@ import java.sql.*
 @Suppress("RemoveRedundantQualifierName")
 class UserService(private val dbConn: Connection) {
     companion object {
+        var initialized: Boolean = false
+
         const val USER_TABLE = "Users"
         const val USER_TABLE_ID = "id"
         const val USERNAME = "username"
@@ -48,10 +49,12 @@ class UserService(private val dbConn: Connection) {
             "VALUES (?, ?, ?, ?);"
         private const val GET_USER =
             "SELECT $USER_TABLE.$USER_TABLE_ID AS $USER_ID, $USERNAME, $EMAIL, $PASSWORD, $SALT, " +
-                    "$PUZZLE_TABLE.$PUZZLE_TABLE_ID AS $PUZZLE_ID, $JSON " +
+                    "STRING_AGG(CAST($PUZZLE_TABLE.$PUZZLE_TABLE_ID AS TEXT), '|') AS $PUZZLE_ID," +
+                    "STRING_AGG($JSON, '|') as $JSON " +
             "FROM $USER_TABLE " +
             "LEFT JOIN $PUZZLE_TABLE ON $USER_TABLE.$USER_TABLE_ID = $PUZZLE_TABLE.$USER_ID " +
-            "WHERE LOWER($USERNAME) = LOWER(?) OR LOWER($EMAIL) = LOWER(?);"
+            "WHERE LOWER($USERNAME) = LOWER(?) OR LOWER($EMAIL) = LOWER(?)" +
+            "GROUP BY $USER_TABLE.$USER_TABLE_ID;"
         private const val UPDATE_USER =
             "UPDATE $USER_TABLE " +
             "SET $USERNAME = ?, $EMAIL = ? " +
@@ -73,9 +76,13 @@ class UserService(private val dbConn: Connection) {
     }
 
     init {
-        this.dbConn.createStatement().use { stmt ->
-            stmt.executeUpdate(CREATE_USER_TABLE)
-            stmt.executeUpdate(CREATE_PUZZLE_TABLE)
+        if (!UserService.initialized) {
+            this.dbConn.createStatement().use { stmt ->
+                stmt.executeUpdate(CREATE_USER_TABLE)
+                stmt.executeUpdate(CREATE_PUZZLE_TABLE)
+            }
+
+            UserService.initialized = true
         }
     }
 
@@ -107,10 +114,9 @@ class UserService(private val dbConn: Connection) {
     }
 
     private fun doUserCreation(stmt: PreparedStatement): CreateUserResponse {
-        try {
+        runCatching {
             stmt.executeUpdate()
-        }
-        catch (ex: SQLException) { // check for expected errors
+        }.onFailure { ex ->
             val result = ex.message?.startsWith("Unique") ?: false
 
             if (result) {
@@ -128,7 +134,7 @@ class UserService(private val dbConn: Connection) {
         return CreateUserResponse.Success
     }
 
-    suspend fun readUser(request: ReadUserRequest): ReadUserResponse = withContext(Dispatchers.IO) {
+    suspend fun readUserWithPassword(request: ReadUserRequest): ReadUserResponse = withContext(Dispatchers.IO) {
         val usernameOrEmail = request.usernameOrEmail.trim()
         val password = request.password
 
@@ -137,7 +143,7 @@ class UserService(private val dbConn: Connection) {
             stmt.setString(2, usernameOrEmail)
 
             stmt.executeQuery().use { results ->
-                val user = this@UserService.buildUser(results, password)
+                val user = this@UserService.buildUserWithPassword(results, password)
 
                 if (null === user) {
                     return@withContext ReadUserResponse.FailedToFind
@@ -151,58 +157,65 @@ class UserService(private val dbConn: Connection) {
         }
     }
 
-    private fun buildUser(results: ResultSet, providedPassword: String): User? {
-        if (!results.next()) {
-            return null
+    private fun buildUserWithPassword(results: ResultSet, providedPassword: String): User? {
+        val user = this.buildUserHelper(results)
+
+        if (null !== user) {
+            val databasePassword = results.getString(UserService.PASSWORD)
+            val dynamicSalt = results.getString(UserService.SALT)
+
+            if (!validatePassword(providedPassword, databasePassword, dynamicSalt)) {
+                return null
+            }
         }
-
-        val databasePassword = results.getString(UserService.PASSWORD)
-        val dynamicSalt = results.getString(UserService.SALT)
-
-        if (!validatePassword(providedPassword, databasePassword, dynamicSalt)) {
-            return null
-        }
-
-        val user = if (results.isLast)
-            this.buildUserWithPotentiallyNoPuzzles(results)
-        else
-            this.buildUserWithManyPuzzles(results)
 
         return user
     }
 
-    private fun buildUserWithPotentiallyNoPuzzles(results: ResultSet): User {
-        val userId = results.getInt(UserService.USER_ID)
-        val username = results.getString(UserService.USERNAME)
-        val email = results.getString(UserService.EMAIL)
-        val puzzleId = results.getInt(UserService.PUZZLE_ID)
-        val json = results.getString(UserService.JSON)
+    suspend fun readUserWithToken(principal: JWTPrincipal): TokenLoginResponse = withContext(Dispatchers.IO) {
+        val usernameOrEmail = principal.payload.claims.getValue(JwtClaims.USERNAME_OR_EMAIL).asString()
 
-        val puzzles = mutableListOf<Puzzle>()
+        this@UserService.dbConn.prepareStatement(GET_USER).use { stmt ->
+            stmt.setString(1, usernameOrEmail)
+            stmt.setString(2, usernameOrEmail)
 
-        if (null !== json) {
-            val newPuzzle = Puzzle(puzzleId, json)
+            stmt.executeQuery().use { results ->
+                val user = this@UserService.buildUserHelper(results)
 
-            puzzles.add(newPuzzle)
+                if (null === user) {
+                    return@withContext TokenLoginResponse.InvalidUsernameOrEmail
+                }
+
+                val newToken = refreshJwtToken(user, principal.payload)
+
+                return@withContext if (null !== newToken)
+                    TokenLoginResponse.Success(user, newToken)
+                else
+                    TokenLoginResponse.Expired
+            }
         }
-
-        return User(userId, username, email, puzzles)
     }
 
-    private fun buildUserWithManyPuzzles(results: ResultSet): User {
+    private fun buildUserHelper(results: ResultSet): User? {
+        if (!results.next()) {
+            return null
+        }
+
         val userId = results.getInt(UserService.USER_ID)
         val username = results.getString(UserService.USERNAME)
         val email = results.getString(UserService.EMAIL)
+        val puzzleIds = results.getString(UserService.PUZZLE_ID)?.split('|')
+        val puzzleJsons = results.getString(UserService.JSON)?.split('|')
 
         val puzzles = mutableListOf<Puzzle>()
 
-        do {
-            val puzzleId = results.getInt(UserService.PUZZLE_ID)
-            val json = results.getString(UserService.JSON)
+        if (null !== puzzleIds && null !== puzzleJsons) {
+            for ((id, json) in puzzleIds.zip(puzzleJsons)) {
+                val saved = Puzzle(id.toInt(), json)
 
-            val newPuzzle = Puzzle(puzzleId, json)
-            puzzles.add(newPuzzle)
-        } while (results.next())
+                puzzles.add(saved)
+            }
+        }
 
         return User(userId, username, email, puzzles)
     }
@@ -229,7 +242,7 @@ class UserService(private val dbConn: Connection) {
             return@withContext when (amountOfRowsUpdated) {
                 0 -> UpdateUserResponse.FailedToFind
                 1 -> UpdateUserResponse.Success
-                else -> throw RuntimeException("More than one user updated")
+                else -> throw SQLUpdateException("More than one user updated")
             }
         }
     }
@@ -245,7 +258,7 @@ class UserService(private val dbConn: Connection) {
             return@withContext when (amountOfRowsDeleted) {
                 0 -> DeleteUserResponse.FailedToFind
                 1 -> DeleteUserResponse.Success
-                else -> throw RuntimeException("More than one user deleted")
+                else -> throw SQLDeleteException("More than one user deleted")
             }
         }
     }
@@ -286,7 +299,7 @@ class UserService(private val dbConn: Connection) {
             return@withContext when (amountOfRowsChanged) {
                 0 -> UpdatePuzzleResponse.FailedToFind
                 1 -> UpdatePuzzleResponse.Success
-                else -> throw RuntimeException("More than one puzzle updated")
+                else -> throw SQLUpdateException("More than one puzzle updated")
             }
         }
     }
@@ -302,7 +315,7 @@ class UserService(private val dbConn: Connection) {
             return@withContext when (amountOfRowsDeleted) {
                 0 -> DeletePuzzleResponse.FailedToFind
                 1 -> DeletePuzzleResponse.Success
-                else -> throw RuntimeException("More than one puzzle deleted")
+                else -> throw SQLDeleteException("More than one puzzle deleted")
             }
         }
     }

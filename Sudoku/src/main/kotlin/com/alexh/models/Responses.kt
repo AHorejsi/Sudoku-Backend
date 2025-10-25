@@ -94,10 +94,22 @@ sealed class DeletePuzzleResponse {
 }
 
 @Serializable
-sealed class RenewJwtTokenResponse {
+sealed class TokenLoginResponse {
     @Serializable
-    class Success(@Suppress("UNUSED") val newToken: String) : RenewJwtTokenResponse()
+    class Success(val user: User, val newToken: String) : TokenLoginResponse()
 
     @Serializable
-    object InvalidToken : RenewJwtTokenResponse()
+    object Expired : TokenLoginResponse()
+
+    @Serializable
+    object InvalidUsernameOrEmail : TokenLoginResponse()
+}
+
+@Serializable
+sealed class RenewTokenResponse {
+    @Serializable
+    class Success(val newToken: String) : RenewTokenResponse()
+
+    @Serializable
+    object InvalidToken : RenewTokenResponse()
 }
