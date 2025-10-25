@@ -226,6 +226,7 @@ class ApplicationTest {
         assertIs<ReadUserResponse.Success>(responseBody)
 
         val user = responseBody.user
+        assertEquals(this.successfulUserId, user.id)
         assertEquals(this.successfulUsername, user.username)
         assertEquals(this.successfulEmail, user.email)
         assertEquals(0, user.puzzles.size)
@@ -401,7 +402,7 @@ class ApplicationTest {
             this.append(HttpHeaders.ContentEncoding, "gzip")
             this.append(HttpHeaders.Accept, "application/json")
             this.append(HttpHeaders.AcceptCharset, "ISO-8859-1")
-            this.append(HttpHeaders.AcceptEncoding, "gzip, deflate, br")
+            this.append(HttpHeaders.AcceptEncoding, "gzip")
             this.append(HttpHeaders.Connection, "keep-alive")
             this.append(HttpHeaders.AccessControlAllowOrigin, "*")
             this.append(HttpHeaders.UserAgent, "ApplicationTest")
@@ -410,7 +411,7 @@ class ApplicationTest {
 
     private fun setHeadersWithJwt(builder: HttpRequestBuilder, xReqId: String, usernameOrEmail: String) {
         builder.headers {
-            this.append(HttpHeaders.Authorization, "Bearer " + this@ApplicationTest.createJwtToken(usernameOrEmail))
+            this.append(HttpHeaders.Authorization, "Bearer ${this@ApplicationTest.createJwtToken(usernameOrEmail)}")
         }
 
         this.setStandardHeaders(builder, xReqId)
@@ -426,7 +427,7 @@ class ApplicationTest {
             .withAudience(*audience)
             .withIssuer(issuer)
             .withClaim(JwtClaims.USERNAME_OR_EMAIL, usernameOrEmail)
-            .withExpiresAt(oneWeekFromNow())
+            .withExpiresAt(this.oneWeekFromNow())
             .sign(Algorithm.HMAC256(secret))
     }
 

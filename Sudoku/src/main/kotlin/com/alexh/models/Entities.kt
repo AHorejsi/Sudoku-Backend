@@ -10,7 +10,7 @@ class Puzzle(
 
 @Serializable
 class User(
-    @Suppress("UNUSED") val id: Int,
+    val id: Int,
     val username: String,
     val email: String,
     val puzzles: List<Puzzle>
