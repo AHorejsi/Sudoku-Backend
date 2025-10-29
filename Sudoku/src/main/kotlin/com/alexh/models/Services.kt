@@ -48,7 +48,7 @@ class UserService(private val dbConn: Connection) {
             "INSERT INTO $USER_TABLE ($USERNAME, $PASSWORD, $EMAIL, $SALT) " +
             "VALUES (?, ?, ?, ?);"
         private const val GET_USER =
-            "SELECT $USER_TABLE.$USER_TABLE_ID AS $USER_ID, $USERNAME, $EMAIL, $PASSWORD, $SALT, " +
+            "SELECT $USER_TABLE.$USER_TABLE_ID AS $USER_ID, $USERNAME, $EMAIL, $PASSWORD, $SALT," +
                     "STRING_AGG(CAST($PUZZLE_TABLE.$PUZZLE_TABLE_ID AS TEXT), '|') AS $PUZZLE_ID," +
                     "STRING_AGG($JSON, '|') as $JSON " +
             "FROM $USER_TABLE " +

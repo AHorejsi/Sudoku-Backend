@@ -33,11 +33,11 @@ fun createJwtToken(usernameOrEmail: String): String =
         .withAudience(audience)
         .withIssuer(issuer)
         .withClaim(JwtClaims.USERNAME_OR_EMAIL, usernameOrEmail)
-        .withExpiresAt(oneWeekFromNow())
+        .withExpiresAt(expirationDate())
         .sign(Algorithm.HMAC256(secret))
 
-private fun oneWeekFromNow(): Date =
-    Date(System.currentTimeMillis() + 604_800_000)
+private fun expirationDate(): Date =
+    Date(System.currentTimeMillis() + 604800000) // 1 week
 
 fun refreshJwtToken(user: User, jwtPayload: Payload): String? {
     val usernameOrEmail = jwtPayload.claims[JwtClaims.USERNAME_OR_EMAIL]?.asString()

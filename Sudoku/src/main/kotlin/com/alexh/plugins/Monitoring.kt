@@ -29,10 +29,7 @@ fun configureMonitoring(app: Application, logger: Logger) {
 
         this.header(HttpHeaders.XRequestId)
         this.generate { "AUTO:$env-${counter.getAndIncrement()}" }
-        this.verify { callId ->
-            @Suppress("ReplaceNegatedIsEmptyWithIsNotEmpty")
-            !callId.isEmpty()
-        }
+        this.verify { callId -> callId.isNotEmpty() }
     }
 
     app.environment.monitor.subscribe(ApplicationStarted) {
@@ -44,7 +41,7 @@ fun configureMonitoring(app: Application, logger: Logger) {
     }
 
     app.environment.monitor.subscribe(ServerReady) {
-        logger.info("Server ready at ${findCurrentDate()}")
+        logger.info("Server Ready at ${findCurrentDate()}")
     }
 }
 

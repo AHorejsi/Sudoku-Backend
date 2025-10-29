@@ -9,6 +9,8 @@ class EnvironmentVariables private constructor() {
 
     companion object {
         const val STATIC_SALT = "SUDOKU_SALT"
+
+        const val JWT_REALM = "SUDOKU_JWT_REALM"
         const val JWT_SECRET = "SUDOKU_JWT_SECRET"
         const val JWT_ISSUER = "SUDOKU_JWT_ISSUER"
         const val JWT_AUDIENCE = "SUDOKU_JWT_AUDIENCE"

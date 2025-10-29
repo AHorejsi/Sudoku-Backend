@@ -1,6 +1,7 @@
 package com.alexh.plugins
 
 import com.alexh.utils.Auths
+import com.alexh.utils.EnvironmentVariables
 import com.alexh.utils.JwtClaims
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -22,11 +23,11 @@ fun configureHttp(app: Application, logger: Logger) {
         val config = app.environment.config
 
         this.jwt(Auths.JWT) {
-            val secret = config.property("jwt.secret").getString()
-            val issuer = config.property("jwt.issuer").getString()
-            val audience = config.property("jwt.audience").getString()
+            val secret = System.getenv(EnvironmentVariables.JWT_SECRET)
+            val issuer = System.getenv(EnvironmentVariables.JWT_ISSUER)
+            val audience = System.getenv(EnvironmentVariables.JWT_AUDIENCE)
 
-            this.realm = config.property("jwt.realm").getString()
+            this.realm = System.getenv(EnvironmentVariables.JWT_REALM)
             this.verifier(
                 JWT
                     .require(Algorithm.HMAC256(secret))

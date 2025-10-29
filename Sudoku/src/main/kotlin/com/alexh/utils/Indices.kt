@@ -1,7 +1,6 @@
 package com.alexh.utils
 
 import kotlinx.serialization.Serializable
-import kotlin.math.abs
 
 @Serializable
 data class Position (
@@ -23,14 +22,7 @@ data class Position (
     fun outOfBounds(length: Int): Boolean =
         outOfBounds(this.rowIndex, length) || outOfBounds(this.colIndex, length)
 
-    fun isAdjacentTo(other: Position): Boolean {
-        val rowDiff = abs(this.rowIndex - other.rowIndex)
-        val colDiff = abs(this.colIndex - other.colIndex)
-
-        return 1 == rowDiff + colDiff
-    }
-
-    override fun compareTo(other: Position): Int {
+    override operator fun compareTo(other: Position): Int {
         val rowComp = this.rowIndex - other.rowIndex
 
         return if (0 != rowComp)
