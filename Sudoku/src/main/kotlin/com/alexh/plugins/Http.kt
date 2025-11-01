@@ -20,8 +20,6 @@ import kotlin.time.Duration.Companion.seconds
 
 fun configureHttp(app: Application, logger: Logger) {
     app.install(Authentication) {
-        val config = app.environment.config
-
         this.jwt(Auths.JWT) {
             val secret = System.getenv(EnvironmentVariables.JWT_SECRET)
             val issuer = System.getenv(EnvironmentVariables.JWT_ISSUER)
