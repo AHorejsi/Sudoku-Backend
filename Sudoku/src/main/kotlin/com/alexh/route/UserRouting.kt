@@ -22,7 +22,7 @@ fun configureEndpointsForUsers(app: Application, source: DataSource) {
     }
 }
 
-private fun openUrls(source: DataSource, route: Routing) {
+private fun openUrls(source: DataSource, route: Route) {
     route.put(Endpoints.CREATE_USER) {
         val result = createUser(source, this.call)
 
