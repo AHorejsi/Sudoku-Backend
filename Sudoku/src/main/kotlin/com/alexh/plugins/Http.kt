@@ -115,8 +115,10 @@ private suspend fun respondToException(
     cause: Throwable,
     statusCode: HttpStatusCode
 ) {
-    val isDevMode = app.environment.config.property("ktor.development").getString().toBoolean()
-    val isTestMode = app.environment.config.property("ktor.testing").getString().toBoolean()
+    val config = app.environment.config
+
+    val isDevMode = config.property("ktor.development").getString().toBoolean()
+    val isTestMode = config.property("ktor.testing").getString().toBoolean()
     
     val stackTrace = cause.stackTraceToString()
 
