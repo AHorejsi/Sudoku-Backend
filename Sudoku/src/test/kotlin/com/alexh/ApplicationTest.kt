@@ -4,12 +4,9 @@ import com.alexh.game.Difficulty
 import com.alexh.game.Dimension
 import com.alexh.game.Game
 import com.alexh.models.*
+import com.alexh.route.createJwtToken
 import com.alexh.utils.Endpoints
-import com.alexh.utils.EnvironmentVariables
-import com.alexh.utils.JwtClaims
 import com.alexh.utils.XRequestIds
-import com.auth0.jwt.JWT
-import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -24,7 +21,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import io.ktor.client.plugins.compression.*
 import io.ktor.client.statement.*
-import java.util.*
 import kotlin.reflect.KClass
 
 class ApplicationTest {
@@ -94,10 +90,10 @@ class ApplicationTest {
         val responseBody = response.body<GenerateResponse>()
         assertIs<GenerateResponse.Success>(responseBody)
 
-        val puzzle = responseBody.sudoku
-        assertEquals(dimension.length, puzzle.length)
-        assertEquals(difficulty, puzzle.difficulty)
-        assertEquals(games, puzzle.games)
+        val json = responseBody.sudoku
+        assertEquals(dimension.length, json.length)
+        assertEquals(difficulty, json.difficulty)
+        assertEquals(games, json.games)
     }
 
     private suspend fun testUnfilledFieldsOnGenerate(client: HttpClient) {
@@ -410,28 +406,11 @@ class ApplicationTest {
 
     private fun setHeadersWithJwt(builder: HttpRequestBuilder, xReqId: String, usernameOrEmail: String) {
         builder.headers {
-            this.append(HttpHeaders.Authorization, "Bearer ${this@ApplicationTest.createJwtToken(usernameOrEmail)}")
+            this.append(HttpHeaders.Authorization, "Bearer ${createJwtToken(usernameOrEmail)}")
         }
 
         this.setStandardHeaders(builder, xReqId)
     }
-
-    private fun createJwtToken(usernameOrEmail: String): String {
-        val secret = System.getenv(EnvironmentVariables.JWT_SECRET)
-        val issuer = System.getenv(EnvironmentVariables.JWT_ISSUER)
-        val audience = System.getenv(EnvironmentVariables.JWT_AUDIENCE).split(';').toTypedArray()
-
-        return JWT
-            .create()
-            .withAudience(*audience)
-            .withIssuer(issuer)
-            .withClaim(JwtClaims.USERNAME_OR_EMAIL, usernameOrEmail)
-            .withExpiresAt(this.oneWeekFromNow())
-            .sign(Algorithm.HMAC256(secret))
-    }
-
-    private fun oneWeekFromNow(): Date =
-        Date(System.currentTimeMillis() + 604_800_000)
 
     private fun installJson(config: HttpClientConfig<*>) {
         config.install(ContentNegotiation) {

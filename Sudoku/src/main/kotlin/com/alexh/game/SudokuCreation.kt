@@ -3,7 +3,6 @@ package com.alexh.game
 import com.alexh.utils.Position
 import com.alexh.utils.unflatten
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import kotlin.random.Random
 
 enum class Game {
@@ -37,7 +36,7 @@ data class MakeSudokuCommand(
     val dimension: Dimension,
     val difficulty: Difficulty,
     val games: Set<Game>,
-    @Transient val random: Random = Random.Default
+    val random: Random = Random.Default
 )
 
 internal class SudokuNode(val place: Position) {
@@ -119,15 +118,15 @@ class Cage(
 
 @Serializable
 class Box(
-    @Suppress("UNUSED") val isHyper: Boolean,
+    val isHyper: Boolean,
     val positions: MutableSet<Position>
 )
 
 @Serializable
 class Cell(
     val value: Int?,
-    @Suppress("UNUSED") val notes: Int,
-    @Suppress("UNUSED") val editable: Boolean
+    val notes: Int,
+    val editable: Boolean
 )
 
 @Serializable
@@ -161,7 +160,7 @@ fun makeSudoku(info: MakeSudokuCommand): SudokuJson {
     // Remove values from the sudoku in such a way that ensures there is only one solution
     adjustForDifficulty(neighborhoods, info)
 
-    // Save unsolved state of the sudoku for playing
+    // Save unsolved state of the sudoku for gameplay
     val board = neighborhoods.map{ Cell(it.value, 0,null === it.value) }.unflatten(length)
 
     // Save all of the above information as JSON

@@ -25,7 +25,7 @@ class SudokuTest {
 
         for (startIndex in games.indices) {
             for (endIndex in startIndex .. games.size) {
-                val selectedGames = games.sliceArray(startIndex until endIndex).toSet()
+                val selectedGames = games.slice(startIndex until endIndex).toSet()
 
                 val info = MakeSudokuCommand(dimension, difficulty, selectedGames, rand)
                 val sudoku = makeSudoku(info)
@@ -36,22 +36,28 @@ class SudokuTest {
     }
 
     private fun testSudokuProperties(sudoku: SudokuJson) {
-        this.checkIfMatching(sudoku)
+        this.checkIfCellsAreValid(sudoku)
         this.checkIfValuesAreValid(sudoku)
         this.checkIfCagesAreValid(sudoku)
+
+        if (Game.HYPER in sudoku.games) {
+            assertTrue(sudoku.boxes.any{ it.isHyper })
+        }
     }
 
-    private fun checkIfMatching(sudoku: SudokuJson) {
+    private fun checkIfCellsAreValid(sudoku: SudokuJson) {
         val range = 0 until sudoku.length
 
         for (rowIndex in range) {
             for (colIndex in range) {
-                val value1 = sudoku.board[rowIndex][colIndex].value
-                val value2 = sudoku.solved[rowIndex][colIndex]
+                val cell = sudoku.board[rowIndex][colIndex]
+                val value = sudoku.solved[rowIndex][colIndex]
 
-                if (null !== value1) {
-                    assertEquals(value1, value2)
+                if (null !== cell.value) {
+                    assertEquals(value, cell.value)
                 }
+                assertEquals(0, cell.notes)
+                assertEquals(cell.editable, null === cell.value)
             }
         }
     }
@@ -73,36 +79,42 @@ class SudokuTest {
     }
 
     private fun checkIfRowIsValid(sudoku: SudokuJson, rowIndex: Int, range: IntRange) {
-        val set = mutableSetOf<Int>()
+        val set = hashSetOf<Int>()
 
         for (colIndex in range) {
-            val result = set.add(sudoku.solved[rowIndex][colIndex])
+            val value = sudoku.solved[rowIndex][colIndex]
 
-            assertTrue(result)
+            val notDuplicate = set.add(value)
+
+            assertTrue(notDuplicate)
         }
 
         assertEquals(sudoku.length, set.size)
     }
 
     private fun checkIfColumnIsValid(sudoku: SudokuJson, colIndex: Int, range: IntRange) {
-        val set = mutableSetOf<Int>()
+        val set = hashSetOf<Int>()
 
         for (rowIndex in range) {
-            val result = set.add(sudoku.solved[rowIndex][colIndex])
+            val value = sudoku.solved[rowIndex][colIndex]
 
-            assertTrue(result)
+            val notDuplicate = set.add(value)
+
+            assertTrue(notDuplicate)
         }
 
         assertEquals(sudoku.length, set.size)
     }
 
     private fun checkIfBoxIsValid(sudoku: SudokuJson, box: Box) {
-        val set = mutableSetOf<Int>()
+        val set = hashSetOf<Int>()
 
         for (pos in box.positions) {
-            val result = set.add(sudoku.solved[pos.rowIndex][pos.colIndex])
+            val value = sudoku.solved[pos.rowIndex][pos.colIndex]
 
-            assertTrue(result)
+            val notDuplicate = set.add(value)
+
+            assertTrue(notDuplicate)
         }
 
         assertEquals(sudoku.length, set.size)
