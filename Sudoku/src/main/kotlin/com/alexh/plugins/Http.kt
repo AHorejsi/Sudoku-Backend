@@ -62,6 +62,7 @@ fun configureHttp(app: Application, logger: Logger) {
         this.allowHeader(HttpHeaders.Authorization)
         this.allowHeader(HttpHeaders.AccessControlAllowOrigin)
         this.allowHeader(HttpHeaders.AcceptCharset)
+        this.allowHeader(HttpHeaders.Allow)
         this.allowHeader(HttpHeaders.Connection)
         this.allowHeader(HttpHeaders.Accept)
         this.allowHeader(HttpHeaders.AcceptEncoding)
@@ -79,7 +80,10 @@ fun configureHttp(app: Application, logger: Logger) {
             this.anyHost() // Don't do this in production!
         }
         else {
-            this.allowHost("localhost:1234", listOf("http", "https"))
+            val host = System.getenv("SUDOKU_CLIENT_HOST")
+            val port = System.getenv("SUDOKU_CLIENT_PORT")
+
+            this.allowHost("${host}:${port}", listOf("http", "https"))
         }
     }
 
