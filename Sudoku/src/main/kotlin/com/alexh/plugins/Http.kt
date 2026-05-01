@@ -9,18 +9,22 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
-import io.ktor.server.config.*
 import io.ktor.server.plugins.*
 import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.cors.routing.*
-import io.ktor.server.plugins.ratelimit.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import org.slf4j.Logger
 import java.sql.SQLException
-import kotlin.time.Duration.Companion.seconds
 
 fun configureHttp(app: Application, logger: Logger) {
+    configureJwtAuthentication(app)
+    configureCors(app)
+    configureStatusPages(app, logger)
+    configureRequestCompression(app)
+}
+
+private fun configureJwtAuthentication(app: Application) {
     app.install(Authentication) {
         this.jwt(Auths.JWT) {
             val secret = System.getenv(EnvironmentVariables.JWT_SECRET)
@@ -53,7 +57,9 @@ fun configureHttp(app: Application, logger: Logger) {
             }
         }
     }
+}
 
+private fun configureCors(app: Application) {
     app.install(CORS) {
         this.allowMethod(HttpMethod.Options)
         this.allowMethod(HttpMethod.Get)
@@ -90,7 +96,9 @@ fun configureHttp(app: Application, logger: Logger) {
             this.allowHost("${host}:${port}", protocolList, subDomainList)
         }
     }
+}
 
+private fun configureStatusPages(app: Application, logger: Logger) {
     app.install(StatusPages) {
         this.exception<Throwable> { call, exception ->
             logAndSendError(app, call, logger, exception, HttpStatusCode.InternalServerError)
@@ -110,20 +118,6 @@ fun configureHttp(app: Application, logger: Logger) {
 
         this.status(HttpStatusCode.Unauthorized) { call, status ->
             logAndSendError(app, call, logger, null, status)
-        }
-    }
-
-    app.install(Compression) {
-        this.gzip {
-            this.matchContentType(ContentType.Application.Any)
-            this.minimumSize(1024)
-            this.priority = 1.0
-        }
-    }
-
-    app.install(RateLimit) {
-        this.global {
-            this.rateLimiter(50, 10.seconds)
         }
     }
 }
@@ -150,4 +144,14 @@ private suspend fun logAndSendError(
     }
 
     logger.error(stackTrace)
+}
+
+private fun configureRequestCompression(app: Application) {
+    app.install(Compression) {
+        this.gzip {
+            this.matchContentType(ContentType.Application.Any)
+            this.minimumSize(1024)
+            this.priority = 1.0
+        }
+    }
 }

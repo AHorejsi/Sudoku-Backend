@@ -12,12 +12,12 @@ import java.util.Date
 import java.util.concurrent.atomic.AtomicLong
 
 fun configureMonitoring(app: Application, logger: Logger) {
-    app.install(CallLogging) {
-        this.level = Level.INFO
-        this.filter { call -> call.request.path().startsWith("/") }
-        this.callIdMdc("call-id")
-    }
+    configureCallId(app)
+    configureCallLogging(app)
+    configureServerStateMonitoring(app, logger)
+}
 
+private fun configureCallId(app: Application) {
     app.install(CallId) {
         val counter = AtomicLong(0)
         val config = app.environment.config
@@ -31,7 +31,17 @@ fun configureMonitoring(app: Application, logger: Logger) {
         this.generate { "AUTO:$env-${counter.getAndIncrement()}" }
         this.verify { callId -> callId.isNotEmpty() }
     }
+}
 
+private fun configureCallLogging(app: Application) {
+    app.install(CallLogging) {
+        this.level = Level.INFO
+        this.filter { call -> call.request.path().startsWith("/") }
+        this.callIdMdc("call-id")
+    }
+}
+
+private fun configureServerStateMonitoring(app: Application, logger: Logger) {
     app.environment.monitor.subscribe(ApplicationStarted) {
         logger.info("Application Started at ${findCurrentDate()}")
     }

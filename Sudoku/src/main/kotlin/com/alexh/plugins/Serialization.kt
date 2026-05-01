@@ -6,17 +6,21 @@ import io.ktor.server.plugins.contentnegotiation.*
 import kotlinx.serialization.json.Json
 
 fun configureSerialization(app: Application) {
-    val config = app.environment.config
-
-    val devMode = config.property("ktor.development").getString().toBoolean()
-    val testMode = config.property("ktor.testing").getString().toBoolean()
-    val jsonConfig =
-        if (devMode || testMode)
-            Json { this.prettyPrint = true }
-        else
-            Json
+    val jsonConfig = determineJsonConfig(app)
 
     app.install(ContentNegotiation) {
         this.json(jsonConfig)
     }
+}
+
+private fun determineJsonConfig(app: Application): Json {
+    val config = app.environment.config
+
+    val devMode = config.property("ktor.development").getString().toBoolean()
+    val testMode = config.property("ktor.testing").getString().toBoolean()
+
+    return if (devMode || testMode)
+        Json { this.prettyPrint = true }
+    else
+        Json
 }
