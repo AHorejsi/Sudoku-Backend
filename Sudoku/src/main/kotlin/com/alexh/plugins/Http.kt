@@ -9,6 +9,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
+import io.ktor.server.plugins.*
 import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.ratelimit.*
@@ -89,11 +90,23 @@ fun configureHttp(app: Application, logger: Logger) {
 
     app.install(StatusPages) {
         this.exception<Throwable> { call, cause ->
-            respondToException(app, call, logger, cause, HttpStatusCode.InternalServerError)
+            logAndSendError(app, call, logger, cause, HttpStatusCode.InternalServerError)
+        }
+
+        this.exception<IllegalArgumentException> { call, cause ->
+            logAndSendError(app, call, logger, cause, HttpStatusCode.BadRequest)
+        }
+
+        this.exception<ContentTransformationException> {call, cause ->
+            logAndSendError(app, call, logger, cause, HttpStatusCode.BadRequest)
         }
 
         this.exception<SQLException> { call, cause ->
-            respondToException(app, call, logger, cause, HttpStatusCode.BadGateway)
+            logAndSendError(app, call, logger, cause, HttpStatusCode.BadGateway)
+        }
+
+        this.status(HttpStatusCode.Unauthorized) { call, cause ->
+            logAndSendError(app, call, logger, null, cause)
         }
     }
 
@@ -112,11 +125,11 @@ fun configureHttp(app: Application, logger: Logger) {
     }
 }
 
-private suspend fun respondToException(
+private suspend fun logAndSendError(
     app: Application,
     call: ApplicationCall,
     logger: Logger,
-    cause: Throwable,
+    cause: Throwable?,
     statusCode: HttpStatusCode
 ) {
     val config = app.environment.config
@@ -124,9 +137,9 @@ private suspend fun respondToException(
     val isDevMode = config.property("ktor.development").getString().toBoolean()
     val isTestMode = config.property("ktor.testing").getString().toBoolean()
     
-    val stackTrace = cause.stackTraceToString()
+    val stackTrace = cause?.stackTraceToString()
 
-    if (isDevMode || isTestMode) {
+    if (null !== stackTrace && (isDevMode || isTestMode)) {
         call.respond(statusCode, stackTrace)
     }
     else {
