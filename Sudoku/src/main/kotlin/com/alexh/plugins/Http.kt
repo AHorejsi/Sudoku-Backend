@@ -9,6 +9,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
+import io.ktor.server.config.*
 import io.ktor.server.plugins.*
 import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.cors.routing.*
@@ -83,8 +84,9 @@ fun configureHttp(app: Application, logger: Logger) {
         else {
             val host = System.getenv(EnvironmentVariables.CLIENT_HOST)
             val port = System.getenv(EnvironmentVariables.CLIENT_PORT)
+            val protocol = chooseProtocolByEnvironment(app.environment.config)
 
-            this.allowHost("${host}:${port}", listOf("http", "https"))
+            this.allowHost("${protocol}://${host}:${port}", listOf("http", "https"))
         }
     }
 
@@ -136,7 +138,7 @@ private suspend fun logAndSendError(
 
     val isDevMode = config.property("ktor.development").getString().toBoolean()
     val isTestMode = config.property("ktor.testing").getString().toBoolean()
-    
+
     val stackTrace = cause?.stackTraceToString()
 
     if (null !== stackTrace && (isDevMode || isTestMode)) {
@@ -147,4 +149,10 @@ private suspend fun logAndSendError(
     }
 
     logger.error(stackTrace)
+}
+
+private fun chooseProtocolByEnvironment(config: ApplicationConfig): String {
+    val isTestMode = config.property("ktor.development").getString().toBoolean()
+
+    return if (isTestMode) "https" else "http"
 }
