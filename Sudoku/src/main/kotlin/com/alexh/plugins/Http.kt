@@ -152,7 +152,7 @@ private suspend fun logAndSendError(
 }
 
 private fun chooseProtocolByEnvironment(config: ApplicationConfig): String {
-    val isTestMode = config.property("ktor.development").getString().toBoolean()
+    val isTestMode = config.property("ktor.testing").getString().toBoolean()
 
     return if (isTestMode) "https" else "http"
 }
