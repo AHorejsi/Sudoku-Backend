@@ -1,5 +1,10 @@
 <configuration>
-    <if condition='property("IS_DEV_ENV").equals("true") || property("IS_TEST_ENV").equals("true")'>
+    <condition class="ch.qos.logback.core.boolex.PropertyEqualityCondition">
+        <key>IS_DEV_ENV</key>
+        <value>true</value>
+    </condition>
+
+    <if>
         <then>
             <appender name='CONSOLE' class='ch.qos.logback.core.ConsoleAppender'>
                 <encoder>
@@ -11,64 +16,76 @@
                 <appender-ref ref='CONSOLE' />
             </root>
         </then>
-    </if>
+        <else>
+            <condition class="ch.qos.logback.core.boolex.PropertyEqualityCondition">
+                <key>IS_TEST_ENV</key>
+                <value>true</value>
+            </condition>
 
-    <if condition='property("IS_TEST_ENV").equals("true")'>
-        <then>
-            <appender name='JSON' class='ch.qos.logback.core.rolling.RollingFileAppender'>
-                <rollingPolicy class='ch.qos.logback.core.rolling.TimeBasedRollingPolicy'>
-                    <fileNamePattern>logs/logFile.test.%d{yyyy-MM-dd}.log</fileNamePattern>
-                </rollingPolicy>
+            <if>
+                <then>
+                    <appender name='JSON' class='ch.qos.logback.core.rolling.RollingFileAppender'>
+                        <rollingPolicy class='ch.qos.logback.core.rolling.TimeBasedRollingPolicy'>
+                            <fileNamePattern>logs/logFile.test.%d{yyyy-MM-dd}.log</fileNamePattern>
+                        </rollingPolicy>
 
-                <encoder class='net.logstash.logback.encoder.LogstashEncoder'>
-                    <includeCallerData>true</includeCallerData>
+                        <encoder class='net.logstash.logback.encoder.LogstashEncoder'>
+                            <includeCallerData>true</includeCallerData>
 
-                    <jsonGeneratorDecorator class='net.logstash.logback.decorate.CompositeJsonGeneratorDecorator'>
-                        <decorator class='net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator'/>
-                    </jsonGeneratorDecorator>
-                </encoder>
+                            <jsonGeneratorDecorator class='net.logstash.logback.decorate.CompositeJsonGeneratorDecorator'>
+                                <decorator class='net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator'/>
+                            </jsonGeneratorDecorator>
+                        </encoder>
 
-                <filter class='ch.qos.logback.classic.filter.ThresholdFilter'>
-                    <level>INFO</level>
-                </filter>
-            </appender>
+                        <filter class='ch.qos.logback.classic.filter.ThresholdFilter'>
+                            <level>INFO</level>
+                        </filter>
+                    </appender>
 
-            <appender name='JSON_ASYNC' class='ch.qos.logback.classic.AsyncAppender'>
-                <appender-ref ref='JSON' />
-            </appender>
+                    <appender name='JSON_ASYNC' class='ch.qos.logback.classic.AsyncAppender'>
+                        <appender-ref ref='JSON' />
+                    </appender>
 
-            <root>
-                <appender-ref ref='JSON_ASYNC' />
-            </root>
-        </then>
-    </if>
+                    <root>
+                        <appender-ref ref='JSON_ASYNC' />
+                    </root>
+                </then>
+                <else>
+                    <condition class="ch.qos.logback.core.boolex.PropertyEqualityCondition">
+                        <key>IS_PROD_ENV</key>
+                        <value>true</value>
+                    </condition>
 
-    <if condition='property("IS_PROD_ENV").equals("true")'>
-        <then>
-            <appender name='JSON' class='ch.qos.logback.core.rolling.RollingFileAppender'>
-                <rollingPolicy class='ch.qos.logback.core.rolling.TimeBasedRollingPolicy'>
-                    <fileNamePattern>logs/logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
-                </rollingPolicy>
+                    <if>
+                        <then>
+                            <appender name='JSON' class='ch.qos.logback.core.rolling.RollingFileAppender'>
+                                <rollingPolicy class='ch.qos.logback.core.rolling.TimeBasedRollingPolicy'>
+                                    <fileNamePattern>logs/logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
+                                </rollingPolicy>
 
-                <encoder class='net.logstash.logback.encoder.LogstashEncoder'>
-                    <jsonGeneratorDecorator class='net.logstash.logback.decorate.CompositeJsonGeneratorDecorator'>
-                        <decorator class='net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator'/>
-                    </jsonGeneratorDecorator>
-                </encoder>
+                                <encoder class='net.logstash.logback.encoder.LogstashEncoder'>
+                                    <jsonGeneratorDecorator class='net.logstash.logback.decorate.CompositeJsonGeneratorDecorator'>
+                                        <decorator class='net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator'/>
+                                    </jsonGeneratorDecorator>
+                                </encoder>
 
-                <filter class='ch.qos.logback.classic.filter.ThresholdFilter'>
-                    <level>INFO</level>
-                </filter>
-            </appender>
+                                <filter class='ch.qos.logback.classic.filter.ThresholdFilter'>
+                                    <level>INFO</level>
+                                </filter>
+                            </appender>
 
-            <appender name='JSON_ASYNC' class='ch.qos.logback.classic.AsyncAppender'>
-                <appender-ref ref='JSON' />
-            </appender>
+                            <appender name='JSON_ASYNC' class='ch.qos.logback.classic.AsyncAppender'>
+                                <appender-ref ref='JSON' />
+                            </appender>
 
-            <root>
-                <appender-ref ref='JSON_ASYNC' />
-            </root>
-        </then>
+                            <root>
+                                <appender-ref ref='JSON_ASYNC' />
+                            </root>
+                        </then>
+                    </if>
+                </else>
+            </if>
+        </else>
     </if>
 
     <logger name='org.eclipse.jetty' level='INFO'/>

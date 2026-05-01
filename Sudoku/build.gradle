@@ -5,7 +5,7 @@ plugins {
 }
 
 group "com.alexh"
-version "1.0.6"
+version "1.0.8"
 mainClassName = "com.alexh.ApplicationKt"
 
 def isDevelopment = project.ext.has("development")
@@ -25,7 +25,6 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation "org.postgresql:postgresql:$postgres_version"
     implementation "org.slf4j:slf4j-api:1.7.25"
-    implementation "org.codehaus.janino:janino:3.1.8"
     implementation "io.ktor:ktor-server-auth:$ktor_version"
     implementation "io.ktor:ktor-server-auth-jwt:$ktor_version"
     implementation "io.ktor:ktor-server-core:$ktor_version"

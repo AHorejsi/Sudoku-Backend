@@ -1,7 +1,5 @@
 package com.alexh.utils
 
-import kotlin.reflect.KClass
-
 class XRequestIds private constructor() {
     init {
         noInstances(XRequestIds::class)
@@ -17,8 +15,4 @@ class XRequestIds private constructor() {
         const val UPDATE_PUZZLE = "Update-Puzzle"
         const val DELETE_PUZZLE = "Delete-Puzzle"
     }
-}
-
-private fun noInstances(cls: KClass<*>): Nothing {
-    throw RuntimeException("No instances of ${cls.java.name}")
 }

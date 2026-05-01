@@ -80,8 +80,8 @@ fun configureHttp(app: Application, logger: Logger) {
             this.anyHost() // Don't do this in production!
         }
         else {
-            val host = System.getenv("SUDOKU_CLIENT_HOST")
-            val port = System.getenv("SUDOKU_CLIENT_PORT")
+            val host = System.getenv(EnvironmentVariables.CLIENT_HOST)
+            val port = System.getenv(EnvironmentVariables.CLIENT_PORT)
 
             this.allowHost("${host}:${port}", listOf("http", "https"))
         }

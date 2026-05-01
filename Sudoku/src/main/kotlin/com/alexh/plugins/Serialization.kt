@@ -10,23 +10,13 @@ fun configureSerialization(app: Application) {
 
     val devMode = config.property("ktor.development").getString().toBoolean()
     val testMode = config.property("ktor.testing").getString().toBoolean()
+    val jsonConfig =
+        if (devMode || testMode)
+            Json { this.prettyPrint = true }
+        else
+            Json
 
-    if (devMode || testMode) {
-        configureDevSerialization(app)
-    }
-    else {
-        configureProdSerialization(app)
-    }
-}
-
-private fun configureDevSerialization(app: Application) {
     app.install(ContentNegotiation) {
-        this.json(Json { this.prettyPrint = true })
-    }
-}
-
-private fun configureProdSerialization(app: Application) {
-    app.install(ContentNegotiation) {
-        this.json()
+        this.json(jsonConfig)
     }
 }

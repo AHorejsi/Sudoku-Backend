@@ -14,6 +14,9 @@ class EnvironmentVariables private constructor() {
         const val JWT_SECRET = "SUDOKU_JWT_SECRET"
         const val JWT_ISSUER = "SUDOKU_JWT_ISSUER"
         const val JWT_AUDIENCE = "SUDOKU_JWT_AUDIENCE"
+
+        const val CLIENT_PORT = "SUDOKU_CLIENT_PORT"
+        const val CLIENT_HOST = "SUDOKU_CLIENT_HOST"
     }
 }
 
@@ -67,8 +70,4 @@ class JwtClaims private constructor() {
     companion object {
         const val USERNAME_OR_EMAIL = "usernameOrEmail"
     }
-}
-
-private fun noInstances(cls: KClass<*>): Nothing {
-    throw RuntimeException("No instances of ${cls.java.name}")
 }
