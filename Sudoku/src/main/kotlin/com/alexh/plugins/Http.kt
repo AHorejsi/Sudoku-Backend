@@ -59,22 +59,22 @@ fun configureHttp(app: Application, logger: Logger) {
         this.allowMethod(HttpMethod.Post)
         this.allowMethod(HttpMethod.Delete)
 
+        this.allowHeader(HttpHeaders.Accept)
+        this.allowHeader(HttpHeaders.AcceptCharset)
+        this.allowHeader(HttpHeaders.AcceptEncoding)
+        this.allowHeader(HttpHeaders.Allow)
         this.allowHeader(HttpHeaders.Authorization)
         this.allowHeader(HttpHeaders.AccessControlAllowOrigin)
-        this.allowHeader(HttpHeaders.AcceptCharset)
-        this.allowHeader(HttpHeaders.Allow)
         this.allowHeader(HttpHeaders.Connection)
-        this.allowHeader(HttpHeaders.Accept)
-        this.allowHeader(HttpHeaders.AcceptEncoding)
-        this.allowHeader(HttpHeaders.UserAgent)
         this.allowHeader(HttpHeaders.ContentType)
         this.allowHeader(HttpHeaders.ContentLength)
-        this.allowHeader(HttpHeaders.Vary)
         this.allowHeader(HttpHeaders.Host)
+        this.allowHeader(HttpHeaders.UserAgent)
+        this.allowHeader(HttpHeaders.Vary)
         this.allowHeader(HttpHeaders.XRequestId)
 
-        this.allowSameOrigin = true
         this.allowCredentials = true
+        this.allowSameOrigin = true
 
         if (app.environment.developmentMode) {
             this.anyHost() // Don't do this in production!
