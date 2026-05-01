@@ -1,7 +1,5 @@
 package com.alexh.utils
 
-import kotlin.reflect.KClass
-
 class EnvironmentVariables private constructor() {
     init {
         noInstances(EnvironmentVariables::class)
@@ -35,7 +33,7 @@ class Endpoints private constructor() {
         const val UPDATE_PUZZLE = "/updatePuzzle"
         const val DELETE_PUZZLE = "/deletePuzzle"
         const val TOKEN_LOGIN = "/tokenLogin"
-        const val RENEW_JWT_TOKEN = "/renewToken"
+        const val RENEW_TOKEN = "/renewToken"
         const val SHUTDOWN = "/shutdown"
     }
 }

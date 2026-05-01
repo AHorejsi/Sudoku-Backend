@@ -91,24 +91,24 @@ fun configureHttp(app: Application, logger: Logger) {
     }
 
     app.install(StatusPages) {
-        this.exception<Throwable> { call, cause ->
-            logAndSendError(app, call, logger, cause, HttpStatusCode.InternalServerError)
+        this.exception<Throwable> { call, exception ->
+            logAndSendError(app, call, logger, exception, HttpStatusCode.InternalServerError)
         }
 
-        this.exception<IllegalArgumentException> { call, cause ->
-            logAndSendError(app, call, logger, cause, HttpStatusCode.BadRequest)
+        this.exception<IllegalArgumentException> { call, exception ->
+            logAndSendError(app, call, logger, exception, HttpStatusCode.BadRequest)
         }
 
-        this.exception<ContentTransformationException> {call, cause ->
-            logAndSendError(app, call, logger, cause, HttpStatusCode.BadRequest)
+        this.exception<ContentTransformationException> { call, exception ->
+            logAndSendError(app, call, logger, exception, HttpStatusCode.BadRequest)
         }
 
-        this.exception<SQLException> { call, cause ->
-            logAndSendError(app, call, logger, cause, HttpStatusCode.BadGateway)
+        this.exception<SQLException> { call, exception ->
+            logAndSendError(app, call, logger, exception, HttpStatusCode.BadGateway)
         }
 
-        this.status(HttpStatusCode.Unauthorized) { call, cause ->
-            logAndSendError(app, call, logger, null, cause)
+        this.status(HttpStatusCode.Unauthorized) { call, status ->
+            logAndSendError(app, call, logger, null, status)
         }
     }
 
@@ -154,5 +154,5 @@ private suspend fun logAndSendError(
 private fun chooseProtocolByEnvironment(config: ApplicationConfig): String {
     val isTestMode = config.property("ktor.testing").getString().toBoolean()
 
-    return if (isTestMode) "https" else "http"
+    return if (isTestMode) "http" else "https"
 }

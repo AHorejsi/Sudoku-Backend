@@ -66,10 +66,10 @@ private fun authenticatedUrls(source: DataSource, route: Route) {
 
         handleResult(result, this.call, logger, Endpoints.TOKEN_LOGIN)
     }
-    route.put(Endpoints.RENEW_JWT_TOKEN) {
+    route.put(Endpoints.RENEW_TOKEN) {
         val result = renewJwtToken(this.call)
 
-        handleResult(result, this.call, logger, Endpoints.RENEW_JWT_TOKEN)
+        handleResult(result, this.call, logger, Endpoints.RENEW_TOKEN)
     }
 }
 
