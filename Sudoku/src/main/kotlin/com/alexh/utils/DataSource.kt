@@ -5,6 +5,15 @@ import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.*
 
 fun connect(embedded: Boolean, app: Application): HikariDataSource {
+    Class.forName("org.postgresql.Driver")
+
+    val config = createDbConfig(embedded, app)
+    val source = initializeDataSource(config)
+
+    return source
+}
+
+private fun createDbConfig(embedded: Boolean, app: Application): HikariConfig {
     val dbConfig = HikariConfig()
 
     if (embedded) {
@@ -18,10 +27,19 @@ fun connect(embedded: Boolean, app: Application): HikariDataSource {
         dbConfig.jdbcUrl = appConfig.property("postgres.url").getString()
         dbConfig.username = appConfig.property("postgres.username").getString()
         dbConfig.password = appConfig.property("postgres.password").getString()
+        dbConfig.driverClassName = "org.postgresql.Driver"
     }
 
     dbConfig.connectionTimeout = 10000
     dbConfig.maximumPoolSize = 50
 
-    return HikariDataSource(dbConfig)
+    return dbConfig
+}
+
+private fun initializeDataSource(config: HikariConfig): HikariDataSource {
+    val source = HikariDataSource(config)
+
+    config.driverClassName = "org.postgresql.Driver"
+
+    return source
 }

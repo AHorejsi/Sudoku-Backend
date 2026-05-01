@@ -84,9 +84,10 @@ fun configureHttp(app: Application, logger: Logger) {
         else {
             val host = System.getenv(EnvironmentVariables.CLIENT_HOST)
             val port = System.getenv(EnvironmentVariables.CLIENT_PORT)
-            val protocol = chooseProtocolByEnvironment(app.environment.config)
+            val protocolList = listOf("http", "https")
+            val subDomainList = listOf<String>()
 
-            this.allowHost("${protocol}://${host}:${port}", listOf("http", "https"))
+            this.allowHost("${host}:${port}", protocolList, subDomainList)
         }
     }
 
@@ -149,10 +150,4 @@ private suspend fun logAndSendError(
     }
 
     logger.error(stackTrace)
-}
-
-private fun chooseProtocolByEnvironment(config: ApplicationConfig): String {
-    val isTestMode = config.property("ktor.testing").getString().toBoolean()
-
-    return if (isTestMode) "http" else "https"
 }
