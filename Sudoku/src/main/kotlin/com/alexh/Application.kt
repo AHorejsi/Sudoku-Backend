@@ -25,7 +25,7 @@ fun Application.setupModule() {
 @Suppress("UNUSED")
 fun Application.endpointModule() {
     val useEmbeddedDatabase = this.environment.developmentMode
-    val source = connect(useEmbeddedDatabase, this)
+    val source = connect(useEmbeddedDatabase, this, "org.postgresql.Driver")
 
     configureEndpointsForGeneratingPuzzles(this)
     configureEndpointsForUsers(this, source)
