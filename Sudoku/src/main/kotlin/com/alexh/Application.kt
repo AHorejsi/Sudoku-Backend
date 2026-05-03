@@ -10,8 +10,17 @@ import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger(Loggers.MAIN_APPLICATION)
 
-fun main(args: Array<String>) =
-    EngineMain.main(args)
+fun main(args: Array<String>) {
+    runCatching {
+        EngineMain.main(args)
+    }.onSuccess { _ ->
+        logger.info("Successfully initialized server and all configurations")
+    }.onFailure { exception ->
+        val stackTrace = exception.stackTraceToString()
+
+        logger.error("FAILED SERVER INITIALIZATION:\n $stackTrace")
+    }
+}
 
 // Specified to be called in configurations
 @Suppress("UNUSED")
@@ -24,8 +33,7 @@ fun Application.setupModule() {
 // Specified to be called in configurations
 @Suppress("UNUSED")
 fun Application.endpointModule() {
-    val useEmbeddedDatabase = this.environment.developmentMode
-    val source = connect(useEmbeddedDatabase, this, "org.postgresql.Driver")
+    val source = connect(this)
 
     configureEndpointsForGeneratingPuzzles(this)
     configureEndpointsForUsers(this, source)

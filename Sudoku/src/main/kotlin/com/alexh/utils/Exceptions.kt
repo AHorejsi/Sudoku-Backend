@@ -3,12 +3,12 @@ package com.alexh.utils
 import java.sql.SQLException
 import kotlin.reflect.KClass
 
-class SQLUpdateException(
+class SqlUpdateException(
     override val message: String? = null,
     override val cause: Throwable? = null
 ) : SQLException(message, cause)
 
-class SQLDeleteException(
+class SqlDeleteException(
     override val message: String? = null,
     override val cause: Throwable? = null
 ) : SQLException(message, cause)

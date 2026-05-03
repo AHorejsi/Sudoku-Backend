@@ -13,8 +13,10 @@ class EnvironmentVariables private constructor() {
         const val JWT_ISSUER = "SUDOKU_JWT_ISSUER"
         const val JWT_AUDIENCE = "SUDOKU_JWT_AUDIENCE"
 
-        const val CLIENT_PORT = "SUDOKU_CLIENT_PORT"
         const val CLIENT_HOST = "SUDOKU_CLIENT_HOST"
+        const val CLIENT_PORT = "SUDOKU_CLIENT_PORT"
+
+        const val DB_NAME = "SUDOKU_DB_NAME"
     }
 }
 

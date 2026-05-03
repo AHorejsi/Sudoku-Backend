@@ -3,22 +3,29 @@ package com.alexh.utils
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.*
-import java.io.BufferedWriter
-import java.io.PrintWriter
+import java.sql.Statement
 
-fun connect(embedded: Boolean, app: Application, driver: String): HikariDataSource {
-    Class.forName(driver)
+fun connect(app: Application): HikariDataSource {
+    Class.forName("org.postgresql.Driver")
 
-    val config = createDbConfig(embedded, app, driver)
-    val source = initializeDbSource(config, driver)
+    val config = createDbConfig(app)
+    val source = HikariDataSource(config)
+
+    source.connection.use { conn ->
+        val stmt = conn.createStatement()
+
+        stmt.use {
+            createDatabaseIfNeeded(it)
+        }
+    }
 
     return source
 }
 
-private fun createDbConfig(embedded: Boolean, app: Application, driver: String): HikariConfig {
+private fun createDbConfig(app: Application): HikariConfig {
     val dbConfig = HikariConfig()
 
-    if (embedded) {
+    if (app.environment.developmentMode) {
         dbConfig.jdbcUrl = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1"
         dbConfig.username = "root"
         dbConfig.password = ""
@@ -33,16 +40,15 @@ private fun createDbConfig(embedded: Boolean, app: Application, driver: String):
 
     dbConfig.connectionTimeout = 10000
     dbConfig.maximumPoolSize = 50
-    dbConfig.driverClassName = driver
+    dbConfig.connectionTestQuery = "SELECT 1;"
 
     return dbConfig
 }
 
-private fun initializeDbSource(config: HikariConfig, driver: String): HikariDataSource {
-    val source = HikariDataSource(config)
-
-    source.logWriter = PrintWriter(System.out)
-    source.driverClassName = driver
-
-    return source
+private fun createDatabaseIfNeeded(stmt: Statement) {
+    runCatching {
+        val dbName = System.getenv(EnvironmentVariables.DB_NAME)
+        
+        stmt.execute("CREATE DATABASE $dbName;")
+    }
 }

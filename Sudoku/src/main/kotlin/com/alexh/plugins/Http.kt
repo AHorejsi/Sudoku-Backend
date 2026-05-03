@@ -90,10 +90,8 @@ private fun configureCors(app: Application) {
         else {
             val host = System.getenv(EnvironmentVariables.CLIENT_HOST)
             val port = System.getenv(EnvironmentVariables.CLIENT_PORT)
-            val protocolList = listOf("http", "https")
-            val subDomainList = listOf<String>()
 
-            this.allowHost("${host}:${port}", protocolList, subDomainList)
+            this.allowHost("$host:$port")
         }
     }
 }

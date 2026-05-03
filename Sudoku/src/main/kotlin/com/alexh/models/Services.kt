@@ -10,6 +10,7 @@ import java.sql.*
 
 @Suppress("RemoveRedundantQualifierName")
 class UserService(private val dbConn: Connection) {
+    @Suppress("MemberVisibilityCanBePrivate")
     companion object {
         var initialized: Boolean = false
 
@@ -77,9 +78,11 @@ class UserService(private val dbConn: Connection) {
 
     init {
         if (!UserService.initialized) {
-            this.dbConn.createStatement().use { stmt ->
-                stmt.executeUpdate(CREATE_USER_TABLE)
-                stmt.executeUpdate(CREATE_PUZZLE_TABLE)
+            val stmt = this.dbConn.createStatement()
+
+            stmt.use {
+                it.executeUpdate(CREATE_USER_TABLE)
+                it.executeUpdate(CREATE_PUZZLE_TABLE)
             }
 
             UserService.initialized = true
@@ -103,13 +106,15 @@ class UserService(private val dbConn: Connection) {
 
         val (passwordHash, salt) = createPassword(password)
 
-        this@UserService.dbConn.prepareStatement(CREATE_USER, Statement.RETURN_GENERATED_KEYS).use { stmt ->
-            stmt.setString(1, username)
-            stmt.setString(2, passwordHash)
-            stmt.setString(3, email)
-            stmt.setString(4, salt)
+        val stmt = this@UserService.dbConn.prepareStatement(CREATE_USER, Statement.RETURN_GENERATED_KEYS)
 
-            return@withContext this@UserService.doUserCreation(stmt)
+        stmt.use {
+            it.setString(1, username)
+            it.setString(2, passwordHash)
+            it.setString(3, email)
+            it.setString(4, salt)
+
+            return@withContext this@UserService.doUserCreation(it)
         }
     }
 
@@ -138,12 +143,16 @@ class UserService(private val dbConn: Connection) {
         val usernameOrEmail = request.usernameOrEmail.trim()
         val password = request.password
 
-        this@UserService.dbConn.prepareStatement(GET_USER).use { stmt ->
-            stmt.setString(1, usernameOrEmail)
-            stmt.setString(2, usernameOrEmail)
+        val stmt = this@UserService.dbConn.prepareStatement(GET_USER)
 
-            stmt.executeQuery().use { results ->
-                val user = this@UserService.buildUserWithPassword(results, password)
+        stmt.use { it0 ->
+            it0.setString(1, usernameOrEmail)
+            it0.setString(2, usernameOrEmail)
+
+            val results = stmt.executeQuery()
+
+            results.use { it1 ->
+                val user = this@UserService.buildUserWithPassword(it1, password)
 
                 if (null === user) {
                     return@withContext ReadUserResponse.FailedToFind
@@ -175,12 +184,16 @@ class UserService(private val dbConn: Connection) {
     suspend fun readUserWithToken(principal: JWTPrincipal): TokenLoginResponse = withContext(Dispatchers.IO) {
         val usernameOrEmail = principal.payload.claims.getValue(JwtClaims.USERNAME_OR_EMAIL).asString()
 
-        this@UserService.dbConn.prepareStatement(GET_USER).use { stmt ->
-            stmt.setString(1, usernameOrEmail)
-            stmt.setString(2, usernameOrEmail)
+        val stmt = this@UserService.dbConn.prepareStatement(GET_USER)
 
-            stmt.executeQuery().use { results ->
-                val user = this@UserService.buildUserHelper(results)
+        stmt.use { it0 ->
+            it0.setString(1, usernameOrEmail)
+            it0.setString(2, usernameOrEmail)
+
+            val results = it0.executeQuery()
+
+            results.use { it1 ->
+                val user = this@UserService.buildUserHelper(it1)
 
                 if (null === user) {
                     return@withContext TokenLoginResponse.InvalidUsernameOrEmail
@@ -204,20 +217,27 @@ class UserService(private val dbConn: Connection) {
         val userId = results.getInt(UserService.USER_ID)
         val username = results.getString(UserService.USERNAME)
         val email = results.getString(UserService.EMAIL)
+
         val puzzleIds = results.getString(UserService.PUZZLE_ID)?.split('|')
         val puzzleJsons = results.getString(UserService.JSON)?.split('|')
+        val puzzles = makePuzzleList(puzzleIds, puzzleJsons)
 
-        val puzzles = mutableListOf<Puzzle>()
+        return User(userId, username, email, puzzles)
+    }
 
-        if (null !== puzzleIds && null !== puzzleJsons) {
-            for ((id, json) in puzzleIds.zip(puzzleJsons)) {
-                val saved = Puzzle(id.toInt(), json)
+    private fun makePuzzleList(idList: List<String>?, jsonList: List<String>?): List<Puzzle> {
+        val puzzleList = mutableListOf<Puzzle>()
 
-                puzzles.add(saved)
+        if (null !== idList && null !== jsonList) {
+            for ((id, json) in idList.zip(jsonList)) {
+                val intId = id.toInt()
+                val saved = Puzzle(intId, json)
+
+                puzzleList.add(saved)
             }
         }
 
-        return User(userId, username, email, puzzles)
+        return puzzleList
     }
 
     suspend fun updateUser(request: UpdateUserRequest): UpdateUserResponse = withContext(Dispatchers.IO) {
@@ -232,17 +252,19 @@ class UserService(private val dbConn: Connection) {
             return@withContext UpdateUserResponse.InvalidEmail
         }
 
-        this@UserService.dbConn.prepareStatement(UPDATE_USER).use { stmt ->
-            stmt.setString(1, newUsername)
-            stmt.setString(2, newEmail)
-            stmt.setInt(3, userId)
+        val stmt = this@UserService.dbConn.prepareStatement(UPDATE_USER)
 
-            val amountOfRowsUpdated = stmt.executeUpdate()
+        stmt.use {
+            it.setString(1, newUsername)
+            it.setString(2, newEmail)
+            it.setInt(3, userId)
+
+            val amountOfRowsUpdated = it.executeUpdate()
 
             return@withContext when (amountOfRowsUpdated) {
                 0 -> UpdateUserResponse.FailedToFind
                 1 -> UpdateUserResponse.Success
-                else -> throw SQLUpdateException("More than one user updated")
+                else -> throw SqlUpdateException("More than one user updated")
             }
         }
     }
@@ -250,15 +272,17 @@ class UserService(private val dbConn: Connection) {
     suspend fun deleteUser(request: DeleteUserRequest): DeleteUserResponse = withContext(Dispatchers.IO) {
         val userId = request.userId
 
-        this@UserService.dbConn.prepareStatement(DELETE_USER).use { stmt ->
-            stmt.setInt(1, userId)
+        val stmt = this@UserService.dbConn.prepareStatement(DELETE_USER)
 
-            val amountOfRowsDeleted = stmt.executeUpdate()
+        stmt.use {
+            it.setInt(1, userId)
+
+            val amountOfRowsDeleted = it.executeUpdate()
 
             return@withContext when (amountOfRowsDeleted) {
                 0 -> DeleteUserResponse.FailedToFind
                 1 -> DeleteUserResponse.Success
-                else -> throw SQLDeleteException("More than one user deleted")
+                else -> throw SqlDeleteException("More than one user deleted")
             }
         }
     }
@@ -267,13 +291,15 @@ class UserService(private val dbConn: Connection) {
         val userId = request.userId
         val json = request.json
 
-        this@UserService.dbConn.prepareStatement(CREATE_PUZZLE, Statement.RETURN_GENERATED_KEYS).use { stmt ->
-            stmt.setString(1, json)
-            stmt.setInt(2, userId)
+        val stmt = this@UserService.dbConn.prepareStatement(CREATE_PUZZLE, Statement.RETURN_GENERATED_KEYS)
 
-            stmt.executeUpdate()
+        stmt.use {
+            it.setString(1, json)
+            it.setInt(2, userId)
 
-            stmt.generatedKeys.use { keys ->
+            it.executeUpdate()
+
+            it.generatedKeys.use { keys ->
                 if (!keys.next()) {
                     return@withContext CreatePuzzleResponse.FailedToCreate
                 }
@@ -291,16 +317,18 @@ class UserService(private val dbConn: Connection) {
         val puzzleId = request.puzzleId
         val json = request.json
 
-        this@UserService.dbConn.prepareStatement(UPDATE_PUZZLE).use { stmt ->
-            stmt.setString(1, json)
-            stmt.setInt(2, puzzleId)
+        val stmt = this@UserService.dbConn.prepareStatement(UPDATE_PUZZLE)
 
-            val amountOfRowsChanged = stmt.executeUpdate()
+        stmt.use {
+            it.setString(1, json)
+            it.setInt(2, puzzleId)
+
+            val amountOfRowsChanged = it.executeUpdate()
 
             return@withContext when (amountOfRowsChanged) {
                 0 -> UpdatePuzzleResponse.FailedToFind
                 1 -> UpdatePuzzleResponse.Success
-                else -> throw SQLUpdateException("More than one puzzle updated")
+                else -> throw SqlUpdateException("More than one puzzle updated")
             }
         }
     }
@@ -308,15 +336,17 @@ class UserService(private val dbConn: Connection) {
     suspend fun deletePuzzle(request: DeletePuzzleRequest): DeletePuzzleResponse = withContext(Dispatchers.IO) {
         val puzzleId = request.puzzleId
 
-        this@UserService.dbConn.prepareStatement(DELETE_PUZZLE).use { stmt ->
-            stmt.setInt(1, puzzleId)
+        val stmt = this@UserService.dbConn.prepareStatement(DELETE_PUZZLE)
 
-            val amountOfRowsDeleted = stmt.executeUpdate()
+        stmt.use {
+            it.setInt(1, puzzleId)
+
+            val amountOfRowsDeleted = it.executeUpdate()
 
             return@withContext when (amountOfRowsDeleted) {
                 0 -> DeletePuzzleResponse.FailedToFind
                 1 -> DeletePuzzleResponse.Success
-                else -> throw SQLDeleteException("More than one puzzle deleted")
+                else -> throw SqlDeleteException("More than one puzzle deleted")
             }
         }
     }
