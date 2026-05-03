@@ -9,20 +9,26 @@ import kotlin.test.assertTrue
 class SudokuTest {
     @Test
     fun testMakeSudoku() {
+        val staticRng = Random(0)
+        val testCount = 10
+
         val dimensionArray = Dimension.values()
         val difficultyArray = Difficulty.values()
-        val rand = Random(0)
+        val gameArray = Game.values()
 
-        for (dimension in dimensionArray) {
-            for (difficulty in difficultyArray) {
-                this.testMakeSudokuHelper(dimension, difficulty, rand)
+        repeat(testCount) {
+            val seed = staticRng.nextInt()
+            val rand = Random(seed)
+
+            for (dimension in dimensionArray) {
+                for (difficulty in difficultyArray) {
+                    this.testMakeSudokuHelper(dimension, difficulty, gameArray, rand)
+                }
             }
         }
     }
 
-    private fun testMakeSudokuHelper(dimension: Dimension, difficulty: Difficulty, rand: Random) {
-        val games = Game.values()
-
+    private fun testMakeSudokuHelper(dimension: Dimension, difficulty: Difficulty, games: Array<Game>, rand: Random) {
         for (startIndex in games.indices) {
             for (endIndex in startIndex .. games.size) {
                 val selectedGames = games.slice(startIndex until endIndex).toSet()
@@ -41,7 +47,9 @@ class SudokuTest {
         this.checkIfCagesAreValid(sudoku)
 
         if (Game.HYPER in sudoku.games) {
-            assertTrue(sudoku.boxes.any{ it.isHyper })
+            val hyperBoxesPresent = sudoku.boxes.any{ it.isHyper }
+
+            assertTrue(hyperBoxesPresent)
         }
     }
 
@@ -133,7 +141,9 @@ class SudokuTest {
             assertEquals(cage.sum, actualSum)
         }
 
-        val cellCount = sudoku.length * sudoku.length
-        assertEquals(cellCount, cageSet.sumOf{ it.positions.size })
+        val actualCellCount = sudoku.length * sudoku.length
+        val cellCountFromCages = cageSet.sumOf{ it.positions.size }
+
+        assertEquals(actualCellCount, cellCountFromCages)
     }
 }

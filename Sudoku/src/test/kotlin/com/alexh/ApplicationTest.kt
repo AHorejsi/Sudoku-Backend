@@ -81,7 +81,9 @@ class ApplicationTest {
         val response = client.post(Endpoints.GENERATE) {
             this@ApplicationTest.setHeadersWithJwt(this, XRequestIds.GENERATE, this@ApplicationTest.successfulUsername)
 
-            val requestBody = GenerateRequest(dimension.name, difficulty.name, games.map{ it.name }.toSet())
+            val gameNameSet = games.map{ it.name }.toSet()
+
+            val requestBody = GenerateRequest(dimension.name, difficulty.name, gameNameSet)
 
             this.setBody(requestBody)
         }
@@ -394,20 +396,21 @@ class ApplicationTest {
     private fun setStandardHeaders(builder: HttpRequestBuilder, xReqId: String) {
         builder.headers {
             this.append(HttpHeaders.XRequestId, xReqId)
-            this.append(HttpHeaders.ContentType, "application/json")
-            this.append(HttpHeaders.ContentEncoding, "gzip")
+            this.append(HttpHeaders.Accept, "application/json")
             this.append(HttpHeaders.AcceptCharset, "ISO-8859-1")
             this.append(HttpHeaders.AcceptEncoding, "gzip")
-            this.append(HttpHeaders.Connection, "keep-alive")
             this.append(HttpHeaders.AccessControlAllowOrigin, "*")
-            this.append(HttpHeaders.UserAgent, "ApplicationTest")
+            this.append(HttpHeaders.Allow, "OPTIONS, GET, POST, PUT, DELETE")
+            this.append(HttpHeaders.Connection, "keep-alive")
+            this.append(HttpHeaders.ContentType, "application/json")
+            this.append(HttpHeaders.ContentEncoding, "gzip")
+            this.append(HttpHeaders.UserAgent, "Mozilla/5.0")
         }
     }
 
     private fun setHeadersWithJwt(builder: HttpRequestBuilder, xReqId: String, usernameOrEmail: String) {
-        builder.headers {
-            this.append(HttpHeaders.Authorization, "Bearer ${createJwtToken(usernameOrEmail)}")
-        }
+        val jwtToken = createJwtToken(usernameOrEmail)
+        builder.headers.append(HttpHeaders.Authorization, "Bearer $jwtToken")
 
         this.setStandardHeaders(builder, xReqId)
     }
