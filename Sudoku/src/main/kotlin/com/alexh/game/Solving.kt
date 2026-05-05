@@ -1,19 +1,13 @@
 package com.alexh.game
 
-internal fun hasUniqueSolution(
-    neighborhoods: List<SudokuNode>,
-    length: Int
-): Boolean {
+internal fun hasUniqueSolution(neighborhoods: List<SudokuNode>, length: Int): Boolean {
     val unassigned = neighborhoods.filter{ null === it.value }.toMutableList()
     val values = 1 .. length
 
     return 1 == countSolutions(unassigned, values)
 }
 
-private fun countSolutions(
-    unassigned: MutableList<SudokuNode>,
-    valueRange: IntRange
-): Int {
+private fun countSolutions(unassigned: MutableList<SudokuNode>, valueRange: IntRange): Int {
     if (unassigned.isEmpty()) {
         return 1
     }
@@ -38,10 +32,7 @@ private fun countSolutions(
     return found
 }
 
-private fun findValidValues(
-    node: SudokuNode,
-    valueRange: IntRange
-): Set<Int> {
+private fun findValidValues(node: SudokuNode, valueRange: IntRange): Set<Int> {
     val valid = valueRange.toHashSet()
 
     for (neighbor in node.all) {

@@ -5,10 +5,7 @@ import com.alexh.utils.unflatten
 import kotlinx.serialization.Serializable
 import kotlin.random.Random
 
-enum class Game {
-    HYPER,
-    KILLER
-}
+enum class Game { HYPER, KILLER }
 
 enum class Dimension(
     val length: Int,
@@ -111,23 +108,13 @@ internal class SudokuNode(val place: Position) {
 }
 
 @Serializable
-class Cage(
-    val sum: Int,
-    val positions: MutableSet<Position>
-)
+class Cage(val sum: Int, val positions: MutableSet<Position>)
 
 @Serializable
-class Box(
-    val isHyper: Boolean,
-    val positions: MutableSet<Position>
-)
+class Box(val isHyper: Boolean, val positions: MutableSet<Position>)
 
 @Serializable
-class Cell(
-    val value: Int?,
-    val notes: Int,
-    val editable: Boolean
-)
+class Cell(val value: Int?, val notes: Int, val editable: Boolean)
 
 @Serializable
 class SudokuJson(

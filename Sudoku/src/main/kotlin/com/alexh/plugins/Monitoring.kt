@@ -1,5 +1,6 @@
 package com.alexh.plugins
 
+import com.alexh.utils.currentDateString
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.callid.*
@@ -7,14 +8,12 @@ import io.ktor.server.plugins.callloging.*
 import io.ktor.server.request.*
 import org.slf4j.Logger
 import org.slf4j.event.Level
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.concurrent.atomic.AtomicLong
 
 fun configureMonitoring(app: Application, logger: Logger) {
     configureCallId(app)
     configureCallLogging(app)
-    configureServerStateMonitoring(app, logger)
+    configureAppStateMonitoring(app, logger)
 }
 
 private fun configureCallId(app: Application) {
@@ -41,23 +40,18 @@ private fun configureCallLogging(app: Application) {
     }
 }
 
-private fun configureServerStateMonitoring(app: Application, logger: Logger) {
-    app.environment.monitor.subscribe(ApplicationStarted) {
-        logger.info("Application Started at ${findCurrentDate()}")
+private fun configureAppStateMonitoring(app: Application, logger: Logger) {
+    val stateMonitoring = app.environment.monitor
+
+    stateMonitoring.subscribe(ApplicationStarted) {
+        logger.info("Application Started at ${currentDateString()}")
     }
 
-    app.environment.monitor.subscribe(ApplicationStopped) {
-        logger.info("Application Stopped at ${findCurrentDate()}")
+    stateMonitoring.subscribe(ApplicationStopped) {
+        logger.info("Application Stopped at ${currentDateString()}")
     }
 
-    app.environment.monitor.subscribe(ServerReady) {
-        logger.info("Server Ready at ${findCurrentDate()}")
+    stateMonitoring.subscribe(ServerReady) {
+        logger.info("Server Ready at ${currentDateString()}")
     }
-}
-
-private fun findCurrentDate(): String {
-    val sdf = SimpleDateFormat("yyyy/MM/dd hh:mm:ss")
-    val date = Date()
-
-    return sdf.format(date)
 }

@@ -4,18 +4,17 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.*
 import java.sql.Statement
+import javax.sql.DataSource
 
-fun connect(app: Application): HikariDataSource {
+fun connectToDatabase(app: Application): DataSource {
     Class.forName("org.postgresql.Driver")
 
     val config = createDbConfig(app)
     val source = HikariDataSource(config)
 
     source.connection.use { conn ->
-        val stmt = conn.createStatement()
-
-        stmt.use {
-            createDatabaseIfNeeded(it)
+        conn.createStatement().use { stmt ->
+            createDatabaseIfNeeded(stmt)
         }
     }
 
@@ -38,7 +37,7 @@ private fun createDbConfig(app: Application): HikariConfig {
         dbConfig.password = appConfig.property("postgres.password").getString()
     }
 
-    dbConfig.connectionTimeout = 10000
+    dbConfig.connectionTimeout = 10000 // in milliseconds
     dbConfig.maximumPoolSize = 50
     dbConfig.connectionTestQuery = "SELECT 1;"
 
@@ -47,8 +46,9 @@ private fun createDbConfig(app: Application): HikariConfig {
 
 private fun createDatabaseIfNeeded(stmt: Statement) {
     runCatching {
-        val dbName = System.getenv(EnvironmentVariables.DB_NAME)
-        
-        stmt.execute("CREATE DATABASE $dbName;")
+        stmt.execute(SqlStrings.CREATE_DATABASE)
     }
+
+    stmt.executeUpdate(SqlStrings.CREATE_USER_TABLE)
+    stmt.executeUpdate(SqlStrings.CREATE_PUZZLE_TABLE)
 }

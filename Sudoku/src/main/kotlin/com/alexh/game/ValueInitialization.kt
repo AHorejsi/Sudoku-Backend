@@ -4,10 +4,7 @@ import com.alexh.utils.get2d
 import com.alexh.utils.up
 import kotlin.random.Random
 
-internal fun initializeValues(
-    neighborhoods: List<SudokuNode>,
-    info: MakeSudokuCommand
-) {
+internal fun initializeValues(neighborhoods: List<SudokuNode>, info: MakeSudokuCommand) {
     val rand = info.random
     val dimension = info.dimension
     val games = info.games
@@ -100,10 +97,7 @@ private fun shuffleValues(
     return legalMap
 }
 
-private fun initializeValuesHelper2(
-    unassigned: MutableList<SudokuNode>,
-    legalMap: Map<SudokuNode, List<Int>>
-): Boolean {
+private fun initializeValuesHelper2(unassigned: MutableList<SudokuNode>, legalMap: Map<SudokuNode, List<Int>>): Boolean {
     if (unassigned.isEmpty()) {
         return true
     }
@@ -128,10 +122,7 @@ private fun initializeValuesHelper2(
     return false
 }
 
-private fun isSafe(
-    value: Int,
-    node: SudokuNode
-): Boolean {
+private fun isSafe(value: Int, node: SudokuNode): Boolean {
     for (neighbor in node.all) {
         if (value == neighbor.value) {
             return false

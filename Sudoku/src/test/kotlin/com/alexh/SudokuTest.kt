@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
 class SudokuTest {
     @Test
     fun testMakeSudoku() {
-        val staticRng = Random(0)
+        val static = Random(0)
         val testCount = 10
 
         val dimensionArray = Dimension.values()
@@ -17,7 +17,7 @@ class SudokuTest {
         val gameArray = Game.values()
 
         repeat(testCount) {
-            val seed = staticRng.nextInt()
+            val seed = static.nextInt()
             val rand = Random(seed)
 
             for (dimension in dimensionArray) {

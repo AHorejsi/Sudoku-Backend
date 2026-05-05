@@ -5,10 +5,7 @@ import com.alexh.utils.get2d
 import kotlin.collections.HashSet
 import kotlin.random.Random
 
-internal fun makeCages(
-    neighborhoods: List<SudokuNode>,
-    info: MakeSudokuCommand
-): Set<Cage>? {
+internal fun makeCages(neighborhoods: List<SudokuNode>, info: MakeSudokuCommand): Set<Cage>? {
     if (Game.KILLER !in info.games) {
         return null
     }
@@ -23,10 +20,7 @@ internal fun makeCages(
     return cages
 }
 
-private fun decideCageRange(
-    info: MakeSudokuCommand,
-    length: Int
-): IntRange {
+private fun decideCageRange(info: MakeSudokuCommand, length: Int): IntRange {
     val minCageCount = (length * info.difficulty.minCageSize).toInt()
     val maxCageCount = (length * info.difficulty.maxCageSize).toInt()
 

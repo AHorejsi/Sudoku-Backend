@@ -10,17 +10,21 @@ import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
 
-private val logger = LoggerFactory.getLogger(Loggers.GENERATION_ROUTING)
+private val GENERATION_LOGGER = LoggerFactory.getLogger(Loggers.GENERATION_ROUTING)!!
 
 fun configureEndpointsForGeneratingPuzzles(app: Application) {
     app.routing {
         this.authenticate(Auths.JWT) {
-            this.post(Endpoints.GENERATE) {
-                val result = generateSudoku(this.call)
-
-                handleResult(result, this.call, logger, Endpoints.GENERATE)
-            }
+            authenticatedUrls(this)
         }
+    }
+}
+
+private fun authenticatedUrls(route: Route) {
+    route.post(Endpoints.GENERATE) {
+        val result = generateSudoku(this.call)
+
+        handleResult(result, this.call, GENERATION_LOGGER, Endpoints.GENERATE)
     }
 }
 

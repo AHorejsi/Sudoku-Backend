@@ -2,10 +2,7 @@ package com.alexh.game
 
 import kotlin.random.Random
 
-internal fun adjustForDifficulty(
-    neighborhoods: List<SudokuNode>,
-    info: MakeSudokuCommand
-) {
+internal fun adjustForDifficulty(neighborhoods: List<SudokuNode>, info: MakeSudokuCommand) {
     val difficulty = info.difficulty
     val rand = info.random
     val length = info.dimension.length
@@ -26,11 +23,7 @@ internal fun adjustForDifficulty(
     }
 }
 
-private fun determineAmountOfGivens(
-    difficulty: Difficulty,
-    length: Int,
-    rand: Random
-): Int {
+private fun determineAmountOfGivens(difficulty: Difficulty, length: Int, rand: Random): Int {
     val givenCount = length * length
 
     val minCount = (givenCount * difficulty.initialGivenLowerBound).toInt()
@@ -39,10 +32,7 @@ private fun determineAmountOfGivens(
     return rand.nextInt(minCount, maxCount)
 }
 
-private fun checkLowerBound(
-    node: SudokuNode,
-    lowerBound: Int
-): Boolean {
+private fun checkLowerBound(node: SudokuNode, lowerBound: Int): Boolean {
     val rows = node.row.count{ null !== it.value } >= lowerBound
     val cols = node.column.count{ null !== it.value } >= lowerBound
     val boxes = node.box.count{ null !== it.value } >= lowerBound
@@ -56,11 +46,7 @@ private fun checkLowerBound(
     return result
 }
 
-private fun tryRemove(
-    neighborhoods: List<SudokuNode>,
-    length: Int,
-    node: SudokuNode
-): Boolean {
+private fun tryRemove(neighborhoods: List<SudokuNode>, length: Int, node: SudokuNode): Boolean {
     val temp = node.value!!
 
     node.value = null

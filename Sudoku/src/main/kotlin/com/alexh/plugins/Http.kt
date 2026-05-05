@@ -3,6 +3,7 @@ package com.alexh.plugins
 import com.alexh.utils.Auths
 import com.alexh.utils.EnvironmentVariables
 import com.alexh.utils.JwtClaims
+import com.alexh.utils.getEnvironmentVariable
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.http.*
@@ -18,6 +19,8 @@ import org.slf4j.Logger
 import java.sql.SQLException
 
 fun configureHttp(app: Application, logger: Logger) {
+    // HttpRequestLifecycle
+
     configureJwtAuthentication(app)
     configureCors(app)
     configureStatusPages(app, logger)
@@ -27,11 +30,11 @@ fun configureHttp(app: Application, logger: Logger) {
 private fun configureJwtAuthentication(app: Application) {
     app.install(Authentication) {
         this.jwt(Auths.JWT) {
-            val secret = System.getenv(EnvironmentVariables.JWT_SECRET)
-            val issuer = System.getenv(EnvironmentVariables.JWT_ISSUER)
-            val audience = System.getenv(EnvironmentVariables.JWT_AUDIENCE)
+            val secret = getEnvironmentVariable(EnvironmentVariables.JWT_SECRET)
+            val issuer = getEnvironmentVariable(EnvironmentVariables.JWT_ISSUER)
+            val audience = getEnvironmentVariable(EnvironmentVariables.JWT_AUDIENCE)
 
-            this.realm = System.getenv(EnvironmentVariables.JWT_REALM)
+            this.realm = getEnvironmentVariable(EnvironmentVariables.JWT_REALM)
             this.verifier(
                 JWT
                     .require(Algorithm.HMAC256(secret))
@@ -88,8 +91,8 @@ private fun configureCors(app: Application) {
             this.anyHost() // Don't do this in production!
         }
         else {
-            val host = System.getenv(EnvironmentVariables.CLIENT_HOST)
-            val port = System.getenv(EnvironmentVariables.CLIENT_PORT)
+            val host = getEnvironmentVariable(EnvironmentVariables.CLIENT_HOST)
+            val port = getEnvironmentVariable(EnvironmentVariables.CLIENT_PORT)
 
             this.allowHost("$host:$port")
         }
