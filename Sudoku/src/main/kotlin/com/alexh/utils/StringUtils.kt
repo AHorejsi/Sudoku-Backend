@@ -76,7 +76,7 @@ class JwtClaims private constructor() {
 }
 
 @Suppress("MemberVisibilityCanBePrivate")
-class SqlStrings {
+class SqlStrings private constructor() {
     init {
         noInstances(SqlStrings::class)
     }
