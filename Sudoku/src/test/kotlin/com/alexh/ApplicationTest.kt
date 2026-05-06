@@ -8,7 +8,6 @@ import com.alexh.route.createJwtToken
 import com.alexh.utils.Endpoints
 import com.alexh.utils.EnvironmentVariables
 import com.alexh.utils.XRequestIds
-import com.alexh.utils.getEnvironmentVariable
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -98,9 +97,11 @@ class ApplicationTest {
         val response = client.post(Endpoints.GENERATE) {
             this@ApplicationTest.setJwtHeaders(this, XRequestIds.GENERATE, this@ApplicationTest.successfulUsername)
 
+            val dimensionName = dimension.name
+            val difficultyName = difficulty.name
             val gameNameSet = games.map{ it.name }.toSet()
 
-            val requestBody = GenerateRequest(dimension.name, difficulty.name, gameNameSet)
+            val requestBody = GenerateRequest(dimensionName, difficultyName, gameNameSet)
 
             this.setBody(requestBody)
         }
@@ -411,8 +412,8 @@ class ApplicationTest {
     }
 
     private fun setBasicHeaders(builder: HttpRequestBuilder, xReqId: String) {
-        val name = getEnvironmentVariable(EnvironmentVariables.BASIC_NAME)
-        val pass = getEnvironmentVariable(EnvironmentVariables.BASIC_PASS)
+        val name = EnvironmentVariables.BASIC_NAME
+        val pass = EnvironmentVariables.BASIC_PASS
 
         val bytes = "$name:$pass".toByteArray()
         val credentials = Base64.getEncoder().encodeToString(bytes)
@@ -424,6 +425,7 @@ class ApplicationTest {
 
     private fun setJwtHeaders(builder: HttpRequestBuilder, xReqId: String, usernameOrEmail: String) {
         val jwtToken = createJwtToken(usernameOrEmail)
+
         builder.headers.append(HttpHeaders.Authorization, "Bearer $jwtToken")
 
         this.setStandardHeaders(builder, xReqId)
@@ -432,9 +434,8 @@ class ApplicationTest {
     private fun setStandardHeaders(builder: HttpRequestBuilder, xReqId: String) {
         builder.headers {
             this.append(HttpHeaders.XRequestId, xReqId)
-            this.append(HttpHeaders.Accept, "application/json")
-            this.append(HttpHeaders.AcceptCharset, "ISO-8859-1")
             this.append(HttpHeaders.AcceptEncoding, "gzip")
+            this.append(HttpHeaders.AcceptCharset, "ISO-8859-1")
             this.append(HttpHeaders.AccessControlAllowOrigin, "*")
             this.append(HttpHeaders.Allow, "OPTIONS, GET, POST, PUT, DELETE")
             this.append(HttpHeaders.Connection, "keep-alive")

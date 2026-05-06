@@ -103,7 +103,7 @@ private fun configureAuthentication(app: Application, logger: Logger) {
 
                 val isValidIssuer = actualIssuer == issuer
                 val isValidAudience = actualAudience.contains(audience)
-                val isValidUsernameOrEmail = isValidUsername(usernameOrEmail) && isValidEmail(usernameOrEmail)
+                val isValidUsernameOrEmail = isValidUsername(usernameOrEmail) || isValidEmail(usernameOrEmail)
 
                 if (isValidIssuer && isValidAudience && isValidUsernameOrEmail)
                     JWTPrincipal(load)
