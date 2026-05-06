@@ -147,10 +147,10 @@ private suspend fun logAndSendError(
     statusCode: HttpStatusCode
 ) {
     withContext(Dispatchers.IO) {
-        val stackTrace = cause?.stackTraceToString()
+        val message = cause?.stackTraceToString() ?: statusCode.description
 
-        this.launch { call.respond(statusCode, stackTrace ?: statusCode.description) }
-        this.launch { logger.error(stackTrace) }
+        this.launch { call.respond(statusCode, message) }
+        this.launch { logger.error(message) }
     }
 }
 
