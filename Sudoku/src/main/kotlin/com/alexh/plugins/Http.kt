@@ -15,6 +15,9 @@ import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.slf4j.Logger
 import java.sql.SQLException
 
@@ -116,49 +119,39 @@ private fun configureAuthentication(app: Application) {
 private fun configureStatusPages(app: Application, logger: Logger) {
     app.install(StatusPages) {
         this.exception<Throwable> { call, exception ->
-            logAndSendError(app, call, logger, exception, HttpStatusCode.InternalServerError)
+            logAndSendError(call, logger, exception, HttpStatusCode.InternalServerError)
         }
 
         this.exception<IllegalArgumentException> { call, exception ->
-            logAndSendError(app, call, logger, exception, HttpStatusCode.BadRequest)
+            logAndSendError(call, logger, exception, HttpStatusCode.BadRequest)
         }
 
         this.exception<ContentTransformationException> { call, exception ->
-            logAndSendError(app, call, logger, exception, HttpStatusCode.BadRequest)
+            logAndSendError(call, logger, exception, HttpStatusCode.BadRequest)
         }
 
         this.exception<SQLException> { call, exception ->
-            logAndSendError(app, call, logger, exception, HttpStatusCode.BadGateway)
+            logAndSendError(call, logger, exception, HttpStatusCode.BadGateway)
         }
 
         this.status(HttpStatusCode.Unauthorized) { call, status ->
-            logAndSendError(app, call, logger, null, status)
+            logAndSendError(call, logger, null, status)
         }
     }
 }
 
 private suspend fun logAndSendError(
-    app: Application,
     call: ApplicationCall,
     logger: Logger,
     cause: Throwable?,
     statusCode: HttpStatusCode
 ) {
-    val config = app.environment.config
-
-    val isDevMode = config.property("ktor.development").getString().toBoolean()
-    val isTestMode = config.property("ktor.testing").getString().toBoolean()
-
     val stackTrace = cause?.stackTraceToString()
 
-    if (null !== stackTrace && (isDevMode || isTestMode)) {
-        call.respond(statusCode, stackTrace)
+    withContext(Dispatchers.IO) {
+        this.launch { call.respond(statusCode, stackTrace ?: statusCode.description) }
+        this.launch { logger.error(stackTrace) }
     }
-    else {
-        call.respond(statusCode)
-    }
-
-    logger.error(stackTrace)
 }
 
 private fun configureRequestCompression(app: Application) {
