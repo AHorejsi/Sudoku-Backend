@@ -40,12 +40,12 @@ private fun checkCreateForValidity(username: String, password: String, email: St
         null
 
 fun doUserCreation(stmt: PreparedStatement): CreateUserResponse {
-    try {
+    runCatching {
         stmt.executeUpdate()
-    } catch (ex: SQLException) {
-        val foundDuplicate = ex.message?.startsWith("Unique") ?: false
+    }.onFailure { ex ->
+        val message = ex.message
 
-        if (foundDuplicate) {
+        if (null !== message && message.startsWith("Unique")) {
             return CreateUserResponse.DuplicateFound
         }
 
@@ -143,7 +143,7 @@ private fun makePuzzleList(idList: List<String>?, jsonList: List<String>?): List
     val puzzleList = mutableListOf<Puzzle>()
 
     if (null !== idList && null !== jsonList) {
-        for (index in 0 until idList.size) {
+        for (index in idList.indices) {
             val id = idList[index].toInt()
             val json = jsonList[index]
 

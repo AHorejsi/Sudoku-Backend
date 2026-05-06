@@ -47,32 +47,49 @@ class ApplicationTest {
             this@ApplicationTest.installLogging(this)
             this@ApplicationTest.installCompression(this)
         }.use { client ->
+            val testCount = 10
+
             val dimensionArray = Dimension.values()
             val difficultyArray = Difficulty.values()
+            val gameArray = Game.values()
 
-            for (dimension in dimensionArray) {
-                for (difficulty in difficultyArray) {
-                    this@ApplicationTest.testGenerateHelper1(client, dimension, difficulty)
-                }
+            repeat(testCount) { _ ->
+                testGenerateHelper1(client, dimensionArray, difficultyArray, gameArray)
             }
 
             this@ApplicationTest.testUnfilledFieldsOnGenerate(client)
         }
     }
 
-    private suspend fun testGenerateHelper1(client: HttpClient, dimension: Dimension, difficulty: Difficulty) {
-        val games = Game.values()
-
-        for (startIndex in games.indices) {
-            for (endIndex in startIndex..games.size) {
-                val gameSet = games.slice(startIndex until endIndex).toSet()
-
-                this.testGenerateHelper2(client, dimension, difficulty, gameSet)
+    private suspend fun testGenerateHelper1(
+        client: HttpClient,
+        dimensionArray: Array<Dimension>,
+        difficultyArray: Array<Difficulty>,
+        gameArray: Array<Game>
+    ) {
+        for (dimension in dimensionArray) {
+            for (difficulty in difficultyArray) {
+                this@ApplicationTest.testGenerateHelper2(client, dimension, difficulty, gameArray)
             }
         }
     }
 
     private suspend fun testGenerateHelper2(
+        client: HttpClient,
+        dimension: Dimension,
+        difficulty: Difficulty,
+        gameArray: Array<Game>
+    ) {
+        for (startIndex in gameArray.indices) {
+            for (endIndex in startIndex .. gameArray.size) {
+                val gameSet = gameArray.slice(startIndex until endIndex).toSet()
+
+                this.testGenerateHelper3(client, dimension, difficulty, gameSet)
+            }
+        }
+    }
+
+    private suspend fun testGenerateHelper3(
         client: HttpClient,
         dimension: Dimension,
         difficulty: Difficulty,

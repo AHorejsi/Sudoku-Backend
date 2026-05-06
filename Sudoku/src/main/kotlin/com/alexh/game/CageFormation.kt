@@ -2,6 +2,7 @@ package com.alexh.game
 
 import com.alexh.utils.Position
 import com.alexh.utils.get2d
+import com.alexh.utils.outOfBounds
 import kotlin.collections.HashSet
 import kotlin.random.Random
 
@@ -47,7 +48,7 @@ private fun makeCagesHelper(
             available.remove(pos)
 
             val adjacent =
-                listOf(pos.up, pos.down, pos.left, pos.right).filter{ !it.outOfBounds(length) && it in available }
+                listOf(pos.up, pos.down, pos.left, pos.right).filter{ !outOfBounds(it, length) && it in available }
 
             if (adjacent.isEmpty()) {
                 break
@@ -56,7 +57,7 @@ private fun makeCagesHelper(
             pos = adjacent.random(rand)
         }
 
-        val sum = cagePos.sumOf{ neighborhoods.get2d(it.rowIndex, it.colIndex, length).value!! }
+        val sum = cagePos.sumOf{ neighborhoods.get2d(it, length).value!! }
         val newCage = Cage(sum, cagePos)
 
         cages.add(newCage)
