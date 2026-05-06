@@ -53,7 +53,7 @@ class ApplicationTest {
             val gameArray = Game.values()
 
             repeat(testCount) { _ ->
-                testGenerateHelper1(client, dimensionArray, difficultyArray, gameArray)
+                this@ApplicationTest.testGenerateHelper1(client, dimensionArray, difficultyArray, gameArray)
             }
 
             this@ApplicationTest.testUnfilledFieldsOnGenerate(client)
@@ -68,7 +68,7 @@ class ApplicationTest {
     ) {
         for (dimension in dimensionArray) {
             for (difficulty in difficultyArray) {
-                this@ApplicationTest.testGenerateHelper2(client, dimension, difficulty, gameArray)
+                this.testGenerateHelper2(client, dimension, difficulty, gameArray)
             }
         }
     }
