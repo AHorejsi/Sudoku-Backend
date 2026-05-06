@@ -6,19 +6,19 @@ class EnvironmentVariables private constructor() {
     }
 
     companion object {
-        val STATIC_SALT = System.getenv("SUDOKU_SALT")!!
+        val STATIC_SALT = System.getenv("STATIC_SALT")!!
 
-        val BASIC_REALM = System.getenv("SUDOKU_BASIC_REALM")!!
-        val BASIC_NAME = System.getenv("SUDOKU_BASIC_NAME")!!
-        val BASIC_PASS = System.getenv("SUDOKU_BASIC_PASS")!!
+        val BASIC_REALM = System.getenv("BASIC_REALM")!!
+        val BASIC_NAME = System.getenv("BASIC_NAME")!!
+        val BASIC_PASS = System.getenv("BASIC_PASS")!!
 
-        val JWT_REALM = System.getenv("SUDOKU_JWT_REALM")!!
-        val JWT_SECRET = System.getenv("SUDOKU_JWT_SECRET")!!
-        val JWT_ISSUER = System.getenv("SUDOKU_JWT_ISSUER")!!
-        val JWT_AUDIENCE = System.getenv("SUDOKU_JWT_AUDIENCE")!!
+        val JWT_REALM = System.getenv("JWT_REALM")!!
+        val JWT_SECRET = System.getenv("JWT_SECRET")!!
+        val JWT_ISSUER = System.getenv("JWT_ISSUER")!!
+        val JWT_AUDIENCE = System.getenv("JWT_AUDIENCE")!!
 
-        val CLIENT_HOST = System.getenv("SUDOKU_CLIENT_HOST")!!
-        val CLIENT_PORT = System.getenv("SUDOKU_CLIENT_PORT")!!
+        val CLIENT_HOST = System.getenv("CLIENT_HOST")!!
+        val CLIENT_PORT = System.getenv("CLIENT_PORT")!!
     }
 }
 
@@ -139,7 +139,7 @@ class SqlStrings private constructor() {
             "WHERE $USER_TABLE_ID = ?"
 
         const val CREATE_PUZZLE =
-            "INSERT INTO $PUZZLE_TABLE ($JSON, $USER_ID)" +
+            "INSERT INTO $PUZZLE_TABLE ($JSON, $USER_ID) " +
             "VALUES (?, ?)"
         const val UPDATE_PUZZLE =
             "UPDATE $PUZZLE_TABLE " +

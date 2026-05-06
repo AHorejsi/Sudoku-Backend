@@ -1,8 +1,6 @@
 package com.alexh.plugins
 
-import com.alexh.utils.Auths
-import com.alexh.utils.EnvironmentVariables
-import com.alexh.utils.JwtClaims
+import com.alexh.utils.*
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.http.*
@@ -22,7 +20,7 @@ import java.sql.SQLException
 
 fun configureHttp(app: Application, logger: Logger) {
     configureCors(app)
-    configureAuthentication(app)
+    configureAuthentication(app, logger)
     configureStatusPages(app, logger)
     configureRequestCompression(app)
 }
@@ -64,7 +62,7 @@ private fun configureCors(app: Application) {
     }
 }
 
-private fun configureAuthentication(app: Application) {
+private fun configureAuthentication(app: Application, logger: Logger) {
     app.install(Authentication) {
         this.basic(Auths.BASIC) {
             val name = EnvironmentVariables.BASIC_NAME
@@ -97,19 +95,24 @@ private fun configureAuthentication(app: Application) {
                     .build()
             )
             this.validate { credentials ->
-                val payload = credentials.payload
+                val load = credentials.payload
 
-                val isActualIssuer = payload.issuer == issuer
-                val isAllowedAudience = payload.audience.contains(audience)
-                val isAllowedUsernameOrEmail = !payload.getClaim(JwtClaims.USERNAME_OR_EMAIL).asString().isNullOrBlank()
+                val actualIssuer = load.issuer!!
+                val actualAudience = load.audience!!
+                val usernameOrEmail = load.getClaim(JwtClaims.USERNAME_OR_EMAIL).asString()!!
 
-                if (isActualIssuer && isAllowedAudience && isAllowedUsernameOrEmail)
-                    JWTPrincipal(credentials.payload)
+                val isValidIssuer = actualIssuer == issuer
+                val isValidAudience = actualAudience.contains(audience)
+                val isValidUsernameOrEmail = isValidUsername(usernameOrEmail) && isValidEmail(usernameOrEmail)
+
+                if (isValidIssuer && isValidAudience && isValidUsernameOrEmail)
+                    JWTPrincipal(load)
                 else
                     null
             }
-            this.challenge { _, _ ->
-                this.call.respond(HttpStatusCode.Unauthorized, "Invalid JWT Token")
+            this.challenge { scheme, realm ->
+                logger.error("Scheme: $scheme, Realm: $realm")
+                logAndSendError(this.call, logger, null, HttpStatusCode.Unauthorized)
             }
         }
     }
@@ -132,10 +135,6 @@ private fun configureStatusPages(app: Application, logger: Logger) {
         this.exception<SQLException> { call, exception ->
             logAndSendError(call, logger, exception, HttpStatusCode.BadGateway)
         }
-
-        this.status(HttpStatusCode.Unauthorized) { call, status ->
-            logAndSendError(call, logger, null, status)
-        }
     }
 }
 
@@ -143,12 +142,13 @@ private suspend fun logAndSendError(
     call: ApplicationCall,
     logger: Logger,
     cause: Throwable?,
-    statusCode: HttpStatusCode
+    status: HttpStatusCode
 ) {
     withContext(Dispatchers.IO) {
-        val message = cause?.stackTraceToString() ?: statusCode.description
+        val stackTrace = cause?.stackTraceToString() ?: "No Exception"
+        val message = "${status.description}: $stackTrace"
 
-        this.launch { call.respond(statusCode, message) }
+        this.launch { call.respond(status, message) }
         this.launch { logger.error(message) }
     }
 }
@@ -156,7 +156,7 @@ private suspend fun logAndSendError(
 private fun configureRequestCompression(app: Application) {
     app.install(Compression) {
         this.gzip {
-            this.matchContentType(ContentType.Application.Any)
+            this.matchContentType(ContentType.Application.Json)
             this.minimumSize(1024)
             this.priority = 1.0
         }
