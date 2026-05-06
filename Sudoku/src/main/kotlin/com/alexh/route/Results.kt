@@ -26,11 +26,11 @@ suspend inline fun <reified TType : Any> handleResult(
     call: ApplicationCall,
     logger: Logger,
     endpoint: String
-): Unit = withContext(Dispatchers.IO) {
-    this.launch { call.respond(HttpStatusCode.OK, result) }
-    this.launch { logger.info("Successful call to $endpoint") }
-
-    return@withContext
+) {
+    withContext(Dispatchers.IO) {
+        this.launch { call.respond(HttpStatusCode.OK, result) }
+        this.launch { logger.info("Successful call to $endpoint") }
+    }
 }
 
 fun createJwtToken(usernameOrEmail: String): String {
@@ -45,7 +45,7 @@ fun createJwtToken(usernameOrEmail: String): String {
         .sign(Algorithm.HMAC256(SECRET))
 }
 
-fun refreshJwtTokenIfNotExpired(user: User, jwtPayload: Payload): String? {
+fun refreshJwtTokenIfExpired(user: User, jwtPayload: Payload): String? {
     val usernameOrEmail = jwtPayload.claims[JwtClaims.USERNAME_OR_EMAIL]?.asString()
 
     if (null === usernameOrEmail || user.username != usernameOrEmail && user.email != usernameOrEmail) {

@@ -19,47 +19,10 @@ import org.slf4j.Logger
 import java.sql.SQLException
 
 fun configureHttp(app: Application, logger: Logger) {
-    // HttpRequestLifecycle
-
-    configureJwtAuthentication(app)
     configureCors(app)
+    configureAuthentication(app)
     configureStatusPages(app, logger)
     configureRequestCompression(app)
-}
-
-private fun configureJwtAuthentication(app: Application) {
-    app.install(Authentication) {
-        this.jwt(Auths.JWT) {
-            val secret = getEnvironmentVariable(EnvironmentVariables.JWT_SECRET)
-            val issuer = getEnvironmentVariable(EnvironmentVariables.JWT_ISSUER)
-            val audience = getEnvironmentVariable(EnvironmentVariables.JWT_AUDIENCE)
-
-            this.realm = getEnvironmentVariable(EnvironmentVariables.JWT_REALM)
-            this.verifier(
-                JWT
-                    .require(Algorithm.HMAC256(secret))
-                    .withIssuer(issuer)
-                    .withAudience(audience)
-                    .withClaimPresence(JwtClaims.USERNAME_OR_EMAIL)
-                    .build()
-            )
-            this.validate { credentials ->
-                val payload = credentials.payload
-
-                val isActualIssuer = payload.issuer == issuer
-                val isAllowedAudience = payload.audience.contains(audience)
-                val isAllowedUsernameOrEmail = !payload.getClaim(JwtClaims.USERNAME_OR_EMAIL).asString().isNullOrBlank()
-
-                if (isActualIssuer && isAllowedAudience && isAllowedUsernameOrEmail)
-                    JWTPrincipal(credentials.payload)
-                else
-                    null
-            }
-            this.challenge { _, _ ->
-                this.call.respond(HttpStatusCode.Unauthorized, "Invalid JWT Token")
-            }
-        }
-    }
 }
 
 private fun configureCors(app: Application) {
@@ -95,6 +58,57 @@ private fun configureCors(app: Application) {
             val port = getEnvironmentVariable(EnvironmentVariables.CLIENT_PORT)
 
             this.allowHost("$host:$port")
+        }
+    }
+}
+
+private fun configureAuthentication(app: Application) {
+    app.install(Authentication) {
+        this.basic(Auths.BASIC) {
+            val name = getEnvironmentVariable(EnvironmentVariables.BASIC_NAME)
+            val pass = getEnvironmentVariable(EnvironmentVariables.BASIC_PASS)
+
+            this.realm = getEnvironmentVariable(EnvironmentVariables.BASIC_REALM)
+            this.validate { credentials ->
+                val actualName = credentials.name
+                val actualPass = credentials.password
+
+                if (name == actualName && pass == actualPass)
+                    UserIdPrincipal(credentials.name)
+                else
+                    null
+            }
+        }
+
+        this.jwt(Auths.JWT) {
+            val secret = getEnvironmentVariable(EnvironmentVariables.JWT_SECRET)
+            val issuer = getEnvironmentVariable(EnvironmentVariables.JWT_ISSUER)
+            val audience = getEnvironmentVariable(EnvironmentVariables.JWT_AUDIENCE)
+
+            this.realm = getEnvironmentVariable(EnvironmentVariables.JWT_REALM)
+            this.verifier(
+                JWT
+                    .require(Algorithm.HMAC256(secret))
+                    .withIssuer(issuer)
+                    .withAudience(audience)
+                    .withClaimPresence(JwtClaims.USERNAME_OR_EMAIL)
+                    .build()
+            )
+            this.validate { credentials ->
+                val payload = credentials.payload
+
+                val isActualIssuer = payload.issuer == issuer
+                val isAllowedAudience = payload.audience.contains(audience)
+                val isAllowedUsernameOrEmail = !payload.getClaim(JwtClaims.USERNAME_OR_EMAIL).asString().isNullOrBlank()
+
+                if (isActualIssuer && isAllowedAudience && isAllowedUsernameOrEmail)
+                    JWTPrincipal(credentials.payload)
+                else
+                    null
+            }
+            this.challenge { _, _ ->
+                this.call.respond(HttpStatusCode.Unauthorized, "Invalid JWT Token")
+            }
         }
     }
 }

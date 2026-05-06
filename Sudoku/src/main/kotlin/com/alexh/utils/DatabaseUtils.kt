@@ -39,7 +39,7 @@ private fun createDbConfig(app: Application): HikariConfig {
 
     dbConfig.connectionTimeout = 10000 // in milliseconds
     dbConfig.maximumPoolSize = 50
-    dbConfig.connectionTestQuery = "SELECT 1;"
+    dbConfig.connectionTestQuery = "SELECT 1"
 
     return dbConfig
 }

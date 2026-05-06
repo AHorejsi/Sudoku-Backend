@@ -15,12 +15,12 @@ private val GENERATION_LOGGER = LoggerFactory.getLogger(Loggers.GENERATION_ROUTI
 fun configureEndpointsForGeneratingPuzzles(app: Application) {
     app.routing {
         this.authenticate(Auths.JWT) {
-            authenticatedUrls(this)
+            jwtUrls(this)
         }
     }
 }
 
-private fun authenticatedUrls(route: Route) {
+private fun jwtUrls(route: Route) {
     route.post(Endpoints.GENERATE) {
         val result = generateSudoku(this.call)
 

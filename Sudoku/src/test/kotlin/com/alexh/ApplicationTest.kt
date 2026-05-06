@@ -6,7 +6,9 @@ import com.alexh.game.Game
 import com.alexh.models.*
 import com.alexh.route.createJwtToken
 import com.alexh.utils.Endpoints
+import com.alexh.utils.EnvironmentVariables
 import com.alexh.utils.XRequestIds
+import com.alexh.utils.getEnvironmentVariable
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -21,6 +23,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import io.ktor.client.plugins.compression.*
 import io.ktor.client.statement.*
+import java.util.*
 import kotlin.reflect.KClass
 
 class ApplicationTest {
@@ -42,10 +45,7 @@ class ApplicationTest {
         this.createClient {
             this@ApplicationTest.installJson(this)
             this@ApplicationTest.installLogging(this)
-
-            this.install(ContentEncoding) {
-                this.gzip(1.0f)
-            }
+            this@ApplicationTest.installCompression(this)
         }.use { client ->
             val dimensionArray = Dimension.values()
             val difficultyArray = Difficulty.values()
@@ -79,7 +79,7 @@ class ApplicationTest {
         games: Set<Game>
     ) {
         val response = client.post(Endpoints.GENERATE) {
-            this@ApplicationTest.setHeadersWithJwt(this, XRequestIds.GENERATE, this@ApplicationTest.successfulUsername)
+            this@ApplicationTest.setJwtHeaders(this, XRequestIds.GENERATE, this@ApplicationTest.successfulUsername)
 
             val gameNameSet = games.map{ it.name }.toSet()
 
@@ -100,7 +100,7 @@ class ApplicationTest {
 
     private suspend fun testUnfilledFieldsOnGenerate(client: HttpClient) {
         val response = client.post(Endpoints.GENERATE) {
-            this@ApplicationTest.setHeadersWithJwt(this, XRequestIds.GENERATE, this@ApplicationTest.successfulEmail)
+            this@ApplicationTest.setJwtHeaders(this, XRequestIds.GENERATE, this@ApplicationTest.successfulEmail)
 
             val requestBody = GenerateRequest("", "", emptySet())
 
@@ -174,7 +174,7 @@ class ApplicationTest {
         email: String
     ) {
         val response = client.put(Endpoints.CREATE_USER) {
-            this@ApplicationTest.setStandardHeaders(this, XRequestIds.CREATE_USER)
+            this@ApplicationTest.setBasicHeaders(this, XRequestIds.CREATE_USER)
 
             val requestBody = CreateUserRequest(username, password, email)
 
@@ -193,7 +193,7 @@ class ApplicationTest {
 
     private suspend fun attemptToReadUserWithSuccess(client: HttpClient) {
         val responseWithUsername = client.post(Endpoints.READ_USER) {
-            this@ApplicationTest.setStandardHeaders(this, XRequestIds.READ_USER)
+            this@ApplicationTest.setBasicHeaders(this, XRequestIds.READ_USER)
 
             val requestBody = ReadUserRequest(
                 this@ApplicationTest.successfulUsername,
@@ -203,7 +203,7 @@ class ApplicationTest {
             this.setBody(requestBody)
         }
         val responseWithEmail = client.post(Endpoints.READ_USER) {
-            this@ApplicationTest.setStandardHeaders(this, XRequestIds.READ_USER)
+            this@ApplicationTest.setBasicHeaders(this, XRequestIds.READ_USER)
 
             val requestBody = ReadUserRequest(
                 this@ApplicationTest.successfulEmail,
@@ -232,7 +232,7 @@ class ApplicationTest {
 
     private suspend fun attemptToReadUserWithFailure(client: HttpClient) {
         val responseWithUsername = client.post(Endpoints.READ_USER) {
-            this@ApplicationTest.setStandardHeaders(this, XRequestIds.READ_USER)
+            this@ApplicationTest.setBasicHeaders(this, XRequestIds.READ_USER)
 
             val requestBody = ReadUserRequest(
                 this@ApplicationTest.invalidUsername,
@@ -242,7 +242,7 @@ class ApplicationTest {
             this.setBody(requestBody)
         }
         val responseWithEmail = client.post(Endpoints.READ_USER) {
-            this@ApplicationTest.setStandardHeaders(this, XRequestIds.READ_USER)
+            this@ApplicationTest.setBasicHeaders(this, XRequestIds.READ_USER)
 
             val requestBody = ReadUserRequest(
                 this@ApplicationTest.invalidEmail,
@@ -291,7 +291,7 @@ class ApplicationTest {
         newEmail: String
     ) {
         val response = client.put(Endpoints.UPDATE_USER) {
-            this@ApplicationTest.setHeadersWithJwt(this, XRequestIds.UPDATE_USER, this@ApplicationTest.successfulUsername)
+            this@ApplicationTest.setJwtHeaders(this, XRequestIds.UPDATE_USER, this@ApplicationTest.successfulUsername)
 
             val requestBody = UpdateUserRequest(
                 this@ApplicationTest.successfulUserId,
@@ -309,7 +309,7 @@ class ApplicationTest {
 
     private suspend fun testCreatePuzzle(client: HttpClient) {
         val response = client.put(Endpoints.CREATE_PUZZLE) {
-            this@ApplicationTest.setHeadersWithJwt(this, XRequestIds.CREATE_PUZZLE, this@ApplicationTest.successfulUsername)
+            this@ApplicationTest.setJwtHeaders(this, XRequestIds.CREATE_PUZZLE, this@ApplicationTest.successfulUsername)
 
             val requestBody = CreatePuzzleRequest("{}", this@ApplicationTest.successfulUserId)
 
@@ -335,7 +335,7 @@ class ApplicationTest {
         cls: KClass<*>
     ) {
         val response = client.put(Endpoints.UPDATE_PUZZLE) {
-            this@ApplicationTest.setHeadersWithJwt(this, XRequestIds.UPDATE_PUZZLE, this@ApplicationTest.successfulEmail)
+            this@ApplicationTest.setJwtHeaders(this, XRequestIds.UPDATE_PUZZLE, this@ApplicationTest.successfulEmail)
 
             val requestBody = UpdatePuzzleRequest(puzzleId, json)
 
@@ -358,7 +358,7 @@ class ApplicationTest {
         cls: KClass<*>
     ) {
         val response = client.delete(Endpoints.DELETE_PUZZLE) {
-            this@ApplicationTest.setHeadersWithJwt(this, XRequestIds.DELETE_PUZZLE, this@ApplicationTest.successfulUsername)
+            this@ApplicationTest.setJwtHeaders(this, XRequestIds.DELETE_PUZZLE, this@ApplicationTest.successfulUsername)
 
             val requestBody = DeletePuzzleRequest(puzzleId)
 
@@ -381,7 +381,7 @@ class ApplicationTest {
         cls: KClass<*>,
     ) {
         val response = client.delete(Endpoints.DELETE_USER) {
-            this@ApplicationTest.setHeadersWithJwt(this, XRequestIds.DELETE_USER, this@ApplicationTest.successfulEmail)
+            this@ApplicationTest.setJwtHeaders(this, XRequestIds.DELETE_USER, this@ApplicationTest.successfulEmail)
 
             val requestBody = DeleteUserRequest(userId)
 
@@ -391,6 +391,25 @@ class ApplicationTest {
 
         val responseBody = response.body<DeleteUserResponse>()
         assertEquals(cls, responseBody::class)
+    }
+
+    private fun setBasicHeaders(builder: HttpRequestBuilder, xReqId: String) {
+        val name = getEnvironmentVariable(EnvironmentVariables.BASIC_NAME)
+        val pass = getEnvironmentVariable(EnvironmentVariables.BASIC_PASS)
+
+        val bytes = "$name:$pass".toByteArray()
+        val credentials = Base64.getEncoder().encodeToString(bytes)
+
+        builder.headers.append(HttpHeaders.Authorization, "Basic $credentials")
+
+        this.setStandardHeaders(builder, xReqId)
+    }
+
+    private fun setJwtHeaders(builder: HttpRequestBuilder, xReqId: String, usernameOrEmail: String) {
+        val jwtToken = createJwtToken(usernameOrEmail)
+        builder.headers.append(HttpHeaders.Authorization, "Bearer $jwtToken")
+
+        this.setStandardHeaders(builder, xReqId)
     }
 
     private fun setStandardHeaders(builder: HttpRequestBuilder, xReqId: String) {
@@ -408,13 +427,6 @@ class ApplicationTest {
         }
     }
 
-    private fun setHeadersWithJwt(builder: HttpRequestBuilder, xReqId: String, usernameOrEmail: String) {
-        val jwtToken = createJwtToken(usernameOrEmail)
-        builder.headers.append(HttpHeaders.Authorization, "Bearer $jwtToken")
-
-        this.setStandardHeaders(builder, xReqId)
-    }
-
     private fun installJson(config: HttpClientConfig<*>) {
         config.install(ContentNegotiation) {
             this.json(Json {
@@ -428,6 +440,12 @@ class ApplicationTest {
         config.install(Logging) {
             this.logger = Logger.DEFAULT
             this.level = LogLevel.ALL
+        }
+    }
+
+    private fun installCompression(config: HttpClientConfig<*>) {
+        config.install(ContentEncoding) {
+            this.gzip(1.0f)
         }
     }
 }

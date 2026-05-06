@@ -1,7 +1,7 @@
 package com.alexh.models
 
 import com.alexh.route.createJwtToken
-import com.alexh.route.refreshJwtTokenIfNotExpired
+import com.alexh.route.refreshJwtTokenIfExpired
 import com.alexh.utils.*
 import io.ktor.server.auth.jwt.*
 import java.sql.*
@@ -113,7 +113,7 @@ fun readUserWithToken(dbConn: Connection, principal: JWTPrincipal): TokenLoginRe
                 return TokenLoginResponse.InvalidUsernameOrEmail
             }
 
-            val newToken = refreshJwtTokenIfNotExpired(user, principal.payload)
+            val newToken = refreshJwtTokenIfExpired(user, principal.payload)
 
             return if (null !== newToken)
                 TokenLoginResponse.Success(user, newToken)
@@ -132,8 +132,8 @@ private fun buildUserObject(results: ResultSet): User? {
     val username = results.getString(SqlStrings.USERNAME)
     val email = results.getString(SqlStrings.EMAIL)
 
-    val puzzleIds = results.getString(SqlStrings.PUZZLE_ID)?.split('|')
-    val puzzleJsons = results.getString(SqlStrings.JSON)?.split('|')
+    val puzzleIds = results.getString(SqlStrings.PUZZLE_ID)?.split(SqlStrings.SEPARATOR)
+    val puzzleJsons = results.getString(SqlStrings.JSON)?.split(SqlStrings.SEPARATOR)
     val puzzles = makePuzzleList(puzzleIds, puzzleJsons)
 
     return User(userId, username, email, puzzles)

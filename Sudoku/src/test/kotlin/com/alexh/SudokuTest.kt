@@ -5,6 +5,7 @@ import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.test.assertFalse
 
 class SudokuTest {
     @Test
@@ -16,7 +17,7 @@ class SudokuTest {
         val difficultyArray = Difficulty.values()
         val gameArray = Game.values()
 
-        repeat(testCount) {
+        repeat(testCount) { _ ->
             val seed = static.nextInt()
             val rand = Random(seed)
 
@@ -61,11 +62,14 @@ class SudokuTest {
                 val cell = sudoku.board[rowIndex][colIndex]
                 val value = sudoku.solved[rowIndex][colIndex]
 
-                if (null !== cell.value) {
+                if (null === cell.value) {
+                    assertTrue(cell.editable)
+                }
+                else {
+                    assertFalse(cell.editable)
                     assertEquals(value, cell.value)
                 }
                 assertEquals(0, cell.notes)
-                assertEquals(cell.editable, null === cell.value)
             }
         }
     }

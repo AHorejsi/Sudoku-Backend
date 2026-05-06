@@ -7,7 +7,6 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
-import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
@@ -17,15 +16,17 @@ fun configureEndpointsForUsers(app: Application) {
     val source = connectToDatabase(app)
 
     app.routing {
-        openUrls(source, this)
+        this.authenticate(Auths.BASIC) {
+            basicUrls(source, this)
+        }
 
         this.authenticate(Auths.JWT) {
-            authenticatedUrls(source, this)
+            jwtUrls(source, this)
         }
     }
 }
 
-private fun openUrls(source: DataSource, route: Route) {
+private fun basicUrls(source: DataSource, route: Route) {
     route.put(Endpoints.CREATE_USER) {
         val result = createUser(source, this.call)
 
@@ -38,7 +39,7 @@ private fun openUrls(source: DataSource, route: Route) {
     }
 }
 
-private fun authenticatedUrls(source: DataSource, route: Route) {
+private fun jwtUrls(source: DataSource, route: Route) {
     route.put(Endpoints.UPDATE_USER) {
         val result = updateUser(source, this.call)
 
@@ -152,7 +153,7 @@ private suspend fun renewJwtToken(call: ApplicationCall): RenewTokenResponse {
     val principal = call.principal<JWTPrincipal>()!!
     val request = call.receive(RenewTokenRequest::class)
 
-    val token = refreshJwtTokenIfNotExpired(request.user, principal.payload)
+    val token = refreshJwtTokenIfExpired(request.user, principal.payload)
     val response =
         if (null !== token)
             RenewTokenResponse.Success(token)

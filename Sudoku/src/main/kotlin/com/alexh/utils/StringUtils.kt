@@ -8,6 +8,10 @@ class EnvironmentVariables private constructor() {
     companion object {
         const val STATIC_SALT = "SUDOKU_SALT"
 
+        const val BASIC_REALM = "SUDOKU_BASIC_REALM"
+        const val BASIC_NAME = "SUDOKU_BASIC_NAME"
+        const val BASIC_PASS = "SUDOKU_BASIC_PASS"
+
         const val JWT_REALM = "SUDOKU_JWT_REALM"
         const val JWT_SECRET = "SUDOKU_JWT_SECRET"
         const val JWT_ISSUER = "SUDOKU_JWT_ISSUER"
@@ -15,8 +19,6 @@ class EnvironmentVariables private constructor() {
 
         const val CLIENT_HOST = "SUDOKU_CLIENT_HOST"
         const val CLIENT_PORT = "SUDOKU_CLIENT_PORT"
-
-        const val DB_NAME = "SUDOKU_DB_NAME"
     }
 }
 
@@ -58,6 +60,7 @@ class Auths private constructor() {
     }
 
     companion object {
+        const val BASIC = "auth-basic"
         const val JWT = "auth-jwt"
     }
 }
@@ -95,6 +98,8 @@ class SqlStrings {
         const val USER_ID = "userId"
         const val PUZZLE_ID = "puzzleId"
 
+        const val SEPARATOR = "|"
+
         const val CREATE_DATABASE = "CREATE DATABASE $DB_NAME"
 
         const val CREATE_USER_TABLE =
@@ -119,8 +124,8 @@ class SqlStrings {
             "VALUES (?, ?, ?, ?)"
         const val GET_USER =
             "SELECT $USER_TABLE.$USER_TABLE_ID AS $USER_ID, $USERNAME, $EMAIL, $PASSWORD, $SALT," +
-            "STRING_AGG(CAST($PUZZLE_TABLE.$PUZZLE_TABLE_ID AS TEXT), '|') AS $PUZZLE_ID," +
-            "STRING_AGG($JSON, '|') as $JSON " +
+            "STRING_AGG(CAST($PUZZLE_TABLE.$PUZZLE_TABLE_ID AS TEXT), '$SEPARATOR') AS $PUZZLE_ID," +
+            "STRING_AGG($JSON, '$SEPARATOR') as $JSON " +
             "FROM $USER_TABLE " +
             "LEFT JOIN $PUZZLE_TABLE ON $USER_TABLE.$USER_TABLE_ID = $PUZZLE_TABLE.$USER_ID " +
             "WHERE LOWER($USERNAME) = LOWER(?) OR LOWER($EMAIL) = LOWER(?)" +
