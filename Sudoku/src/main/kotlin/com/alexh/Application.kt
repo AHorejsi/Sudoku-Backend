@@ -12,10 +12,10 @@ private val MAIN_LOGGER = LoggerFactory.getLogger(Loggers.MAIN_APPLICATION)!!
 fun main(args: Array<String>) {
     runCatching {
         EngineMain.main(args)
-    }.onFailure { exception ->
-        val stackTrace = exception.stackTraceToString()
+    }.onFailure { ex ->
+        val stackTrace = ex.stackTraceToString()
 
-        MAIN_LOGGER.error("FAILED SERVER INITIALIZATION:\n $stackTrace")
+        MAIN_LOGGER.error("FAILED SERVER INITIALIZATION:\n$stackTrace")
     }
 }
 
