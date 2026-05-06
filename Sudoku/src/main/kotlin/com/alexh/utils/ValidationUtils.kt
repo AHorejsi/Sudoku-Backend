@@ -22,7 +22,7 @@ fun isValidEmail(email: String): Boolean =
     EMAIL_REGEX.matches(email)
 
 fun createPassword(password: String): Pair<String, String> {
-    val staticSalt = getEnvironmentVariable(EnvironmentVariables.STATIC_SALT)
+    val staticSalt = EnvironmentVariables.STATIC_SALT
     val dynamicSalt = generateSalt()
 
     val salted = (staticSalt + password + dynamicSalt).toCharArray()
@@ -48,7 +48,7 @@ private fun generateSalt(): String {
 }
 
 fun validatePassword(providedPassword: String, passwordInDatabase: String, dynamicSalt: String): Boolean {
-    val staticSalt = getEnvironmentVariable(EnvironmentVariables.STATIC_SALT)
+    val staticSalt = EnvironmentVariables.STATIC_SALT
     val salted = (staticSalt + providedPassword + dynamicSalt).toCharArray()
 
     val login = PASSWORD_VERIFIER.verify(salted, passwordInDatabase)!!

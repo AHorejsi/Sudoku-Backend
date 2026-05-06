@@ -3,7 +3,6 @@ package com.alexh.route
 import com.alexh.models.User
 import com.alexh.utils.EnvironmentVariables
 import com.alexh.utils.JwtClaims
-import com.alexh.utils.getEnvironmentVariable
 import com.alexh.utils.oneWeekFromNow
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -16,10 +15,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.*
-
-private val SECRET = getEnvironmentVariable(EnvironmentVariables.JWT_SECRET)
-private val ISSUER = getEnvironmentVariable(EnvironmentVariables.JWT_ISSUER)
-private val AUDIENCE = getEnvironmentVariable(EnvironmentVariables.JWT_AUDIENCE)
 
 suspend inline fun <reified TType : Any> handleResult(
     result: TType,
@@ -38,11 +33,11 @@ fun createJwtToken(usernameOrEmail: String): String {
 
     return JWT
         .create()
-        .withAudience(AUDIENCE)
-        .withIssuer(ISSUER)
-        .withClaim(JwtClaims.USERNAME_OR_EMAIL, usernameOrEmail)
+        .withIssuer(EnvironmentVariables.JWT_ISSUER)
+        .withAudience(EnvironmentVariables.JWT_AUDIENCE)
         .withExpiresAt(weekLongExpirationDate)
-        .sign(Algorithm.HMAC256(SECRET))
+        .withClaim(JwtClaims.USERNAME_OR_EMAIL, usernameOrEmail)
+        .sign(Algorithm.HMAC256(EnvironmentVariables.JWT_SECRET))
 }
 
 fun refreshJwtTokenIfExpired(user: User, jwtPayload: Payload): String? {

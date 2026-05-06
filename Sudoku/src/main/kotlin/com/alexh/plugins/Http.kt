@@ -3,7 +3,6 @@ package com.alexh.plugins
 import com.alexh.utils.Auths
 import com.alexh.utils.EnvironmentVariables
 import com.alexh.utils.JwtClaims
-import com.alexh.utils.getEnvironmentVariable
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.http.*
@@ -57,8 +56,8 @@ private fun configureCors(app: Application) {
             this.anyHost() // Don't do this in production!
         }
         else {
-            val host = getEnvironmentVariable(EnvironmentVariables.CLIENT_HOST)
-            val port = getEnvironmentVariable(EnvironmentVariables.CLIENT_PORT)
+            val host = EnvironmentVariables.CLIENT_HOST
+            val port = EnvironmentVariables.CLIENT_PORT
 
             this.allowHost("$host:$port")
         }
@@ -68,10 +67,10 @@ private fun configureCors(app: Application) {
 private fun configureAuthentication(app: Application) {
     app.install(Authentication) {
         this.basic(Auths.BASIC) {
-            val name = getEnvironmentVariable(EnvironmentVariables.BASIC_NAME)
-            val pass = getEnvironmentVariable(EnvironmentVariables.BASIC_PASS)
+            val name = EnvironmentVariables.BASIC_NAME
+            val pass = EnvironmentVariables.BASIC_PASS
 
-            this.realm = getEnvironmentVariable(EnvironmentVariables.BASIC_REALM)
+            this.realm = EnvironmentVariables.BASIC_REALM
             this.validate { credentials ->
                 val actualName = credentials.name
                 val actualPass = credentials.password
@@ -84,11 +83,11 @@ private fun configureAuthentication(app: Application) {
         }
 
         this.jwt(Auths.JWT) {
-            val secret = getEnvironmentVariable(EnvironmentVariables.JWT_SECRET)
-            val issuer = getEnvironmentVariable(EnvironmentVariables.JWT_ISSUER)
-            val audience = getEnvironmentVariable(EnvironmentVariables.JWT_AUDIENCE)
+            val secret = EnvironmentVariables.JWT_SECRET
+            val issuer = EnvironmentVariables.JWT_ISSUER
+            val audience = EnvironmentVariables.JWT_AUDIENCE
 
-            this.realm = getEnvironmentVariable(EnvironmentVariables.JWT_REALM)
+            this.realm = EnvironmentVariables.JWT_REALM
             this.verifier(
                 JWT
                     .require(Algorithm.HMAC256(secret))

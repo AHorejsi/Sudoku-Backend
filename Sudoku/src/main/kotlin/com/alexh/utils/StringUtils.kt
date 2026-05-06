@@ -6,19 +6,19 @@ class EnvironmentVariables private constructor() {
     }
 
     companion object {
-        const val STATIC_SALT = "SUDOKU_SALT"
+        val STATIC_SALT = System.getenv("SUDOKU_SALT")!!
 
-        const val BASIC_REALM = "SUDOKU_BASIC_REALM"
-        const val BASIC_NAME = "SUDOKU_BASIC_NAME"
-        const val BASIC_PASS = "SUDOKU_BASIC_PASS"
+        val BASIC_REALM = System.getenv("SUDOKU_BASIC_REALM")!!
+        val BASIC_NAME = System.getenv("SUDOKU_BASIC_NAME")!!
+        val BASIC_PASS = System.getenv("SUDOKU_BASIC_PASS")!!
 
-        const val JWT_REALM = "SUDOKU_JWT_REALM"
-        const val JWT_SECRET = "SUDOKU_JWT_SECRET"
-        const val JWT_ISSUER = "SUDOKU_JWT_ISSUER"
-        const val JWT_AUDIENCE = "SUDOKU_JWT_AUDIENCE"
+        val JWT_REALM = System.getenv("SUDOKU_JWT_REALM")!!
+        val JWT_SECRET = System.getenv("SUDOKU_JWT_SECRET")!!
+        val JWT_ISSUER = System.getenv("SUDOKU_JWT_ISSUER")!!
+        val JWT_AUDIENCE = System.getenv("SUDOKU_JWT_AUDIENCE")!!
 
-        const val CLIENT_HOST = "SUDOKU_CLIENT_HOST"
-        const val CLIENT_PORT = "SUDOKU_CLIENT_PORT"
+        val CLIENT_HOST = System.getenv("SUDOKU_CLIENT_HOST")!!
+        val CLIENT_PORT = System.getenv("SUDOKU_CLIENT_PORT")!!
     }
 }
 
@@ -149,8 +149,4 @@ class SqlStrings private constructor() {
             "DELETE FROM $PUZZLE_TABLE " +
             "WHERE $PUZZLE_TABLE_ID = ?"
     }
-}
-
-fun getEnvironmentVariable(name: String): String {
-    return System.getenv(name)!!
 }
