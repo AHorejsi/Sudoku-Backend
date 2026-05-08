@@ -96,7 +96,7 @@ class ApplicationTest {
             val requestBody = GenerateRequest(dimensionName, difficultyName, gameNames)
 
             this.setBody(requestBody)
-        }.let { response ->
+        }.also { response ->
             assertEquals(HttpStatusCode.OK, response.status)
 
             val responseBody = response.body<GenerateResponse>()
@@ -194,7 +194,7 @@ class ApplicationTest {
             val requestBody = CreateUserRequest(username, password, email)
 
             this.setBody(requestBody)
-        }.let { response ->
+        }.also { response ->
             assertEquals(HttpStatusCode.OK, response.status)
 
             val actualResponse = response.body<CreateUserResponse>()::class.simpleName!!
@@ -217,7 +217,7 @@ class ApplicationTest {
             )
 
             this.setBody(requestBody)
-        }.let { response ->
+        }.also { response ->
             this.checkSuccessfulReadUser(response)
         }
 
@@ -230,7 +230,7 @@ class ApplicationTest {
             )
 
             this.setBody(requestBody)
-        }.let { response ->
+        }.also { response ->
             this.checkSuccessfulReadUser(response)
         }
     }
@@ -258,7 +258,7 @@ class ApplicationTest {
             )
 
             this.setBody(requestBody)
-        }.let { response ->
+        }.also { response ->
             this.checkFailedReadUser(response)
         }
 
@@ -271,7 +271,7 @@ class ApplicationTest {
             )
 
             this.setBody(requestBody)
-        }.let { response ->
+        }.also { response ->
             this.checkFailedReadUser(response)
         }
     }
@@ -320,7 +320,7 @@ class ApplicationTest {
             )
 
             this.setBody(requestBody)
-        }.let { response ->
+        }.also { response ->
             assertEquals(HttpStatusCode.OK, response.status)
 
             val actualResponse = response.body<UpdateUserResponse>()::class.simpleName!!
@@ -335,7 +335,7 @@ class ApplicationTest {
             val requestBody = CreatePuzzleRequest("{}", this@ApplicationTest.successfulUserId)
 
             this.setBody(requestBody)
-        }.let { response ->
+        }.also { response ->
             assertEquals(HttpStatusCode.OK, response.status)
 
             val responseBody = response.body<CreatePuzzleResponse>()
@@ -372,7 +372,7 @@ class ApplicationTest {
             val requestBody = UpdatePuzzleRequest(puzzleId, json)
 
             this.setBody(requestBody)
-        }.let { response ->
+        }.also { response ->
             assertEquals(HttpStatusCode.OK, response.status)
 
             val actualResponse = response.body<UpdatePuzzleResponse>()::class.simpleName!!
@@ -404,7 +404,7 @@ class ApplicationTest {
             val requestBody = DeletePuzzleRequest(puzzleId)
 
             this.setBody(requestBody)
-        }.let { response ->
+        }.also { response ->
             assertEquals(HttpStatusCode.OK, response.status)
 
             val actualResponse = response.body<DeletePuzzleResponse>()::class.simpleName!!
@@ -436,7 +436,7 @@ class ApplicationTest {
             val requestBody = DeleteUserRequest(userId)
 
             this.setBody(requestBody)
-        }.let { response ->
+        }.also { response ->
             assertEquals(HttpStatusCode.OK, response.status)
 
             val actualResponse = response.body<DeleteUserResponse>()::class.simpleName!!

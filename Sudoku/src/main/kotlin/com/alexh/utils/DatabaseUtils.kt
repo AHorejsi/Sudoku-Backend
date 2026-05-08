@@ -7,8 +7,6 @@ import java.sql.Statement
 import javax.sql.DataSource
 
 fun connectToDatabase(app: Application): DataSource {
-    Class.forName("org.postgresql.Driver")
-
     val config = createDbConfig(app)
     val source = HikariDataSource(config)
 
@@ -35,6 +33,7 @@ private fun createDbConfig(app: Application): HikariConfig {
         dbConfig.jdbcUrl = appConfig.property("postgres.url").getString()
         dbConfig.username = appConfig.property("postgres.username").getString()
         dbConfig.password = appConfig.property("postgres.password").getString()
+        dbConfig.driverClassName = findDriver(app)
     }
 
     dbConfig.connectionTimeout = 10000 // ten seconds in milliseconds
@@ -44,11 +43,19 @@ private fun createDbConfig(app: Application): HikariConfig {
     return dbConfig
 }
 
+private fun findDriver(app: Application): String {
+    val driver = "org.postgresql.Driver"
+
+    Class.forName(driver)
+
+    return driver
+}
+
 private fun createDatabaseIfNeeded(stmt: Statement) {
     runCatching {
         stmt.execute(SqlStrings.CREATE_DATABASE)
+    }.also { _ ->
+        stmt.executeUpdate(SqlStrings.CREATE_USER_TABLE)
+        stmt.executeUpdate(SqlStrings.CREATE_PUZZLE_TABLE)
     }
-
-    stmt.executeUpdate(SqlStrings.CREATE_USER_TABLE)
-    stmt.executeUpdate(SqlStrings.CREATE_PUZZLE_TABLE)
 }

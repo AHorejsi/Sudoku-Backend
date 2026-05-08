@@ -18,25 +18,26 @@ fun configureMonitoring(app: Application, logger: Logger) {
 
 private fun configureCallId(app: Application) {
     app.install(CallId) {
-        val counter = AtomicLong(0)
+        this.header(HttpHeaders.XRequestId)
+        this.verify { callId -> callId.isNotEmpty() }
+
         val config = app.environment.config
 
         val isDev = config.property("ktor.development").getString().toBoolean()
         val isTest = config.property("ktor.testing").getString().toBoolean()
 
+        val counter = AtomicLong(0)
         val env = if (isDev) "DEV" else if (isTest) "TEST" else "PROD"
 
-        this.header(HttpHeaders.XRequestId)
         this.generate { "AUTO:$env-${counter.getAndIncrement()}" }
-        this.verify { callId -> callId.isNotEmpty() }
     }
 }
 
 private fun configureCallLogging(app: Application) {
     app.install(CallLogging) {
         this.level = Level.INFO
-        this.filter { call -> call.request.path().startsWith("/") }
         this.callIdMdc("call-id")
+        this.filter { call -> call.request.path().startsWith("/") }
     }
 }
 

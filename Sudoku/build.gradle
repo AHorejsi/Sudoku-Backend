@@ -5,11 +5,11 @@ plugins {
 }
 
 group "com.alexh"
-version "1.0.31"
+version "1.0.32"
 mainClassName = "com.alexh.ApplicationKt"
 
 def isDevelopment = project.ext.has("development")
-applicationDefaultJvmArgs = ["-Dio.ktor.development=$isDevelopment"]
+applicationDefaultJvmArgs = [ "-Dio.ktor.development=$isDevelopment" ]
 
 application {
     mainClass.set("io.ktor.server.netty.EngineMain")
