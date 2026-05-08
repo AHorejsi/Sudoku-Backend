@@ -37,7 +37,7 @@ private fun createDbConfig(app: Application): HikariConfig {
         dbConfig.password = appConfig.property("postgres.password").getString()
     }
 
-    dbConfig.connectionTimeout = 10000 // in milliseconds
+    dbConfig.connectionTimeout = 10000 // ten seconds in milliseconds
     dbConfig.maximumPoolSize = 50
     dbConfig.connectionTestQuery = "SELECT 1"
 
