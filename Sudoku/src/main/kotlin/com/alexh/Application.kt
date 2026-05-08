@@ -10,12 +10,12 @@ import org.slf4j.LoggerFactory
 private val MAIN_LOGGER = LoggerFactory.getLogger(Loggers.MAIN_APPLICATION)!!
 
 fun main(args: Array<String>) {
-    runCatching {
+    try {
         EngineMain.main(args)
-    }.onFailure { ex ->
+    } catch (ex: Exception) {
         val stackTrace = ex.stackTraceToString()
 
-        MAIN_LOGGER.error("FAILED SERVER INITIALIZATION:\n$stackTrace")
+        MAIN_LOGGER.error("FAILED SERVER INITIALIZATION\n$stackTrace")
     }
 }
 

@@ -98,7 +98,9 @@ private fun configureAuthentication(app: Application, logger: Logger) {
                     null
             }
             this.challenge { scheme, realm ->
-                logAndSendError(this.call, logger, HttpStatusCode.Unauthorized) { logger.error("Scheme: $scheme, Realm: $realm") }
+                logAndSendError(this.call, logger, HttpStatusCode.Unauthorized) {
+                    logger.error("Scheme: $scheme, Realm: $realm")
+                }
             }
         }
     }

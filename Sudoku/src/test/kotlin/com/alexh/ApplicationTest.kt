@@ -43,21 +43,16 @@ class ApplicationTest {
             this@ApplicationTest.installLogging(this)
             this@ApplicationTest.installCompression(this)
         }.use { client ->
-            val dimensionArray = Dimension.values()
-            val difficultyArray = Difficulty.values()
-            val gameArray = Game.values()
-
-            this@ApplicationTest.testGenerateHelper1(client, dimensionArray, difficultyArray, gameArray)
+            this@ApplicationTest.testGenerateHelper1(client)
             this@ApplicationTest.testUnfilledFieldsOnGenerate(client)
         }
     }
 
-    private suspend fun testGenerateHelper1(
-        client: HttpClient,
-        dimensionArray: Array<Dimension>,
-        difficultyArray: Array<Difficulty>,
-        gameArray: Array<Game>
-    ) {
+    private suspend fun testGenerateHelper1(client: HttpClient) {
+        val dimensionArray = Dimension.values()
+        val difficultyArray = Difficulty.values()
+        val gameArray = Game.values()
+
         for (dimension in dimensionArray) {
             for (difficulty in difficultyArray) {
                 this.testGenerateHelper2(client, dimension, difficulty, gameArray)
