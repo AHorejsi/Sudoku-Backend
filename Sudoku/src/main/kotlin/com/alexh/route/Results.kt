@@ -16,15 +16,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.*
 
-suspend inline fun <reified TType : Any> handleResult(
+suspend inline fun <reified TType : Any> handleResponse(
     result: TType,
     call: ApplicationCall,
     logger: Logger,
     endpoint: String
 ) {
     withContext(Dispatchers.IO) {
-        this.launch { call.respond(HttpStatusCode.OK, result) }
         this.launch { logger.info("Successful call to $endpoint") }
+        this.launch { call.respond(HttpStatusCode.OK, result) }
     }
 }
 

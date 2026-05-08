@@ -6,5 +6,14 @@
         <language minSize="72" name="Kotlin" />
       </Languages>
     </inspection_tool>
+    <inspection_tool class="IncorrectHttpHeaderInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="customHeaders">
+        <set>
+          <option value="X-RateLimit-Limit" />
+          <option value="X-RateLimit-Remaining" />
+          <option value="X-RateLimit-Reset" />
+        </set>
+      </option>
+    </inspection_tool>
   </profile>
 </component>

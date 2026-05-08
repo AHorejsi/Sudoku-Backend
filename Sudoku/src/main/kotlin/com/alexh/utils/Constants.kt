@@ -1,5 +1,7 @@
 package com.alexh.utils
 
+import io.ktor.server.plugins.ratelimit.*
+
 class EnvironmentVariables private constructor() {
     init {
         noInstances(EnvironmentVariables::class)
@@ -7,10 +9,6 @@ class EnvironmentVariables private constructor() {
 
     companion object {
         val STATIC_SALT = System.getenv("STATIC_SALT")!!
-
-        val BASIC_REALM = System.getenv("BASIC_REALM")!!
-        val BASIC_NAME = System.getenv("BASIC_NAME")!!
-        val BASIC_PASS = System.getenv("BASIC_PASS")!!
 
         val JWT_REALM = System.getenv("JWT_REALM")!!
         val JWT_SECRET = System.getenv("JWT_SECRET")!!
@@ -60,7 +58,7 @@ class Auths private constructor() {
     }
 
     companion object {
-        const val BASIC = "auth-basic"
+        const val DIGEST = "auth-digest"
         const val JWT = "auth-jwt"
     }
 }
@@ -72,6 +70,23 @@ class JwtClaims private constructor() {
 
     companion object {
         const val USERNAME_OR_EMAIL = "usernameOrEmail"
+    }
+}
+
+class RateLimits private constructor() {
+    init {
+        noInstances(RateLimits::class)
+    }
+
+    companion object {
+        const val SUDOKU_GENERATE_LIMIT = 100
+        const val SUDOKU_GENERATE_REFILL_PERIOD = 3600 // one hour in seconds
+        val SUDOKU_GENERATE_NAME = RateLimitName("SudokuGeneration")
+
+        const val LIMIT_HEADER = "X-RateLimit-Limit"
+        const val REMAINING_HEADER = "X-RateLimit-Remaining"
+        const val RESET_HEADER = "X-RateLimit-Reset"
+        const val RETRY_AFTER_HEADER = "Retry-After"
     }
 }
 

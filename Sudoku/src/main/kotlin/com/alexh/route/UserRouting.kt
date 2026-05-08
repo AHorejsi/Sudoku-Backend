@@ -16,9 +16,7 @@ fun configureEndpointsForUsers(app: Application) {
     val source = connectToDatabase(app)
 
     app.routing {
-        this.authenticate(Auths.BASIC) {
-            basicUrls(source, this)
-        }
+        digestUrls(source, this)
 
         this.authenticate(Auths.JWT) {
             jwtUrls(source, this)
@@ -26,16 +24,16 @@ fun configureEndpointsForUsers(app: Application) {
     }
 }
 
-private fun basicUrls(source: DataSource, route: Route) {
+private fun digestUrls(source: DataSource, route: Route) {
     route.put(Endpoints.CREATE_USER) {
         val result = createUser(source, this.call)
 
-        handleResult(result, this.call, USER_LOGGER, Endpoints.CREATE_USER)
+        handleResponse(result, this.call, USER_LOGGER, Endpoints.CREATE_USER)
     }
     route.post(Endpoints.READ_USER) {
         val result = readUser(source, this.call)
 
-        handleResult(result, this.call, USER_LOGGER, Endpoints.READ_USER)
+        handleResponse(result, this.call, USER_LOGGER, Endpoints.READ_USER)
     }
 }
 
@@ -43,37 +41,37 @@ private fun jwtUrls(source: DataSource, route: Route) {
     route.put(Endpoints.UPDATE_USER) {
         val result = updateUser(source, this.call)
 
-        handleResult(result, this.call, USER_LOGGER, Endpoints.UPDATE_USER)
+        handleResponse(result, this.call, USER_LOGGER, Endpoints.UPDATE_USER)
     }
     route.delete(Endpoints.DELETE_USER) {
         val result = deleteUser(source, this.call)
 
-        handleResult(result, this.call, USER_LOGGER, Endpoints.DELETE_USER)
+        handleResponse(result, this.call, USER_LOGGER, Endpoints.DELETE_USER)
     }
     route.put(Endpoints.CREATE_PUZZLE) {
         val result = createPuzzle(source, this.call)
 
-        handleResult(result, this.call, USER_LOGGER, Endpoints.CREATE_PUZZLE)
+        handleResponse(result, this.call, USER_LOGGER, Endpoints.CREATE_PUZZLE)
     }
     route.put(Endpoints.UPDATE_PUZZLE) {
         val result = updatePuzzle(source, this.call)
 
-        handleResult(result, this.call, USER_LOGGER, Endpoints.UPDATE_PUZZLE)
+        handleResponse(result, this.call, USER_LOGGER, Endpoints.UPDATE_PUZZLE)
     }
     route.delete(Endpoints.DELETE_PUZZLE) {
         val result = deletePuzzle(source, this.call)
 
-        handleResult(result, this.call, USER_LOGGER, Endpoints.DELETE_PUZZLE)
+        handleResponse(result, this.call, USER_LOGGER, Endpoints.DELETE_PUZZLE)
     }
     route.get(Endpoints.TOKEN_LOGIN) {
         val result = tokenLogin(source, this.call)
 
-        handleResult(result, this.call, USER_LOGGER, Endpoints.TOKEN_LOGIN)
+        handleResponse(result, this.call, USER_LOGGER, Endpoints.TOKEN_LOGIN)
     }
     route.put(Endpoints.RENEW_TOKEN) {
         val result = renewJwtToken(this.call)
 
-        handleResult(result, this.call, USER_LOGGER, Endpoints.RENEW_TOKEN)
+        handleResponse(result, this.call, USER_LOGGER, Endpoints.RENEW_TOKEN)
     }
 }
 
@@ -95,7 +93,7 @@ private suspend fun readUser(source: DataSource, call: ApplicationCall): ReadUse
     }
 }
 
-private suspend fun tokenLogin(source: DataSource, call: ApplicationCall): TokenLoginResponse {
+private fun tokenLogin(source: DataSource, call: ApplicationCall): TokenLoginResponse {
     source.connection.use {
         val principal = call.principal<JWTPrincipal>()!!
         val response = readUserWithToken(it, principal)

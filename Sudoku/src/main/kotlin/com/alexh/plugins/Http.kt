@@ -17,10 +17,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.slf4j.Logger
 import java.sql.SQLException
+import io.ktor.server.plugins.ratelimit.*
+import kotlin.time.Duration.Companion.seconds
 
 fun configureHttp(app: Application, logger: Logger) {
     configureCors(app)
     configureAuthentication(app, logger)
+    configureRateLimits(app)
     configureStatusPages(app, logger)
     configureRequestCompression(app)
 }
@@ -52,8 +55,7 @@ private fun configureCors(app: Application) {
 
         if (app.environment.developmentMode) {
             this.anyHost() // Don't do this in production!
-        }
-        else {
+        } else {
             val host = EnvironmentVariables.CLIENT_HOST
             val port = EnvironmentVariables.CLIENT_PORT
 
@@ -64,28 +66,13 @@ private fun configureCors(app: Application) {
 
 private fun configureAuthentication(app: Application, logger: Logger) {
     app.install(Authentication) {
-        this.basic(Auths.BASIC) {
-            val name = EnvironmentVariables.BASIC_NAME
-            val pass = EnvironmentVariables.BASIC_PASS
-
-            this.realm = EnvironmentVariables.BASIC_REALM
-            this.validate { credentials ->
-                val actualName = credentials.name
-                val actualPass = credentials.password
-
-                if (name == actualName && pass == actualPass)
-                    UserIdPrincipal(credentials.name)
-                else
-                    null
-            }
-        }
-
         this.jwt(Auths.JWT) {
+            this.realm = EnvironmentVariables.JWT_REALM
+
             val secret = EnvironmentVariables.JWT_SECRET
             val issuer = EnvironmentVariables.JWT_ISSUER
             val audience = EnvironmentVariables.JWT_AUDIENCE
 
-            this.realm = EnvironmentVariables.JWT_REALM
             this.verifier(
                 JWT
                     .require(Algorithm.HMAC256(secret))
@@ -111,9 +98,21 @@ private fun configureAuthentication(app: Application, logger: Logger) {
                     null
             }
             this.challenge { scheme, realm ->
-                logger.error("Scheme: $scheme, Realm: $realm")
-                logAndSendError(this.call, logger, null, HttpStatusCode.Unauthorized)
+                logAndSendError(this.call, logger, HttpStatusCode.Unauthorized) { logger.error("Scheme: $scheme, Realm: $realm") }
             }
+        }
+    }
+}
+
+private fun configureRateLimits(app: Application) {
+    app.install(RateLimit) {
+        this.register(RateLimits.SUDOKU_GENERATE_NAME) {
+            val refillGap = RateLimits.SUDOKU_GENERATE_REFILL_PERIOD.seconds
+
+            this.rateLimiter(
+                limit = RateLimits.SUDOKU_GENERATE_LIMIT,
+                refillPeriod = refillGap
+            )
         }
     }
 }
@@ -121,19 +120,23 @@ private fun configureAuthentication(app: Application, logger: Logger) {
 private fun configureStatusPages(app: Application, logger: Logger) {
     app.install(StatusPages) {
         this.exception<Throwable> { call, exception ->
-            logAndSendError(call, logger, exception, HttpStatusCode.InternalServerError)
+            logAndSendError(call, logger, HttpStatusCode.InternalServerError, exception)
         }
 
         this.exception<IllegalArgumentException> { call, exception ->
-            logAndSendError(call, logger, exception, HttpStatusCode.BadRequest)
+            logAndSendError(call, logger, HttpStatusCode.BadRequest, exception)
         }
 
         this.exception<ContentTransformationException> { call, exception ->
-            logAndSendError(call, logger, exception, HttpStatusCode.BadRequest)
+            logAndSendError(call, logger, HttpStatusCode.BadRequest, exception)
         }
 
         this.exception<SQLException> { call, exception ->
-            logAndSendError(call, logger, exception, HttpStatusCode.BadGateway)
+            logAndSendError(call, logger, HttpStatusCode.BadGateway, exception)
+        }
+
+        this.status(HttpStatusCode.TooManyRequests) { call, status ->
+            logAndSendError(call, logger, status)
         }
     }
 }
@@ -141,8 +144,9 @@ private fun configureStatusPages(app: Application, logger: Logger) {
 private suspend fun logAndSendError(
     call: ApplicationCall,
     logger: Logger,
-    cause: Throwable?,
-    status: HttpStatusCode
+    status: HttpStatusCode,
+    cause: Throwable? = null,
+    extra: EmptyCallback? = null
 ) {
     withContext(Dispatchers.IO) {
         val stackTrace = cause?.stackTraceToString() ?: "No Exception"
@@ -150,6 +154,10 @@ private suspend fun logAndSendError(
 
         this.launch { call.respond(status, message) }
         this.launch { logger.error(message) }
+
+        if (null !== extra) {
+            this.launch { extra() }
+        }
     }
 }
 
