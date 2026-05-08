@@ -26,9 +26,7 @@ fun configureEndpointsForGeneratingPuzzles(app: Application) {
 
 private fun jwtUrls(route: Route) {
     route.rateLimit(RateLimits.SUDOKU_GENERATE_NAME) {
-        this.post(Endpoints.GENERATE) {
-            handleRequest(this.call)
-        }
+        this.post(Endpoints.GENERATE) { handleRequest(this.call) }
     }
 }
 
