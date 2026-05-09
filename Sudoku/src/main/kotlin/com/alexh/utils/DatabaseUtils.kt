@@ -24,7 +24,7 @@ fun connectToDatabase(app: Application): DataSource {
 private fun createDbConfig(app: Application): HikariConfig {
     val dbConfig = HikariConfig()
 
-    if (app.environment.developmentMode) { // Config for in-memory database. Only to be used for testing
+    if (app.environment.developmentMode) { // Config for in-memory database. Only to be used in DEV environment
         dbConfig.jdbcUrl = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1"
         dbConfig.username = "root"
         dbConfig.password = ""
