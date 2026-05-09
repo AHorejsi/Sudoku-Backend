@@ -32,7 +32,6 @@ private suspend fun generateSudoku(call: ApplicationCall) {
 
     val dimensionName = request.dimension
     val difficultyName = request.difficulty
-    val gameNames = request.games
 
     val result: GenerateResponse
 
@@ -40,6 +39,8 @@ private suspend fun generateSudoku(call: ApplicationCall) {
         result = GenerateResponse.UnfilledFields
     }
     else {
+        val gameNames = request.games
+
         val dimension = Dimension.valueOf(dimensionName)
         val difficulty = Difficulty.valueOf(difficultyName)
         val games = gameNames.map{ Game.valueOf(it) }.toSortedSet()

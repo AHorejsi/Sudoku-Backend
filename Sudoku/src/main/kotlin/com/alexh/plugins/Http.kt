@@ -124,6 +124,7 @@ private fun configureRateLimits(app: Application) {
 
 private fun configureStatusPages(app: Application, logger: Logger) {
     app.install(StatusPages) {
+        // Generic error meant to catch unexpected errors
         this.exception<Throwable> { call, exception ->
             logAndSendError(call, logger, HttpStatusCode.InternalServerError, exception)
         }
@@ -132,6 +133,7 @@ private fun configureStatusPages(app: Application, logger: Logger) {
             logAndSendError(call, logger, HttpStatusCode.BadRequest, exception)
         }
 
+        // Usually happens from malformed JSON
         this.exception<ContentTransformationException> { call, exception ->
             logAndSendError(call, logger, HttpStatusCode.BadRequest, exception)
         }
@@ -140,6 +142,7 @@ private fun configureStatusPages(app: Application, logger: Logger) {
             logAndSendError(call, logger, HttpStatusCode.BadGateway, exception)
         }
 
+        // Happens when rate limit has been reached
         this.status(HttpStatusCode.TooManyRequests) { call, status ->
             logAndSendError(call, logger, status)
         }

@@ -17,7 +17,7 @@ fun createUser(dbConn: Connection, request: CreateUserRequest): CreateUserRespon
         return valid
     }
 
-    dbConn.prepareStatement(SqlStrings.CREATE_USER, Statement.RETURN_GENERATED_KEYS).use { stmt ->
+    dbConn.prepareStatement(SqlStrings.CREATE_USER, Statement.RETURN_GENERATED_KEYS)!!.use { stmt ->
         val (passwordHash, salt) = createPassword(password)
 
         stmt.setString(1, username)
@@ -42,20 +42,20 @@ private fun checkCreateForValidity(username: String, password: String, email: St
 fun doUserCreation(stmt: PreparedStatement): CreateUserResponse {
     runCatching {
         stmt.executeUpdate()
+    }.onSuccess{
+        stmt.generatedKeys!!.use { keys ->
+            if (!keys.next()) {
+                return CreateUserResponse.FailedToCreate
+            }
+        }
     }.onFailure { ex ->
-        val message = ex.message
-
-        if (null !== message && message.startsWith("Unique")) {
-            return CreateUserResponse.DuplicateFound
+        ex.message?.let {
+            if (it.startsWith("Unique")) {
+                return CreateUserResponse.DuplicateFound
+            }
         }
 
         throw ex
-    }
-
-    stmt.generatedKeys.use { keys ->
-        if (!keys.next()) {
-            return CreateUserResponse.FailedToCreate
-        }
     }
 
     return CreateUserResponse.Success
@@ -65,11 +65,11 @@ fun readUserWithPassword(dbConn: Connection, request: ReadUserRequest): ReadUser
     val usernameOrEmail = request.usernameOrEmail.trim()
     val password = request.password
 
-    dbConn.prepareStatement(SqlStrings.GET_USER).use { stmt ->
+    dbConn.prepareStatement(SqlStrings.GET_USER)!!.use { stmt ->
         stmt.setString(1, usernameOrEmail)
         stmt.setString(2, usernameOrEmail)
 
-        stmt.executeQuery().use { results ->
+        stmt.executeQuery()!!.use { results ->
             val user = buildUserWithPassword(results, password)
 
             if (null === user) {
@@ -88,8 +88,8 @@ private fun buildUserWithPassword(results: ResultSet, providedPassword: String):
     val user = buildUserObject(results)
 
     if (null !== user) {
-        val passwordInDatabase = results.getString(SqlStrings.PASSWORD)
-        val dynamicSalt = results.getString(SqlStrings.SALT)
+        val passwordInDatabase = results.getString(SqlStrings.PASSWORD)!!
+        val dynamicSalt = results.getString(SqlStrings.SALT)!!
 
         if (!validatePassword(providedPassword, passwordInDatabase, dynamicSalt)) {
             return null
@@ -102,11 +102,11 @@ private fun buildUserWithPassword(results: ResultSet, providedPassword: String):
 fun readUserWithToken(dbConn: Connection, principal: JWTPrincipal): TokenLoginResponse {
     val usernameOrEmail = principal.payload.claims.getValue(JwtClaims.USERNAME_OR_EMAIL).asString()
 
-    dbConn.prepareStatement(SqlStrings.GET_USER).use { stmt ->
+    dbConn.prepareStatement(SqlStrings.GET_USER)!!.use { stmt ->
         stmt.setString(1, usernameOrEmail)
         stmt.setString(2, usernameOrEmail)
 
-        stmt.executeQuery().use { results ->
+        stmt.executeQuery()!!.use { results ->
             val user = buildUserObject(results)
 
             if (null === user) {
@@ -115,10 +115,11 @@ fun readUserWithToken(dbConn: Connection, principal: JWTPrincipal): TokenLoginRe
 
             val newToken = refreshJwtTokenIfExpired(user, principal.payload)
 
-            return if (null !== newToken)
-                TokenLoginResponse.Success(user, newToken)
-            else
+            return newToken?.let {
+                TokenLoginResponse.Success(user, it)
+            } ?: run {
                 TokenLoginResponse.Expired
+            }
         }
     }
 }
@@ -129,8 +130,8 @@ private fun buildUserObject(results: ResultSet): User? {
     }
 
     val userId = results.getInt(SqlStrings.USER_ID)
-    val username = results.getString(SqlStrings.USERNAME)
-    val email = results.getString(SqlStrings.EMAIL)
+    val username = results.getString(SqlStrings.USERNAME)!!
+    val email = results.getString(SqlStrings.EMAIL)!!
 
     val puzzleIds = results.getString(SqlStrings.PUZZLE_ID)?.split(SqlStrings.SEPARATOR)
     val puzzleJsons = results.getString(SqlStrings.JSON)?.split(SqlStrings.SEPARATOR)
@@ -167,7 +168,7 @@ fun updateUser(dbConn: Connection, request: UpdateUserRequest): UpdateUserRespon
         return valid
     }
 
-    dbConn.prepareStatement(SqlStrings.UPDATE_USER).use { stmt ->
+    dbConn.prepareStatement(SqlStrings.UPDATE_USER)!!.use { stmt ->
         stmt.setString(1, newUsername)
         stmt.setString(2, newEmail)
         stmt.setInt(3, userId)
@@ -193,7 +194,7 @@ private fun checkUpdateForValidity(username: String, email: String): UpdateUserR
 fun deleteUser(dbConn: Connection, request: DeleteUserRequest): DeleteUserResponse {
     val userId = request.userId
 
-    dbConn.prepareStatement(SqlStrings.DELETE_USER).use { stmt ->
+    dbConn.prepareStatement(SqlStrings.DELETE_USER)!!.use { stmt ->
         stmt.setInt(1, userId)
 
         val amountOfRowsDeleted = stmt.executeUpdate()
@@ -210,7 +211,7 @@ fun createPuzzle(dbConn: Connection, request: CreatePuzzleRequest): CreatePuzzle
     val userId = request.userId
     val json = request.json
 
-    dbConn.prepareStatement(SqlStrings.CREATE_PUZZLE, Statement.RETURN_GENERATED_KEYS).use { stmt ->
+    dbConn.prepareStatement(SqlStrings.CREATE_PUZZLE, Statement.RETURN_GENERATED_KEYS)!!.use { stmt ->
         stmt.setString(1, json)
         stmt.setInt(2, userId)
 
@@ -221,7 +222,7 @@ fun createPuzzle(dbConn: Connection, request: CreatePuzzleRequest): CreatePuzzle
 private fun doPuzzleCreation(stmt: PreparedStatement, json: String): CreatePuzzleResponse {
     stmt.executeUpdate()
 
-    stmt.generatedKeys.use { keys ->
+    stmt.generatedKeys!!.use { keys ->
         if (!keys.next()) {
             return CreatePuzzleResponse.FailedToCreate
         }
@@ -238,7 +239,7 @@ fun updatePuzzle(dbConn: Connection, request: UpdatePuzzleRequest): UpdatePuzzle
     val puzzleId = request.puzzleId
     val json = request.json
 
-    dbConn.prepareStatement(SqlStrings.UPDATE_PUZZLE).use { stmt ->
+    dbConn.prepareStatement(SqlStrings.UPDATE_PUZZLE)!!.use { stmt ->
         stmt.setString(1, json)
         stmt.setInt(2, puzzleId)
 
@@ -255,7 +256,7 @@ fun updatePuzzle(dbConn: Connection, request: UpdatePuzzleRequest): UpdatePuzzle
 fun deletePuzzle(dbConn: Connection, request: DeletePuzzleRequest): DeletePuzzleResponse {
     val puzzleId = request.puzzleId
 
-    dbConn.prepareStatement(SqlStrings.DELETE_PUZZLE).use { stmt ->
+    dbConn.prepareStatement(SqlStrings.DELETE_PUZZLE)!!.use { stmt ->
         stmt.setInt(1, puzzleId)
 
         val amountOfRowsDeleted = stmt.executeUpdate()

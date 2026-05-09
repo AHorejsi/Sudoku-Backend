@@ -14,7 +14,7 @@ fun main(args: Array<String>) {
 
     try {
         EngineMain.main(args)
-    } catch (ex: Exception) {
+    } catch (ex: Exception) { // Should only happen if the configurations are not correct
         val stackTrace = ex.stackTraceToString()
 
         MAIN_LOGGER.error("FAILED SERVER INITIALIZATION\n$stackTrace")
