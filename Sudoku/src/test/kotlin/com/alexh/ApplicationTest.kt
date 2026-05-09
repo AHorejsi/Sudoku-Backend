@@ -41,6 +41,17 @@ class ApplicationTest {
     private val updatedEmail = "jt27@try.org"
 
     @Test
+    fun testHealthChecks() = testApplication {
+        this.createClient {
+            this@ApplicationTest.installLogging(this)
+        }.use { client ->
+            client.get(Endpoints.PING).also { response ->
+                assertEquals(HttpStatusCode.OK, response.status)
+            }
+        }
+    }
+
+    @Test
     fun testGenerate() = testApplication {
         this.createClient {
             this@ApplicationTest.installJson(this)

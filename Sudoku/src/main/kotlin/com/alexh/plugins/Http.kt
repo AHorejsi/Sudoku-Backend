@@ -53,14 +53,16 @@ private fun configureCors(app: Application) {
         this.allowCredentials = true
         this.allowSameOrigin = true
 
-        if (app.environment.developmentMode) {
+        /*if (app.environment.developmentMode) {
             this.anyHost() // Don't do this in production!
-        } else {
-            val host = EnvironmentVariables.CLIENT_HOST
-            val port = EnvironmentVariables.CLIENT_PORT
-
-            this.allowHost("$host:$port")
         }
+        else {
+            val host = EnvironmentVariables.CLIENT_HOST
+
+            this.allowHost(host)
+        }*/
+
+        this.anyHost()
     }
 }
 
