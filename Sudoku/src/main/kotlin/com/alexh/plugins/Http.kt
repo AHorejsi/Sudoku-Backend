@@ -79,7 +79,7 @@ private fun configureAuthentication(app: Application, logger: Logger) {
                     .withIssuer(issuer)
                     .withAudience(audience)
                     .withClaimPresence(JwtClaims.USERNAME_OR_EMAIL)
-                    .build()
+                    .build()!!
             )
             this.validate { credentials ->
                 val load = credentials.payload
@@ -111,10 +111,13 @@ private fun configureRateLimits(app: Application) {
         this.register(RateLimits.SUDOKU_GENERATE_NAME) {
             val refillGap = RateLimits.SUDOKU_GENERATE_REFILL_PERIOD.seconds
 
-            this.rateLimiter(
-                limit = RateLimits.SUDOKU_GENERATE_LIMIT,
-                refillPeriod = refillGap
-            )
+            this.rateLimiter(RateLimits.SUDOKU_GENERATE_LIMIT, refillGap)
+        }
+
+        this.register(RateLimits.USER_ACCOUNT_INTERACTION_NAME) {
+            val refillGap = RateLimits.USER_ACCOUNT_INTERACTION_REFILL_PERIOD.seconds
+
+            this.rateLimiter(RateLimits.USER_ACCOUNT_INTERACTION_LIMIT, refillGap)
         }
     }
 }

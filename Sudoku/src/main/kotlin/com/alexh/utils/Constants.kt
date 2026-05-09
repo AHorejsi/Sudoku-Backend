@@ -79,9 +79,13 @@ class RateLimits private constructor() {
     }
 
     companion object {
-        const val SUDOKU_GENERATE_LIMIT = 100
-        const val SUDOKU_GENERATE_REFILL_PERIOD = 3600 // one hour in seconds
-        val SUDOKU_GENERATE_NAME = RateLimitName("SudokuGeneration")
+        const val SUDOKU_GENERATE_LIMIT = 1000
+        const val SUDOKU_GENERATE_REFILL_PERIOD = 60 // one minute in seconds
+        val SUDOKU_GENERATE_NAME = RateLimitName("Sudoku Generation Endpoint Set")
+
+        const val USER_ACCOUNT_INTERACTION_LIMIT = 100
+        const val USER_ACCOUNT_INTERACTION_REFILL_PERIOD = 3600 // one hour in seconds
+        val USER_ACCOUNT_INTERACTION_NAME = RateLimitName("User Account Interaction Endpoint Set")
 
         const val LIMIT_HEADER = "X-RateLimit-Limit"
         const val REMAINING_HEADER = "X-RateLimit-Remaining"
@@ -97,7 +101,7 @@ class SqlStrings private constructor() {
     }
 
     companion object {
-        const val DB_NAME = "sudoku"
+        const val DB_DRIVER = "org.postgresql.Driver"
 
         const val USER_TABLE = "Users"
         const val USER_TABLE_ID = "id"
@@ -114,8 +118,6 @@ class SqlStrings private constructor() {
         const val PUZZLE_ID = "puzzleId"
 
         const val SEPARATOR = "|"
-
-        const val CREATE_DATABASE = "CREATE DATABASE $DB_NAME"
 
         const val CREATE_USER_TABLE =
             "CREATE TABLE IF NOT EXISTS $USER_TABLE (" +

@@ -3,7 +3,6 @@ package com.alexh.game
 import com.alexh.utils.Position
 import com.alexh.utils.get2d
 import com.alexh.utils.up
-import java.util.TreeSet
 
 internal fun buildBoard(info: MakeSudokuCommand): Pair<List<SudokuNode>, Set<Box>> {
     val length = info.dimension.length
@@ -14,7 +13,7 @@ internal fun buildBoard(info: MakeSudokuCommand): Pair<List<SudokuNode>, Set<Box
     val boxes = HashSet<Box>(length * 2)
     initializeBoxes(neighborhoods, length, boxes)
 
-    return neighborhoods to boxes
+    return Pair(neighborhoods, boxes)
 }
 
 private fun initializeNeighborhoods(
@@ -44,10 +43,7 @@ private fun makeRegularNeighborhoods(
     makeRegularConnections(neighborhoods, range, length, boxRows, boxCols)
 }
 
-private fun makeNodes(
-    neighborhoods: MutableList<SudokuNode>,
-    range: IntRange
-) {
+private fun makeNodes(neighborhoods: MutableList<SudokuNode>, range: IntRange) {
     for (rowIndex in range) {
         for (colIndex in range) {
             val place = Position(rowIndex, colIndex)
@@ -141,9 +137,8 @@ private fun findStartOfBox(currentIndex: Int, range: IntRange, boxLength: Int): 
         if (index > currentIndex) {
             break
         }
-        else {
-            start = index
-        }
+
+        start = index
     }
 
     return start
@@ -205,7 +200,7 @@ private fun initializeBoxes(neighborhoods: List<SudokuNode>, length: Int, boxSet
     val seen = HashSet<SudokuNode>(2 * length * length)
 
     for (node in neighborhoods) {
-        val box = makeBox(node, seen)
+        val box = makeBox(node, length, seen)
 
         box?.let {
             boxSet.add(it)
@@ -215,7 +210,7 @@ private fun initializeBoxes(neighborhoods: List<SudokuNode>, length: Int, boxSet
     seen.clear()
 
     for (node in neighborhoods) {
-        val hyperBox = makeHyperBox(node, seen)
+        val hyperBox = makeHyperBox(node, length, seen)
 
         hyperBox?.let {
             boxSet.add(it)
@@ -223,12 +218,12 @@ private fun initializeBoxes(neighborhoods: List<SudokuNode>, length: Int, boxSet
     }
 }
 
-private fun makeBox(node: SudokuNode, seen: MutableSet<SudokuNode>): Box? {
+private fun makeBox(node: SudokuNode, length: Int, seen: MutableSet<SudokuNode>): Box? {
     if (node in seen) {
         return null
     }
 
-    val positions = TreeSet<Position>()
+    val positions = HashSet<Position>(length)
 
     for (neighbor in node.box) {
         positions.add(neighbor.place)
@@ -239,12 +234,12 @@ private fun makeBox(node: SudokuNode, seen: MutableSet<SudokuNode>): Box? {
     return Box(false, positions)
 }
 
-private fun makeHyperBox(node: SudokuNode, seen: MutableSet<SudokuNode>): Box? {
+private fun makeHyperBox(node: SudokuNode, length: Int, seen: MutableSet<SudokuNode>): Box? {
     if (node in seen || !node.hyper.any()) {
         return null
     }
 
-    val positions = TreeSet<Position>()
+    val positions = HashSet<Position>(length)
 
     for (neighbor in node.hyper) {
         positions.add(neighbor.place)

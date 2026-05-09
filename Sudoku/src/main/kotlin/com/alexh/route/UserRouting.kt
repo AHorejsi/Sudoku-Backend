@@ -5,6 +5,7 @@ import com.alexh.utils.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
+import io.ktor.server.plugins.ratelimit.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
@@ -16,10 +17,12 @@ fun configureEndpointsForUsers(app: Application) {
     val source = connectToDatabase(app)
 
     app.routing {
-        digestUrls(source, this)
+        this.rateLimit(RateLimits.USER_ACCOUNT_INTERACTION_NAME) {
+            digestUrls(source, this)
 
-        this.authenticate(Auths.JWT) {
-            jwtUrls(source, this)
+            this.authenticate(Auths.JWT) {
+                jwtUrls(source, this)
+            }
         }
     }
 }
@@ -76,7 +79,7 @@ private fun jwtUrls(source: DataSource, route: Route) {
 }
 
 private suspend fun createUser(source: DataSource, call: ApplicationCall): CreateUserResponse {
-    source.connection.use {
+    source.connection!!.use {
         val request = call.receive(CreateUserRequest::class)
         val response = createUser(it, request)
 
@@ -85,7 +88,7 @@ private suspend fun createUser(source: DataSource, call: ApplicationCall): Creat
 }
 
 private suspend fun readUser(source: DataSource, call: ApplicationCall): ReadUserResponse {
-    source.connection.use {
+    source.connection!!.use {
         val request = call.receive(ReadUserRequest::class)
         val response = readUserWithPassword(it, request)
 
@@ -94,7 +97,7 @@ private suspend fun readUser(source: DataSource, call: ApplicationCall): ReadUse
 }
 
 private fun tokenLogin(source: DataSource, call: ApplicationCall): TokenLoginResponse {
-    source.connection.use {
+    source.connection!!.use {
         val principal = call.principal<JWTPrincipal>()!!
         val response = readUserWithToken(it, principal)
 
@@ -103,7 +106,7 @@ private fun tokenLogin(source: DataSource, call: ApplicationCall): TokenLoginRes
 }
 
 private suspend fun updateUser(source: DataSource, call: ApplicationCall): UpdateUserResponse {
-    source.connection.use {
+    source.connection!!.use {
         val request = call.receive(UpdateUserRequest::class)
         val response = updateUser(it, request)
 
@@ -112,7 +115,7 @@ private suspend fun updateUser(source: DataSource, call: ApplicationCall): Updat
 }
 
 private suspend fun deleteUser(source: DataSource, call: ApplicationCall): DeleteUserResponse {
-    source.connection.use {
+    source.connection!!.use {
         val request = call.receive(DeleteUserRequest::class)
         val response = deleteUser(it, request)
 
@@ -121,7 +124,7 @@ private suspend fun deleteUser(source: DataSource, call: ApplicationCall): Delet
 }
 
 private suspend fun createPuzzle(source: DataSource, call: ApplicationCall): CreatePuzzleResponse {
-    source.connection.use {
+    source.connection!!.use {
         val request = call.receive(CreatePuzzleRequest::class)
         val response = createPuzzle(it, request)
 
@@ -130,7 +133,7 @@ private suspend fun createPuzzle(source: DataSource, call: ApplicationCall): Cre
 }
 
 private suspend fun updatePuzzle(source: DataSource, call: ApplicationCall): UpdatePuzzleResponse {
-    source.connection.use {
+    source.connection!!.use {
         val request = call.receive(UpdatePuzzleRequest::class)
         val response = updatePuzzle(it, request)
 
@@ -139,7 +142,7 @@ private suspend fun updatePuzzle(source: DataSource, call: ApplicationCall): Upd
 }
 
 private suspend fun deletePuzzle(source: DataSource, call: ApplicationCall): DeletePuzzleResponse {
-    source.connection.use {
+    source.connection!!.use {
         val request = call.receive(DeletePuzzleRequest::class)
         val response = deletePuzzle(it, request)
 
@@ -152,11 +155,11 @@ private suspend fun renewJwtToken(call: ApplicationCall): RenewTokenResponse {
     val request = call.receive(RenewTokenRequest::class)
 
     val token = refreshJwtTokenIfExpired(request.user, principal.payload)
-    val response =
-        if (null !== token)
-            RenewTokenResponse.Success(token)
-        else
-            RenewTokenResponse.InvalidToken
+    val response = token?.let {
+        RenewTokenResponse.Success(it)
+    } ?: run {
+        RenewTokenResponse.InvalidToken
+    }
 
     return response
 }

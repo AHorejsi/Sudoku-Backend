@@ -35,7 +35,7 @@ private fun makeCagesHelper(
     length: Int,
     cageRange: IntRange
 ) {
-    val available = neighborhoods.map{ it.place }.toMutableList()
+    val available = neighborhoods.map(SudokuNode::place).toMutableList()
 
     while (available.any()) {
         val cageSize = cageRange.random(rand)

@@ -21,7 +21,7 @@ fun <TElement> List<TElement>.unflatten(rowLength: Int): List<List<TElement>> {
     while (iter.hasNext()) {
         val row = ArrayList<TElement>(rowLength)
 
-        repeat(rowLength) {
+        repeat(rowLength) { _ ->
             val value = iter.next()
 
             row.add(value)

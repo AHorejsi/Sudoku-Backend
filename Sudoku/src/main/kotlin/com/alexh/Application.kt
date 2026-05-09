@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory
 private val MAIN_LOGGER = LoggerFactory.getLogger(Loggers.MAIN_APPLICATION)!!
 
 fun main(args: Array<String>) {
+    MAIN_LOGGER.info(if (args.isEmpty()) "No CLI Arguments passed" else args.joinToString())
+
     try {
         EngineMain.main(args)
     } catch (ex: Exception) {

@@ -6,14 +6,14 @@
 
     <if>
         <then>
-            <appender name='CONSOLE' class='ch.qos.logback.core.ConsoleAppender'>
+            <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
                 <encoder>
                     <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %X{call-id} %-5level %logger{36} - %msg%n</pattern>
                 </encoder>
             </appender>
 
-            <root level='INFO'>
-                <appender-ref ref='CONSOLE' />
+            <root level="INFO">
+                <appender-ref ref="CONSOLE" />
             </root>
         </then>
         <else>
@@ -24,30 +24,26 @@
 
             <if>
                 <then>
-                    <appender name='JSON' class='ch.qos.logback.core.rolling.RollingFileAppender'>
-                        <rollingPolicy class='ch.qos.logback.core.rolling.TimeBasedRollingPolicy'>
-                            <fileNamePattern>logs/logFile.test.%d{yyyy-MM-dd}.log</fileNamePattern>
-                        </rollingPolicy>
+                    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+                        <file>logs/${bySecond}.log</file>
+                        <append>true</append>
+                        <immediateFlush>true</immediateFlush>
 
-                        <encoder class='net.logstash.logback.encoder.LogstashEncoder'>
-                            <includeCallerData>true</includeCallerData>
-
-                            <jsonGeneratorDecorator class='net.logstash.logback.decorate.CompositeJsonGeneratorDecorator'>
-                                <decorator class='net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator'/>
-                            </jsonGeneratorDecorator>
+                        <encoder>
+                            <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %X{call-id} %-5level %logger{36} - %msg%n</pattern>
                         </encoder>
 
-                        <filter class='ch.qos.logback.classic.filter.ThresholdFilter'>
+                        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
                             <level>INFO</level>
                         </filter>
                     </appender>
 
-                    <appender name='JSON_ASYNC' class='ch.qos.logback.classic.AsyncAppender'>
-                        <appender-ref ref='JSON' />
+                    <appender name="FILE_ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+                        <appender-ref ref="FILE" />
                     </appender>
 
                     <root>
-                        <appender-ref ref='JSON_ASYNC' />
+                        <appender-ref ref="FILE_ASYNC" />
                     </root>
                 </then>
                 <else>
@@ -58,28 +54,28 @@
 
                     <if>
                         <then>
-                            <appender name='JSON' class='ch.qos.logback.core.rolling.RollingFileAppender'>
-                                <rollingPolicy class='ch.qos.logback.core.rolling.TimeBasedRollingPolicy'>
+                            <appender name="JSON" class="ch.qos.logback.core.rolling.RollingFileAppender">
+                                <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
                                     <fileNamePattern>logs/logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
                                 </rollingPolicy>
 
-                                <encoder class='net.logstash.logback.encoder.LogstashEncoder'>
-                                    <jsonGeneratorDecorator class='net.logstash.logback.decorate.CompositeJsonGeneratorDecorator'>
-                                        <decorator class='net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator'/>
+                                <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                                    <jsonGeneratorDecorator class="net.logstash.logback.decorate.CompositeJsonGeneratorDecorator">
+                                        <decorator class="net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator"/>
                                     </jsonGeneratorDecorator>
                                 </encoder>
 
-                                <filter class='ch.qos.logback.classic.filter.ThresholdFilter'>
+                                <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
                                     <level>INFO</level>
                                 </filter>
                             </appender>
 
-                            <appender name='JSON_ASYNC' class='ch.qos.logback.classic.AsyncAppender'>
-                                <appender-ref ref='JSON' />
+                            <appender name="JSON_ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+                                <appender-ref ref="JSON" />
                             </appender>
 
                             <root>
-                                <appender-ref ref='JSON_ASYNC' />
+                                <appender-ref ref="JSON_ASYNC" />
                             </root>
                         </then>
                     </if>
@@ -88,6 +84,6 @@
         </else>
     </if>
 
-    <logger name='org.eclipse.jetty' level='INFO'/>
-    <logger name='io.netty' level='INFO'/>
+    <logger name="org.eclipse.jetty" level="INFO"/>
+    <logger name="io.netty" level="INFO"/>
 </configuration>

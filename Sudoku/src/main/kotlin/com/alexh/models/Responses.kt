@@ -35,9 +35,11 @@ sealed class CreateUserResponse {
 
 @Serializable
 sealed class ReadUserResponse {
-    @Suppress("UNUSED")
     @Serializable
-    class Success(val user: User, val token: String) : ReadUserResponse()
+    class Success(
+        val user: User,
+        @Suppress("UNUSED") val token: String
+    ) : ReadUserResponse()
 
     @Serializable
     object FailedToFind : ReadUserResponse()
@@ -70,7 +72,7 @@ sealed class DeleteUserResponse {
 @Serializable
 sealed class CreatePuzzleResponse {
     @Serializable
-    class Success(val puzzle: Puzzle) : CreatePuzzleResponse()
+    class Success(@Suppress("UNUSED") val puzzle: Puzzle) : CreatePuzzleResponse()
 
     @Serializable
     object FailedToCreate : CreatePuzzleResponse()
@@ -96,9 +98,11 @@ sealed class DeletePuzzleResponse {
 
 @Serializable
 sealed class TokenLoginResponse {
-    @Suppress("UNUSED")
     @Serializable
-    class Success(val user: User, val newToken: String) : TokenLoginResponse()
+    class Success(
+        @Suppress("UNUSED") val user: User,
+        @Suppress("UNUSED") val newToken: String
+    ) : TokenLoginResponse()
 
     @Serializable
     object Expired : TokenLoginResponse()
@@ -109,9 +113,8 @@ sealed class TokenLoginResponse {
 
 @Serializable
 sealed class RenewTokenResponse {
-    @Suppress("UNUSED")
     @Serializable
-    class Success(val newToken: String) : RenewTokenResponse()
+    class Success(@Suppress("UNUSED") val newToken: String) : RenewTokenResponse()
 
     @Serializable
     object InvalidToken : RenewTokenResponse()

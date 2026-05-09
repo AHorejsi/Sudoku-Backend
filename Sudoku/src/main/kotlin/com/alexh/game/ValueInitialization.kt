@@ -30,7 +30,7 @@ private fun initializeValuesHelper1(
     if (Game.HYPER in games) {
         fillBox(neighborhoods, dimension.length, 1 up dimension.boxRows, 1 up dimension.boxCols, legal, rand)
     }
-    else if (games.isEmpty()) {
+    else {
         fillRegularDiagonal(neighborhoods, dimension, rand, legal)
     }
 }
@@ -82,7 +82,7 @@ private fun shuffleValues(
     legal: IntRange
 ): Map<SudokuNode, List<Int>> {
     val range = 0 until length
-    val legalMap = HashMap<SudokuNode, List<Int>>()
+    val legalMap = HashMap<SudokuNode, List<Int>>(length * length)
 
     for (rowIndex in range) {
         for (colIndex in range) {

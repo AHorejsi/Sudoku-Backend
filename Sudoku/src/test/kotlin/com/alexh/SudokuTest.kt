@@ -1,6 +1,7 @@
 package com.alexh
 
 import com.alexh.game.*
+import kotlinx.coroutines.*
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -9,35 +10,50 @@ import kotlin.test.assertFalse
 
 class SudokuTest {
     @Test
-    fun testMakeSudoku() {
-        val static = Random(0)
+    fun testMakeSudoku() = runBlocking(Dispatchers.IO) {
         val testCount = 10
-
-        val dimensionArray = Dimension.values()
-        val difficultyArray = Difficulty.values()
-        val gameArray = Game.values()
+        val static = Random(0)
 
         repeat(testCount) { _ ->
-            val seed = static.nextInt()
-            val rand = Random(seed)
+            this@SudokuTest.testMakeSudokuHelper0(this, static)
+        }
+    }
 
-            for (dimension in dimensionArray) {
-                for (difficulty in difficultyArray) {
-                    this.testMakeSudokuHelper(dimension, difficulty, gameArray, rand)
-                }
+    private fun testMakeSudokuHelper0(scope: CoroutineScope, static: Random) {
+        for (dimension in Dimension.values()) {
+            for (difficulty in Difficulty.values()) {
+                this@SudokuTest.testMakeSudokuHelper1(scope, dimension, difficulty, static)
             }
         }
     }
 
-    private fun testMakeSudokuHelper(dimension: Dimension, difficulty: Difficulty, games: Array<Game>, rand: Random) {
+    private fun testMakeSudokuHelper1(
+        scope: CoroutineScope,
+        dimension: Dimension,
+        difficulty: Difficulty,
+        static: Random
+    ) {
+        val seed = static.nextInt()
+        val rand = Random(seed)
+
+        scope.launch { this@SudokuTest.testMakeSudokuHelper2(dimension, difficulty, rand) }
+    }
+
+    private fun testMakeSudokuHelper2(
+        dimension: Dimension,
+        difficulty: Difficulty,
+        rand: Random
+    ) {
+        val games = Game.values()
+
         for (startIndex in games.indices) {
             for (endIndex in startIndex .. games.size) {
-                val selectedGames = games.slice(startIndex until endIndex).toSet()
+                val selectedGames = games.sliceArray(startIndex until endIndex).toSet()
 
                 val info = MakeSudokuCommand(dimension, difficulty, selectedGames, rand)
                 val sudoku = makeSudoku(info)
 
-                this.testSudokuProperties(sudoku)
+                this@SudokuTest.testSudokuProperties(sudoku)
             }
         }
     }

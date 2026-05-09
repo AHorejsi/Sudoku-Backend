@@ -5,11 +5,17 @@ plugins {
 }
 
 group "com.alexh"
-version "1.0.32"
+version "1.0.34"
 mainClassName = "com.alexh.ApplicationKt"
 
 def isDevelopment = project.ext.has("development")
 applicationDefaultJvmArgs = [ "-Dio.ktor.development=$isDevelopment" ]
+
+jar {
+    manifest {
+        attributes "Main-Class": "com.alexh.Application"
+    }
+}
 
 application {
     mainClass.set("io.ktor.server.netty.EngineMain")
@@ -42,6 +48,7 @@ dependencies {
     implementation "io.ktor:ktor-network-tls-certificates:$ktor_version"
     implementation "com.h2database:h2:$h2_version"
     implementation "com.zaxxer:HikariCP:6.2.1"
+    implementation "com.auth0:java-jwt:4.4.0"
     implementation "ch.qos.logback:logback-classic:$logback_version"
     implementation "ch.qos.logback:logback-core:$logback_version"
     implementation "ch.qos.logback:logback-access:$logback_version"

@@ -3,6 +3,7 @@ package com.alexh.route
 import com.alexh.models.User
 import com.alexh.utils.EnvironmentVariables
 import com.alexh.utils.JwtClaims
+import com.alexh.utils.RateLimits
 import com.alexh.utils.oneWeekFromNow
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -23,13 +24,15 @@ suspend inline fun <reified TType : Any> handleResponse(
     endpoint: String
 ) {
     withContext(Dispatchers.IO) {
-        this.launch { logger.info("Successful call to $endpoint") }
         this.launch { call.respond(HttpStatusCode.OK, result) }
+        this.launch { logger.info("Successful call to $endpoint") }
+        this.launch { handleRateLimitLogging(call, logger) }
     }
 }
 
 fun createJwtToken(usernameOrEmail: String): String {
     val weekLongExpirationDate = oneWeekFromNow()
+    val algorithm = Algorithm.HMAC256(EnvironmentVariables.JWT_SECRET)!!
 
     return JWT
         .create()
@@ -37,7 +40,7 @@ fun createJwtToken(usernameOrEmail: String): String {
         .withAudience(EnvironmentVariables.JWT_AUDIENCE)
         .withExpiresAt(weekLongExpirationDate)
         .withClaim(JwtClaims.USERNAME_OR_EMAIL, usernameOrEmail)
-        .sign(Algorithm.HMAC256(EnvironmentVariables.JWT_SECRET))
+        .sign(algorithm)
 }
 
 fun refreshJwtTokenIfExpired(user: User, jwtPayload: Payload): String? {
@@ -54,4 +57,32 @@ fun refreshJwtTokenIfExpired(user: User, jwtPayload: Payload): String? {
     }
 
     return createJwtToken(usernameOrEmail)
+}
+
+fun handleRateLimitLogging(call: ApplicationCall, logger: Logger) {
+    val rateLimitHeaders = getRateLimitHeaders(call)
+    val message = mutableListOf<String>()
+
+    for ((header, value) in rateLimitHeaders) {
+        val actualValue = value ?: "N/A"
+
+        message.add("$header: $actualValue")
+    }
+
+    val finalMessage = message.joinToString(", ")
+
+    logger.info(finalMessage)
+}
+
+private fun getRateLimitHeaders(call: ApplicationCall): Map<String, String?> {
+    val headers = call.response.headers
+
+    val map = mutableMapOf<String, String?>()
+
+    map[RateLimits.LIMIT_HEADER] = headers[RateLimits.LIMIT_HEADER]
+    map[RateLimits.REMAINING_HEADER] = headers[RateLimits.REMAINING_HEADER]
+    map[RateLimits.RESET_HEADER] = headers[RateLimits.RESET_HEADER]
+    map[RateLimits.RETRY_AFTER_HEADER] = headers[RateLimits.RETRY_AFTER_HEADER]
+
+    return map
 }

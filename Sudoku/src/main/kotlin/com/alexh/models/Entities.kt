@@ -2,11 +2,10 @@ package com.alexh.models
 
 import kotlinx.serialization.Serializable
 
-@Suppress("UNUSED")
 @Serializable
 class Puzzle(
-    val id: Int,
-    val json: String
+    @Suppress("UNUSED") val id: Int,
+    @Suppress("UNUSED") val json: String
 )
 
 @Serializable

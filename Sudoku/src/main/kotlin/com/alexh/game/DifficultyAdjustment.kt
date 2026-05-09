@@ -33,11 +33,9 @@ private fun determineAmountOfGivens(difficulty: Difficulty, length: Int, rand: R
 }
 
 private fun checkLowerBound(node: SudokuNode, lowerBound: Int): Boolean {
-    val rows = node.row.count{ null !== it.value } >= lowerBound
-    val cols = node.column.count{ null !== it.value } >= lowerBound
-    val boxes = node.box.count{ null !== it.value } >= lowerBound
-
-    var result = rows && cols && boxes
+    var result = node.row.count{ null !== it.value } >= lowerBound
+    result = result && node.column.count{ null !== it.value } >= lowerBound
+    result = result && node.box.count{ null !== it.value } >= lowerBound
 
     if (node.hyper.any()) {
         result = result && node.hyper.count{ null !== it.value } >= lowerBound

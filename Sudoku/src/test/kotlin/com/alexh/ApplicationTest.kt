@@ -17,6 +17,10 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.testing.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -43,19 +47,27 @@ class ApplicationTest {
             this@ApplicationTest.installLogging(this)
             this@ApplicationTest.installCompression(this)
         }.use { client ->
-            this@ApplicationTest.testGenerateHelper1(client)
-            this@ApplicationTest.testUnfilledFieldsOnGenerate(client)
+            runBlocking(Dispatchers.IO) {
+                this.launch { this@ApplicationTest.testGenerateHelper0(client, this) }
+                this.launch { this@ApplicationTest.testUnfilledFieldsOnGenerate(client) }
+            }
+        }
+    }
+
+    private fun testGenerateHelper0(client: HttpClient, scope: CoroutineScope) {
+        scope.launch {
+            val testCount = 5
+
+            repeat(testCount) {
+                this@ApplicationTest.testGenerateHelper1(client)
+            }
         }
     }
 
     private suspend fun testGenerateHelper1(client: HttpClient) {
-        val dimensionArray = Dimension.values()
-        val difficultyArray = Difficulty.values()
-        val gameArray = Game.values()
-
-        for (dimension in dimensionArray) {
-            for (difficulty in difficultyArray) {
-                this.testGenerateHelper2(client, dimension, difficulty, gameArray)
+        for (dimension in Dimension.values()) {
+            for (difficulty in Difficulty.values()) {
+                this.testGenerateHelper2(client, dimension, difficulty)
             }
         }
     }
@@ -63,14 +75,15 @@ class ApplicationTest {
     private suspend fun testGenerateHelper2(
         client: HttpClient,
         dimension: Dimension,
-        difficulty: Difficulty,
-        gameArray: Array<Game>
+        difficulty: Difficulty
     ) {
-        for (startIndex in gameArray.indices) {
-            for (endIndex in startIndex..gameArray.size) {
-                val gameSet = gameArray.sliceArray(startIndex until endIndex).toSet()
+        val games = Game.values()
 
-                this.testGenerateHelper3(client, dimension, difficulty, gameSet)
+        for (startIndex in games.indices) {
+            for (endIndex in startIndex .. games.size) {
+                val selectedGames = games.sliceArray(startIndex until endIndex).toSet()
+
+                this.testGenerateHelper3(client, dimension, difficulty, selectedGames)
             }
         }
     }

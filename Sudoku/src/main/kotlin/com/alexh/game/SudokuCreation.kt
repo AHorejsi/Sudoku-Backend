@@ -29,7 +29,7 @@ enum class Difficulty(
     MASTER(0.21f, 0.33f, 0.0f, 0.77f, 0.88f)
 }
 
-data class MakeSudokuCommand(
+class MakeSudokuCommand(
     val dimension: Dimension,
     val difficulty: Difficulty,
     val games: Set<Game>,
