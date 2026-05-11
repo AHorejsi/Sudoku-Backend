@@ -10,6 +10,7 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.plugins.*
 import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.plugins.ratelimit.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +18,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.slf4j.Logger
 import java.sql.SQLException
-import io.ktor.server.plugins.ratelimit.*
 import kotlin.time.Duration.Companion.seconds
 
 fun configureHttp(app: Application, logger: Logger) {
@@ -39,16 +39,37 @@ private fun configureCors(app: Application) {
         this.allowHeader(HttpHeaders.Accept)
         this.allowHeader(HttpHeaders.AcceptCharset)
         this.allowHeader(HttpHeaders.AcceptEncoding)
+        this.allowHeader(HttpHeaders.AcceptLanguage)
         this.allowHeader(HttpHeaders.Allow)
         this.allowHeader(HttpHeaders.Authorization)
         this.allowHeader(HttpHeaders.AccessControlAllowOrigin)
+        this.allowHeader(HttpHeaders.AccessControlRequestHeaders)
+        this.allowHeader(HttpHeaders.AccessControlRequestMethod)
+        this.allowHeader(HttpHeaders.CacheControl)
         this.allowHeader(HttpHeaders.Connection)
         this.allowHeader(HttpHeaders.ContentType)
         this.allowHeader(HttpHeaders.ContentLength)
         this.allowHeader(HttpHeaders.Host)
+        this.allowHeader(HttpHeaders.IfModifiedSince)
+        this.allowHeader(HttpHeaders.IfNoneMatch)
+        this.allowHeader(HttpHeaders.Referrer)
+        this.allowHeader(HttpHeaders.Origin)
         this.allowHeader(HttpHeaders.UserAgent)
         this.allowHeader(HttpHeaders.Vary)
         this.allowHeader(HttpHeaders.XRequestId)
+        this.allowHeader(":authority")
+        this.allowHeader(":method")
+        this.allowHeader(":path")
+        this.allowHeader(":scheme")
+        this.allowHeader("Priority")
+        this.allowHeader("Referer")
+        this.allowHeader("Sec-Ch-Ua")
+        this.allowHeader("Sec-Ch-Ua-Mobile")
+        this.allowHeader("Sec-Ch-Ua-Platform")
+        this.allowHeader("Sec-Fetch-Site")
+        this.allowHeader("Sec-Fetch-Dist")
+        this.allowHeader("Sec-Fetch-Mode")
+        this.allowHeader("Upgrade-Insecure-Requests")
 
         this.allowCredentials = true
         this.allowSameOrigin = true

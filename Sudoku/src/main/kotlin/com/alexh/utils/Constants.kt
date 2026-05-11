@@ -48,6 +48,7 @@ class Loggers private constructor() {
 
     companion object {
         const val MAIN_APPLICATION = "Main"
+        const val HEALTH_ROUTING = "Health-Routing"
         const val GENERATION_ROUTING = "Generate-Sudoku-Routing"
         const val USER_ROUTING = "User-Routing"
     }
