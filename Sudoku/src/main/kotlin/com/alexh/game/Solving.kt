@@ -1,10 +1,22 @@
 package com.alexh.game
 
-internal fun hasUniqueSolution(neighborhoods: List<SudokuNode>, length: Int): Boolean {
-    val unassigned = neighborhoods.filter{ null === it.value }.toMutableList()
+internal fun hasUniqueSolution(graph: SudokuGraph, length: Int): Boolean {
+    val unassigned = findNodesWithNullValues(graph, length)
     val values = 1 .. length
 
     return 1 == countSolutions(unassigned, values)
+}
+
+private fun findNodesWithNullValues(graph: SudokuGraph, length: Int): MutableList<SudokuNode> {
+    val unassigned = ArrayList<SudokuNode>(graph.size)
+
+    for (node in graph) {
+        if (null === node.value) {
+            unassigned.add(node)
+        }
+    }
+
+    return unassigned
 }
 
 private fun countSolutions(unassigned: MutableList<SudokuNode>, valueRange: IntRange): Int {

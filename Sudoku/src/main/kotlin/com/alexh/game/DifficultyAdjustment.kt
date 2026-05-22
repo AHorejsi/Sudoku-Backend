@@ -2,7 +2,7 @@ package com.alexh.game
 
 import kotlin.random.Random
 
-internal fun adjustForDifficulty(neighborhoods: List<SudokuNode>, info: MakeSudokuCommand) {
+internal fun adjustForDifficulty(graph: SudokuGraph, info: MakeSudokuCommand) {
     val difficulty = info.difficulty
     val rand = info.random
     val length = info.dimension.length
@@ -12,8 +12,8 @@ internal fun adjustForDifficulty(neighborhoods: List<SudokuNode>, info: MakeSudo
 
     var givenCount = length * length
 
-    for (node in neighborhoods.shuffled(rand)) {
-        if (checkLowerBound(node, lowerBound) && tryRemove(neighborhoods, length, node)) {
+    for (node in graph.shuffled(rand)) {
+        if (checkLowerBound(node, lowerBound) && tryRemove(graph, length, node)) {
             --givenCount
 
             if (givenCount <= targetGivenCount) {
@@ -37,19 +37,19 @@ private fun checkLowerBound(node: SudokuNode, lowerBound: Int): Boolean {
     result = result && node.column.count{ null !== it.value } >= lowerBound
     result = result && node.box.count{ null !== it.value } >= lowerBound
 
-    if (node.hyper.any()) {
+    if (node.hyper.isNotEmpty()) {
         result = result && node.hyper.count{ null !== it.value } >= lowerBound
     }
 
     return result
 }
 
-private fun tryRemove(neighborhoods: List<SudokuNode>, length: Int, node: SudokuNode): Boolean {
+private fun tryRemove(graph: SudokuGraph, length: Int, node: SudokuNode): Boolean {
     val temp = node.value!!
 
     node.value = null
 
-    if (hasUniqueSolution(neighborhoods, length)) {
+    if (hasUniqueSolution(graph, length)) {
         return true
     }
 

@@ -40,22 +40,22 @@ private fun checkCreateForValidity(username: String, password: String, email: St
         null
 
 fun doUserCreation(stmt: PreparedStatement): CreateUserResponse {
-    runCatching {
+    try {
         stmt.executeUpdate()
-    }.onSuccess{
-        stmt.generatedKeys!!.use { keys ->
-            if (!keys.next()) {
-                return CreateUserResponse.FailedToCreate
-            }
-        }
-    }.onFailure { ex ->
-        ex.message?.let {
-            if (it.startsWith("Unique")) {
-                return CreateUserResponse.DuplicateFound
-            }
+    } catch (ex: SQLException) {
+        val duplicateFound = ex.message?.startsWith("Unique") ?: false
+
+        if (duplicateFound) {
+            return CreateUserResponse.DuplicateFound
         }
 
         throw ex
+    }
+
+    stmt.generatedKeys!!.use { keys ->
+        if (!keys.next()) {
+            return CreateUserResponse.FailedToCreate
+        }
     }
 
     return CreateUserResponse.Success
@@ -75,11 +75,10 @@ fun readUserWithPassword(dbConn: Connection, request: ReadUserRequest): ReadUser
             if (null === user) {
                 return ReadUserResponse.FailedToFind
             }
-            else {
-                val token = createJwtToken(usernameOrEmail)
 
-                return ReadUserResponse.Success(user, token)
-            }
+            val token = createJwtToken(usernameOrEmail)
+
+            return ReadUserResponse.Success(user, token)
         }
     }
 }
@@ -87,13 +86,15 @@ fun readUserWithPassword(dbConn: Connection, request: ReadUserRequest): ReadUser
 private fun buildUserWithPassword(results: ResultSet, providedPassword: String): User? {
     val user = buildUserObject(results)
 
-    if (null !== user) {
-        val passwordInDatabase = results.getString(SqlStrings.PASSWORD)!!
-        val dynamicSalt = results.getString(SqlStrings.SALT)!!
+    if (null === user) {
+        return null
+    }
 
-        if (!validatePassword(providedPassword, passwordInDatabase, dynamicSalt)) {
-            return null
-        }
+    val passwordInDatabase = results.getString(SqlStrings.PASSWORD)!!
+    val dynamicSalt = results.getString(SqlStrings.SALT)!!
+
+    if (!validatePassword(providedPassword, passwordInDatabase, dynamicSalt)) {
+        return null
     }
 
     return user
@@ -115,11 +116,10 @@ fun readUserWithToken(dbConn: Connection, principal: JWTPrincipal): TokenLoginRe
 
             val newToken = refreshJwtTokenIfExpired(user, principal.payload)
 
-            return newToken?.let {
-                TokenLoginResponse.Success(user, it)
-            } ?: run {
+            return if (null !== newToken)
+                TokenLoginResponse.Success(user, newToken)
+            else
                 TokenLoginResponse.Expired
-            }
         }
     }
 }
@@ -141,17 +141,19 @@ private fun buildUserObject(results: ResultSet): User? {
 }
 
 private fun makePuzzleList(idList: List<String>?, jsonList: List<String>?): List<Puzzle> {
+    if (null === idList || null === jsonList) {
+        return emptyList()
+    }
+
     val puzzleList = mutableListOf<Puzzle>()
 
-    if (null !== idList && null !== jsonList) {
-        for (index in idList.indices) {
-            val id = idList[index].toInt()
-            val json = jsonList[index]
+    for (index in idList.indices) {
+        val id = idList[index].toInt()
+        val json = jsonList[index]
 
-            val puzzle = Puzzle(id, json)
+        val puzzle = Puzzle(id, json)
 
-            puzzleList.add(puzzle)
-        }
+        puzzleList.add(puzzle)
     }
 
     return puzzleList
@@ -178,7 +180,7 @@ fun updateUser(dbConn: Connection, request: UpdateUserRequest): UpdateUserRespon
         return when (amountOfRowsUpdated) {
             0 -> UpdateUserResponse.FailedToFind
             1 -> UpdateUserResponse.Success
-            else -> throw SQLException("More than one user updated")
+            else -> failedDatabaseChange(amountOfRowsUpdated, "Update")
         }
     }
 }
@@ -202,7 +204,7 @@ fun deleteUser(dbConn: Connection, request: DeleteUserRequest): DeleteUserRespon
         return when (amountOfRowsDeleted) {
             0 -> DeleteUserResponse.FailedToFind
             1 -> DeleteUserResponse.Success
-            else -> throw SQLException("More than one user deleted")
+            else -> failedDatabaseChange(amountOfRowsDeleted, "Delete")
         }
     }
 }
@@ -248,7 +250,7 @@ fun updatePuzzle(dbConn: Connection, request: UpdatePuzzleRequest): UpdatePuzzle
         return when (amountOfRowsChanged) {
             0 -> UpdatePuzzleResponse.FailedToFind
             1 -> UpdatePuzzleResponse.Success
-            else -> throw SQLException("More than one puzzle updated")
+            else -> failedDatabaseChange(amountOfRowsChanged, "Update")
         }
     }
 }
@@ -264,7 +266,7 @@ fun deletePuzzle(dbConn: Connection, request: DeletePuzzleRequest): DeletePuzzle
         return when (amountOfRowsDeleted) {
             0 -> DeletePuzzleResponse.FailedToFind
             1 -> DeletePuzzleResponse.Success
-            else -> throw SQLException("More than one puzzle deleted")
+            else -> failedDatabaseChange(amountOfRowsDeleted, "Delete")
         }
     }
 }

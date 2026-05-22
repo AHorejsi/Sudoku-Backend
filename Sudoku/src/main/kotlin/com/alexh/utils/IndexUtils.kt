@@ -24,14 +24,26 @@ data class Position(val rowIndex: Int, val colIndex: Int) : Comparable<Position>
         else
             this.colIndex - other.colIndex
     }
+
+    override fun equals(other: Any?): Boolean =
+        other is Position && this.rowIndex == other.rowIndex && this.colIndex == other.colIndex
+
+    override fun hashCode(): Int {
+        val MODIFIER = 31
+
+        var hashValue = MODIFIER
+        hashValue += this.rowIndex.hashCode() * MODIFIER
+        hashValue += this.colIndex.hashCode() * MODIFIER
+
+        return hashValue
+    }
 }
 
 fun outOfBounds(index: Int, length: Int): Boolean =
     index < 0 || index >= length
 
-fun outOfBounds(pos: Position, length: Int): Boolean {
-    return outOfBounds(pos.rowIndex, length) || outOfBounds(pos.colIndex, length)
-}
+fun outOfBounds(pos: Position, length: Int): Boolean =
+    outOfBounds(pos.rowIndex, length) || outOfBounds(pos.colIndex, length)
 
 infix fun Int.up(amount: Int): IntRange =
     this until (this + amount)

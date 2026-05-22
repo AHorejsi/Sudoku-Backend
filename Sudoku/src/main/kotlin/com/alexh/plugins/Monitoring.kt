@@ -1,6 +1,6 @@
 package com.alexh.plugins
 
-import com.alexh.utils.currentDateString
+import com.alexh.utils.dateString
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.callid.*
@@ -45,14 +45,14 @@ private fun configureAppStateMonitoring(app: Application, logger: Logger) {
     val stateMonitoring = app.environment.monitor
 
     stateMonitoring.subscribe(ApplicationStarted) {
-        logger.info("Application Started at ${currentDateString()}")
+        logger.info("Application Started at ${dateString()}")
     }
 
     stateMonitoring.subscribe(ApplicationStopped) {
-        logger.info("Application Stopped at ${currentDateString()}")
+        logger.info("Application Stopped at ${dateString()}")
     }
 
     stateMonitoring.subscribe(ServerReady) {
-        logger.info("Server Ready at ${currentDateString()}")
+        logger.info("Server Ready at ${dateString()}")
     }
 }

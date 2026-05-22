@@ -1,42 +1,40 @@
 package com.alexh.game
 
-import com.alexh.utils.get2d
 import com.alexh.utils.up
 import kotlin.random.Random
 
-internal fun initializeValues(neighborhoods: List<SudokuNode>, info: MakeSudokuCommand) {
-    val rand = info.random
-    val dimension = info.dimension
-    val games = info.games
-
+internal fun initializeValues(graph: SudokuGraph, dimension: Dimension, games: Set<Game>, rand: Random) {
     val length = dimension.length
     val legal = 1 .. length
 
-    initializeValuesHelper1(neighborhoods, dimension, rand, legal, games)
+    initializeValuesHelper1(graph, dimension, rand, legal, games)
 
-    val unassigned = neighborhoods.filter{ null === it.value }.toMutableList()
-    val legalMap = shuffleValues(neighborhoods, length, rand, legal)
+    val unassigned = retrieveNodesWithNullValues(graph)
+    val legalMap = shuffleValues(graph, length, rand, legal)
 
     initializeValuesHelper2(unassigned, legalMap)
 }
 
 private fun initializeValuesHelper1(
-    neighborhoods: List<SudokuNode>,
+    graph: SudokuGraph,
     dimension: Dimension,
     rand: Random,
     legal: IntRange,
     games: Set<Game>
 ) {
     if (Game.HYPER in games) {
-        fillBox(neighborhoods, dimension.length, 1 up dimension.boxRows, 1 up dimension.boxCols, legal, rand)
+        val hyperRows = 1 up dimension.boxRows
+        val hyperCols = 1 up dimension.boxCols
+
+        fillBox(graph, hyperRows, hyperCols, legal, rand)
     }
     else {
-        fillRegularDiagonal(neighborhoods, dimension, rand, legal)
+        fillRegularDiagonal(graph, dimension, rand, legal)
     }
 }
 
 private fun fillRegularDiagonal(
-    neighborhoods: List<SudokuNode>,
+    graph: SudokuGraph,
     dimension: Dimension,
     rand: Random,
     legal: IntRange
@@ -52,31 +50,42 @@ private fun fillRegularDiagonal(
         val rows = startRowIndex up boxRows
         val cols = startColIndex up boxCols
 
-        fillBox(neighborhoods, length, rows, cols, legal, rand)
+        fillBox(graph, rows, cols, legal, rand)
     }
 }
 
 private fun fillBox(
-    neighborhoods: List<SudokuNode>,
-    length: Int,
+    graph: SudokuGraph,
     rows: IntRange,
     cols: IntRange,
     legal: IntRange,
     rand: Random
 ) {
-    val iter = legal.shuffled(rand).iterator()
+    val shuffledValues = shuffleLegalValues(legal, rand).iterator()
 
     for (rowIndex in rows) {
         for (colIndex in cols) {
-            val node = neighborhoods.get2d(rowIndex, colIndex, length)
+            val value = shuffledValues.next()
 
-            node.value = iter.next()
+            graph.set(rowIndex, colIndex, value)
         }
     }
 }
 
+private fun retrieveNodesWithNullValues(graph: SudokuGraph): MutableList<SudokuNode> {
+    val unassigned = ArrayList<SudokuNode>(graph.size)
+
+    for (node in graph) {
+        if (null === node.value) {
+            unassigned.add(node)
+        }
+    }
+
+    return unassigned
+}
+
 private fun shuffleValues(
-    neighborhoods: List<SudokuNode>,
+    graph: SudokuGraph,
     length: Int,
     rand: Random,
     legal: IntRange
@@ -86,10 +95,10 @@ private fun shuffleValues(
 
     for (rowIndex in range) {
         for (colIndex in range) {
-            val node = neighborhoods.get2d(rowIndex, colIndex, length)
+            val node = graph.get(rowIndex, colIndex)
 
             if (null === node.value) {
-                legalMap[node] = legal.shuffled(rand)
+                legalMap[node] = shuffleLegalValues(legal, rand)
             }
         }
     }
@@ -97,7 +106,17 @@ private fun shuffleValues(
     return legalMap
 }
 
-private fun initializeValuesHelper2(unassigned: MutableList<SudokuNode>, legalMap: Map<SudokuNode, List<Int>>): Boolean {
+private fun shuffleLegalValues(legal: IntRange, rand: Random): List<Int> {
+    val list = legal.toMutableList()
+    list.shuffle(rand)
+
+    return list
+}
+
+private fun initializeValuesHelper2(
+    unassigned: MutableList<SudokuNode>,
+    legalMap: Map<SudokuNode, List<Int>>
+): Boolean {
     if (unassigned.isEmpty()) {
         return true
     }

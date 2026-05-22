@@ -31,15 +31,16 @@ fun createPassword(password: String): Pair<String, String> {
     return Pair(hashed, dynamicSalt)
 }
 
+@Suppress("LocalVariableName")
 private fun generateSalt(): String {
-    val length = 7
-    val min = Char.MIN_VALUE.code
-    val max = Char.MAX_VALUE.code + 1
+    val SALT_LENGTH = 7
+    val SALT_MIN = Char.MIN_VALUE.code
+    val SALT_MAX = Char.MAX_VALUE.code + 1
 
-    val salt = StringBuilder(length)
+    val salt = StringBuilder(SALT_LENGTH)
 
-    repeat(length) { _ ->
-        val char = Random.nextInt(min, max).toChar()
+    repeat(SALT_LENGTH) { _ ->
+        val char = Random.nextInt(SALT_MIN, SALT_MAX).toChar()
 
         salt.append(char)
     }

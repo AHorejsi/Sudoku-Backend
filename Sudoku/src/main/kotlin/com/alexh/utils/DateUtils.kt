@@ -3,17 +3,15 @@ package com.alexh.utils
 import java.text.SimpleDateFormat
 import java.util.*
 
-fun dateString(date: Date): String {
-    val sdf = SimpleDateFormat("yyyy/MM/dd hh:mm:ss")
+fun future(futureTimeInMillis: Long): Date {
+    require(futureTimeInMillis > 0) { "Time must be into the future. So time must be positive" }
 
-    return sdf.format(date)
+    return Date(System.currentTimeMillis() + futureTimeInMillis)
 }
 
-fun currentDateString(): String =
-    dateString(Date())
+fun dateString(futureTimeInMillis: Long = 0L): String {
+    val sdf = SimpleDateFormat("yyyy/MM/dd hh:mm:ss")
+    val date = if (0L == futureTimeInMillis) Date() else future(futureTimeInMillis)
 
-fun oneWeekFromNow(): Date {
-    val oneWeekFromNow = System.currentTimeMillis() + 604800000
-
-    return Date(oneWeekFromNow)
+    return sdf.format(date)
 }

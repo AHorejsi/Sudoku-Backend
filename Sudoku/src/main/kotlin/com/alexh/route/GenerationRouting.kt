@@ -37,8 +37,7 @@ private suspend fun generateSudoku(call: ApplicationCall) {
 
     if (dimensionName.isEmpty() || difficultyName.isEmpty()) {
         result = GenerateResponse.UnfilledFields
-    }
-    else {
+    } else {
         val gameNames = request.games
 
         val dimension = Dimension.valueOf(dimensionName)

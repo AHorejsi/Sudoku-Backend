@@ -1,10 +1,7 @@
 package com.alexh.route
 
 import com.alexh.models.User
-import com.alexh.utils.EnvironmentVariables
-import com.alexh.utils.JwtClaims
-import com.alexh.utils.RateLimits
-import com.alexh.utils.oneWeekFromNow
+import com.alexh.utils.*
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.Payload
@@ -14,24 +11,23 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.runBlocking
 import java.util.*
 
-suspend inline fun <reified TType : Any> handleResponse(
+inline fun <reified TType : Any> handleResponse(
     result: TType,
     call: ApplicationCall,
     logger: Logger,
     endpoint: String
-) {
-    withContext(Dispatchers.IO) {
-        this.launch { call.respond(HttpStatusCode.OK, result) }
-        this.launch { logger.info("Successful call to $endpoint") }
-        this.launch { handleRateLimitLogging(call, logger) }
-    }
+): Unit = runBlocking(Dispatchers.IO) {
+    this.launch { call.respond(HttpStatusCode.OK, result) }
+
+    logger.info("Successful call to $endpoint")
+    handleRateLimitLogging(call, logger)
 }
 
 fun createJwtToken(usernameOrEmail: String): String {
-    val weekLongExpirationDate = oneWeekFromNow()
+    val weekLongExpirationDate = future(604800000L) // One week in milliseconds
     val algorithm = Algorithm.HMAC256(EnvironmentVariables.JWT_SECRET)!!
 
     return JWT
@@ -77,7 +73,7 @@ fun handleRateLimitLogging(call: ApplicationCall, logger: Logger) {
 private fun getRateLimitHeaders(call: ApplicationCall): Map<String, String?> {
     val headers = call.response.headers
 
-    val map = mutableMapOf<String, String?>()
+    val map = hashMapOf<String, String?>()
 
     map[RateLimits.LIMIT_HEADER] = headers[RateLimits.LIMIT_HEADER]
     map[RateLimits.REMAINING_HEADER] = headers[RateLimits.REMAINING_HEADER]

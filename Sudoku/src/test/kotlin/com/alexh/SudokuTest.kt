@@ -1,45 +1,39 @@
 package com.alexh
 
+import com.alexh.asserts.assertLess
 import com.alexh.game.*
+import com.alexh.utils.typeName
 import kotlinx.coroutines.*
 import kotlin.random.Random
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
-import kotlin.test.assertFalse
+import kotlin.test.*
 
 class SudokuTest {
     @Test
-    fun testMakeSudoku() = runBlocking(Dispatchers.IO) {
-        val testCount = 10
-        val static = Random(0)
+    fun testMakeSudoku() {
+        val rand = Random(0)
+        val name = rand.typeName()
 
-        repeat(testCount) { _ ->
-            this@SudokuTest.testMakeSudokuHelper0(this, static)
-        }
-    }
+        runBlocking(Dispatchers.IO) {
+            val testCount = 10
 
-    private fun testMakeSudokuHelper0(scope: CoroutineScope, static: Random) {
-        for (dimension in Dimension.values()) {
-            for (difficulty in Difficulty.values()) {
-                this@SudokuTest.testMakeSudokuHelper1(scope, dimension, difficulty, static)
+            repeat(testCount) { count ->
+                val testJob = this.launch { this@SudokuTest.runTest(rand, this) }
+
+                setJobAsserts(testJob, "TEST $count of $name")
             }
         }
     }
 
-    private fun testMakeSudokuHelper1(
-        scope: CoroutineScope,
-        dimension: Dimension,
-        difficulty: Difficulty,
-        static: Random
-    ) {
-        val seed = static.nextInt()
-        val rand = Random(seed)
-
-        scope.launch { this@SudokuTest.testMakeSudokuHelper2(dimension, difficulty, rand) }
+    private fun runTest(rand: Random, scope: CoroutineScope) {
+        for (dimension in Dimension.values()) {
+            for (difficulty in Difficulty.values()) {
+                this@SudokuTest.testMakeSudokuHelper0(scope, dimension, difficulty, rand)
+            }
+        }
     }
 
-    private fun testMakeSudokuHelper2(
+    private fun testMakeSudokuHelper0(
+        scope: CoroutineScope,
         dimension: Dimension,
         difficulty: Difficulty,
         rand: Random
@@ -48,30 +42,49 @@ class SudokuTest {
 
         for (startIndex in games.indices) {
             for (endIndex in startIndex .. games.size) {
-                val selectedGames = games.sliceArray(startIndex until endIndex).toSet()
+                val selectedGames =
+                    games.sliceArray(startIndex until endIndex).toSortedSet()
 
-                val info = MakeSudokuCommand(dimension, difficulty, selectedGames, rand)
-                val sudoku = makeSudoku(info)
-
-                this@SudokuTest.testSudokuProperties(sudoku)
+                executeJob(scope, dimension, difficulty, selectedGames, rand)
             }
         }
     }
 
-    private fun testSudokuProperties(sudoku: SudokuJson) {
-        this.checkIfCellsAreValid(sudoku)
-        this.checkIfValuesAreValid(sudoku)
-        this.checkIfCagesAreValid(sudoku)
+    private fun executeJob(
+        scope: CoroutineScope,
+        dimension: Dimension,
+        difficulty: Difficulty,
+        games: Set<Game>,
+        rand: Random
+    ) {
+        val sudokuJob = scope.launch {
+            val info = MakeSudokuCommand(dimension, difficulty, games, rand)
+            val result = makeSudoku(info)
 
-        if (Game.HYPER in sudoku.games) {
-            val hyperBoxesPresent = sudoku.boxes.any{ it.isHyper }
+            this@SudokuTest.testSudokuProperties(result)
+        }
+
+        setJobAsserts(sudokuJob, "SUDOKU ($dimension, $difficulty, $games)")
+    }
+
+    private fun testSudokuProperties(sudoku: SudokuJson) {
+        val description = sudoku.description
+        val length = description.dimension.length
+
+        this.checkIfCellsAreValid(sudoku, length)
+        this.checkIfValuesAreValid(sudoku, length)
+        this.checkIfCagesAreValid(sudoku, length)
+
+        if (Game.HYPER in description.games) {
+            val hyperBoxesPresent = sudoku.boxes.any(Box::isHyper)
 
             assertTrue(hyperBoxesPresent)
         }
     }
 
-    private fun checkIfCellsAreValid(sudoku: SudokuJson) {
-        val range = 0 until sudoku.length
+    private fun checkIfCellsAreValid(sudoku: SudokuJson, length: Int) {
+        val range = 0 until length
+        var nullCount = 0
 
         for (rowIndex in range) {
             for (colIndex in range) {
@@ -80,75 +93,71 @@ class SudokuTest {
 
                 if (null === cell.value) {
                     assertTrue(cell.editable)
-                }
-                else {
+                    ++nullCount
+                } else {
                     assertFalse(cell.editable)
                     assertEquals(value, cell.value)
                 }
                 assertEquals(0, cell.notes)
             }
         }
+
+        assertLess(0, nullCount)
     }
 
-    private fun checkIfValuesAreValid(sudoku: SudokuJson) {
-        val range = 0 until sudoku.length
+    private fun checkIfValuesAreValid(sudoku: SudokuJson, length: Int) {
+        val range = 0 until length
 
         for (rowIndex in range) {
-            this.checkIfRowIsValid(sudoku, rowIndex, range)
+            this.checkIfRowIsValid(sudoku, rowIndex, range, length)
         }
 
         for (colIndex in range) {
-            this.checkIfColumnIsValid(sudoku, colIndex, range)
+            this.checkIfColumnIsValid(sudoku, colIndex, range, length)
         }
 
         for (box in sudoku.boxes) {
-            this.checkIfBoxIsValid(sudoku, box)
+            this.checkIfBoxIsValid(sudoku, box, length)
         }
     }
 
-    private fun checkIfRowIsValid(sudoku: SudokuJson, rowIndex: Int, range: IntRange) {
-        val set = hashSetOf<Int>()
+    private fun checkIfRowIsValid(sudoku: SudokuJson, rowIndex: Int, range: IntRange, length: Int) {
+        val set = HashSet<Int>(length)
 
         for (colIndex in range) {
             val value = sudoku.solved[rowIndex][colIndex]
 
-            val notDuplicate = set.add(value)
-
-            assertTrue(notDuplicate)
+            set.add(value)
         }
 
-        assertEquals(sudoku.length, set.size)
+        assertEquals(length, set.size)
     }
 
-    private fun checkIfColumnIsValid(sudoku: SudokuJson, colIndex: Int, range: IntRange) {
-        val set = hashSetOf<Int>()
+    private fun checkIfColumnIsValid(sudoku: SudokuJson, colIndex: Int, range: IntRange, length: Int) {
+        val set = HashSet<Int>(length)
 
         for (rowIndex in range) {
             val value = sudoku.solved[rowIndex][colIndex]
 
-            val notDuplicate = set.add(value)
-
-            assertTrue(notDuplicate)
+            set.add(value)
         }
 
-        assertEquals(sudoku.length, set.size)
+        assertEquals(length, set.size)
     }
 
-    private fun checkIfBoxIsValid(sudoku: SudokuJson, box: Box) {
-        val set = hashSetOf<Int>()
+    private fun checkIfBoxIsValid(sudoku: SudokuJson, box: Box, length: Int) {
+        val set = HashSet<Int>(length)
 
         for (pos in box.positions) {
             val value = sudoku.solved[pos.rowIndex][pos.colIndex]
 
-            val notDuplicate = set.add(value)
-
-            assertTrue(notDuplicate)
+            set.add(value)
         }
 
-        assertEquals(sudoku.length, set.size)
+        assertEquals(length, set.size)
     }
 
-    private fun checkIfCagesAreValid(sudoku: SudokuJson) {
+    private fun checkIfCagesAreValid(sudoku: SudokuJson, length: Int) {
         val cageSet = sudoku.cages
 
         if (null === cageSet) {
@@ -161,9 +170,20 @@ class SudokuTest {
             assertEquals(cage.sum, actualSum)
         }
 
-        val actualCellCount = sudoku.length * sudoku.length
+        val actualCellCount = length * length
         val cellCountFromCages = cageSet.sumOf{ it.positions.size }
 
         assertEquals(actualCellCount, cellCountFromCages)
+    }
+}
+
+private fun setJobAsserts(job: Job, message: String) {
+    job.invokeOnCompletion { ex ->
+        println("Finished: $message")
+
+        assertNull(ex)
+
+        assertTrue(job.isCompleted)
+        assertFalse(job.isCancelled)
     }
 }

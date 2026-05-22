@@ -20,6 +20,8 @@ import org.slf4j.Logger
 import java.sql.SQLException
 import kotlin.time.Duration.Companion.seconds
 
+private typealias EmptyCallback = () -> Unit
+
 fun configureHttp(app: Application, logger: Logger) {
     configureCors(app)
     configureAuthentication(app, logger)
@@ -76,8 +78,7 @@ private fun configureCors(app: Application) {
 
         if (app.environment.developmentMode) {
             this.anyHost() // Don't do this in production!
-        }
-        else {
+        } else {
             val host = EnvironmentVariables.CLIENT_HOST
 
             this.allowHost(host)
@@ -87,6 +88,10 @@ private fun configureCors(app: Application) {
 
 private fun configureAuthentication(app: Application, logger: Logger) {
     app.install(Authentication) {
+        this.digest(Auths.DIGEST) {
+            // TODO
+        }
+
         this.jwt(Auths.JWT) {
             this.realm = EnvironmentVariables.JWT_REALM
 
@@ -150,15 +155,12 @@ private fun configureStatusPages(app: Application, logger: Logger) {
             logAndSendError(call, logger, HttpStatusCode.InternalServerError, exception)
         }
 
-        this.exception<IllegalArgumentException> { call, exception ->
-            logAndSendError(call, logger, HttpStatusCode.BadRequest, exception)
-        }
-
         // Usually happens from malformed JSON
         this.exception<ContentTransformationException> { call, exception ->
             logAndSendError(call, logger, HttpStatusCode.BadRequest, exception)
         }
 
+        // Database error
         this.exception<SQLException> { call, exception ->
             logAndSendError(call, logger, HttpStatusCode.BadGateway, exception)
         }

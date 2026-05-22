@@ -7,6 +7,7 @@ import com.alexh.models.*
 import com.alexh.route.createJwtToken
 import com.alexh.utils.Endpoints
 import com.alexh.utils.XRequestIds
+import com.alexh.utils.typeName
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.compression.*
@@ -17,14 +18,11 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.testing.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
+import kotlin.test.*
 
 class ApplicationTest {
     private val successfulUserId = 1
@@ -43,6 +41,7 @@ class ApplicationTest {
     @Test
     fun testHealthChecks() = testApplication {
         this.createClient {
+            this@ApplicationTest.installJson(this)
             this@ApplicationTest.installLogging(this)
         }.use { client ->
             client.get(Endpoints.PING).also { response ->
@@ -58,79 +57,110 @@ class ApplicationTest {
             this@ApplicationTest.installLogging(this)
             this@ApplicationTest.installCompression(this)
         }.use { client ->
-            runBlocking(Dispatchers.IO) {
-                this.launch { this@ApplicationTest.testGenerateHelper0(client, this) }
-                this.launch { this@ApplicationTest.testUnfilledFieldsOnGenerate(client) }
-            }
+            val mutex = Mutex()
+
+            this@ApplicationTest.testGenerateHelper0(client, mutex)
+            this@ApplicationTest.testUnfilledFieldsOnGenerate(client)
         }
     }
 
-    private fun testGenerateHelper0(client: HttpClient, scope: CoroutineScope) {
-        scope.launch {
-            val testCount = 5
+    private fun testGenerateHelper0(client: HttpClient, mutex: Mutex) = runBlocking(Dispatchers.IO) {
+        val job = this.launch { this@ApplicationTest.testGenerateHelper1(client, this, mutex) }
 
-            repeat(testCount) {
-                this@ApplicationTest.testGenerateHelper1(client)
-            }
-        }
+        setJobAsserts(job)
     }
 
-    private suspend fun testGenerateHelper1(client: HttpClient) {
+    private fun testGenerateHelper1(client: HttpClient, scope: CoroutineScope, mutex: Mutex) {
         for (dimension in Dimension.values()) {
             for (difficulty in Difficulty.values()) {
-                this.testGenerateHelper2(client, dimension, difficulty)
+                this@ApplicationTest.testGenerateHelper2(client, dimension, difficulty, scope, mutex)
             }
         }
     }
 
-    private suspend fun testGenerateHelper2(
+    private fun testGenerateHelper2(
         client: HttpClient,
         dimension: Dimension,
-        difficulty: Difficulty
+        difficulty: Difficulty,
+        scope: CoroutineScope,
+        mutex: Mutex
     ) {
         val games = Game.values()
 
         for (startIndex in games.indices) {
             for (endIndex in startIndex .. games.size) {
-                val selectedGames = games.sliceArray(startIndex until endIndex).toSet()
+                val selectedGames =
+                    games.sliceArray(startIndex until endIndex).toSortedSet()
 
-                this.testGenerateHelper3(client, dimension, difficulty, selectedGames)
+                val job = scope.launch {
+                    this@ApplicationTest.testGenerateHelper3(mutex, client, dimension, difficulty, selectedGames)
+                }
+
+                setJobAsserts(job)
             }
         }
     }
 
+    private fun setJobAsserts(job: Job) {
+        job.invokeOnCompletion { ex ->
+            assertNull(ex)
+
+            assertTrue(job.isCompleted)
+            assertFalse(job.isCancelled)
+        }
+    }
+
     private suspend fun testGenerateHelper3(
+        mutex: Mutex,
         client: HttpClient,
         dimension: Dimension,
         difficulty: Difficulty,
         games: Set<Game>
     ) {
         client.post(Endpoints.GENERATE) {
-            this@ApplicationTest.setJwtHeaders(this, XRequestIds.GENERATE, this@ApplicationTest.successfulUsername)
+            this@ApplicationTest.setJwtHeaders(
+                this,
+                XRequestIds.GENERATE,
+                this@ApplicationTest.successfulUsername
+            )
 
             val dimensionName = dimension.name
             val difficultyName = difficulty.name
-            val gameNames = games.map { it.name }.toSet()
+            val gameNames = games.map(Game::name).toSortedSet()
 
             val requestBody = GenerateRequest(dimensionName, difficultyName, gameNames)
 
             this.setBody(requestBody)
         }.also { response ->
-            assertEquals(HttpStatusCode.OK, response.status)
-
-            val responseBody = response.body<GenerateResponse>()
-            assertIs<GenerateResponse.Success>(responseBody)
-
-            val json = responseBody.sudoku
-            assertEquals(dimension.length, json.length)
-            assertEquals(difficulty, json.difficulty)
-            assertEquals(games, json.games)
+            this.testGenerateResponse(mutex, response, dimension, difficulty, games)
         }
     }
 
+    private suspend fun testGenerateResponse(
+        mutex: Mutex,
+        response: HttpResponse,
+        dimension: Dimension,
+        difficulty: Difficulty,
+        games: Set<Game>,
+    ) = mutex.withLock {
+        assertEquals(HttpStatusCode.OK, response.status)
+
+        val responseBody = response.body<GenerateResponse>()
+        assertIs<GenerateResponse.Success>(responseBody)
+
+        val info = responseBody.sudoku.description
+        assertEquals(dimension, info.dimension)
+        assertEquals(difficulty, info.difficulty)
+        assertEquals(games, info.games)
+    }
+
     private suspend fun testUnfilledFieldsOnGenerate(client: HttpClient) {
-        val response = client.post(Endpoints.GENERATE) {
-            this@ApplicationTest.setJwtHeaders(this, XRequestIds.GENERATE, this@ApplicationTest.successfulEmail)
+        client.post(Endpoints.GENERATE) {
+            this@ApplicationTest.setJwtHeaders(
+                this,
+                XRequestIds.GENERATE,
+                this@ApplicationTest.successfulEmail
+            )
 
             val dimensionName = ""
             val difficultyName = ""
@@ -139,11 +169,12 @@ class ApplicationTest {
             val requestBody = GenerateRequest(dimensionName, difficultyName, gameNames)
 
             this.setBody(requestBody)
-        }
-        assertEquals(HttpStatusCode.OK, response.status)
+        }.also { response ->
+            assertEquals(HttpStatusCode.OK, response.status)
 
-        val responseBody = response.body<GenerateResponse>()
-        assertIs<GenerateResponse.UnfilledFields>(responseBody)
+            val responseBody = response.body<GenerateResponse>()
+            assertIs<GenerateResponse.UnfilledFields>(responseBody)
+        }
     }
 
     @Test
@@ -165,35 +196,35 @@ class ApplicationTest {
     private suspend fun testCreateUser(client: HttpClient) {
         this.attemptToCreateUser(
             client,
-            CreateUserResponse.Success::class.simpleName!!,
+            CreateUserResponse.Success.typeName(),
             this.successfulUsername,
             this.successfulPassword,
             this.successfulEmail
         )
         this.attemptToCreateUser(
             client,
-            CreateUserResponse.DuplicateFound::class.simpleName!!,
+            CreateUserResponse.DuplicateFound.typeName(),
             this.successfulUsername,
             this.successfulPassword,
             this.successfulEmail
         )
         this.attemptToCreateUser(
             client,
-            CreateUserResponse.InvalidUsername::class.simpleName!!,
+            CreateUserResponse.InvalidUsername.typeName(),
             this.invalidUsername,
             this.successfulPassword,
             this.successfulEmail
         )
         this.attemptToCreateUser(
             client,
-            CreateUserResponse.InvalidPassword::class.simpleName!!,
+            CreateUserResponse.InvalidPassword.typeName(),
             this.successfulUsername,
             this.invalidPassword,
             this.successfulEmail
         )
         this.attemptToCreateUser(
             client,
-            CreateUserResponse.InvalidEmail::class.simpleName!!,
+            CreateUserResponse.InvalidEmail.typeName(),
             this.successfulUsername,
             this.successfulPassword,
             this.invalidEmail
@@ -216,7 +247,7 @@ class ApplicationTest {
         }.also { response ->
             assertEquals(HttpStatusCode.OK, response.status)
 
-            val actualResponse = response.body<CreateUserResponse>()::class.simpleName!!
+            val actualResponse = response.body<CreateUserResponse>().typeName()
             assertEquals(expectedResponse, actualResponse)
         }
     }
@@ -305,19 +336,19 @@ class ApplicationTest {
     private suspend fun testUpdateUser(client: HttpClient) {
         this.attemptToUpdateUser(
             client,
-            UpdateUserResponse.InvalidUsername::class.simpleName!!,
+            UpdateUserResponse.InvalidUsername.typeName(),
             this.invalidUsername,
             this.updatedEmail
         )
         this.attemptToUpdateUser(
             client,
-            UpdateUserResponse.InvalidEmail::class.simpleName!!,
+            UpdateUserResponse.InvalidEmail.typeName(),
             this.updatedUsername,
             this.invalidEmail
         )
         this.attemptToUpdateUser(
             client,
-            UpdateUserResponse.Success::class.simpleName!!,
+            UpdateUserResponse.Success.typeName(),
             this.updatedUsername,
             this.updatedEmail
         )
@@ -330,7 +361,11 @@ class ApplicationTest {
         newEmail: String
     ) {
         client.put(Endpoints.UPDATE_USER) {
-            this@ApplicationTest.setJwtHeaders(this, XRequestIds.UPDATE_USER, this@ApplicationTest.successfulUsername)
+            this@ApplicationTest.setJwtHeaders(
+                this,
+                XRequestIds.UPDATE_USER,
+                this@ApplicationTest.successfulUsername
+            )
 
             val requestBody = UpdateUserRequest(
                 this@ApplicationTest.successfulUserId,
@@ -342,14 +377,18 @@ class ApplicationTest {
         }.also { response ->
             assertEquals(HttpStatusCode.OK, response.status)
 
-            val actualResponse = response.body<UpdateUserResponse>()::class.simpleName!!
+            val actualResponse = response.body<UpdateUserResponse>().typeName()
             assertEquals(expectedResponse, actualResponse)
         }
     }
 
     private suspend fun testCreatePuzzle(client: HttpClient) {
         client.put(Endpoints.CREATE_PUZZLE) {
-            this@ApplicationTest.setJwtHeaders(this, XRequestIds.CREATE_PUZZLE, this@ApplicationTest.successfulUsername)
+            this@ApplicationTest.setJwtHeaders(
+                this,
+                XRequestIds.CREATE_PUZZLE,
+                this@ApplicationTest.successfulUsername
+            )
 
             val requestBody = CreatePuzzleRequest("{}", this@ApplicationTest.successfulUserId)
 
@@ -369,13 +408,13 @@ class ApplicationTest {
             client,
             this.successfulPuzzleId,
             fakeJson,
-            UpdatePuzzleResponse.Success::class.simpleName!!
+            UpdatePuzzleResponse.Success.typeName()
         )
         this.attemptToUpdatePuzzle(
             client,
             this.invalidPuzzleId,
             fakeJson,
-            UpdatePuzzleResponse.FailedToFind::class.simpleName!!
+            UpdatePuzzleResponse.FailedToFind.typeName()
         )
     }
 
@@ -386,7 +425,11 @@ class ApplicationTest {
         expectedResponse: String
     ) {
         client.put(Endpoints.UPDATE_PUZZLE) {
-            this@ApplicationTest.setJwtHeaders(this, XRequestIds.UPDATE_PUZZLE, this@ApplicationTest.successfulEmail)
+            this@ApplicationTest.setJwtHeaders(
+                this,
+                XRequestIds.UPDATE_PUZZLE,
+                this@ApplicationTest.successfulEmail
+            )
 
             val requestBody = UpdatePuzzleRequest(puzzleId, json)
 
@@ -394,7 +437,7 @@ class ApplicationTest {
         }.also { response ->
             assertEquals(HttpStatusCode.OK, response.status)
 
-            val actualResponse = response.body<UpdatePuzzleResponse>()::class.simpleName!!
+            val actualResponse = response.body<UpdatePuzzleResponse>().typeName()
             assertEquals(expectedResponse, actualResponse)
         }
     }
@@ -403,12 +446,12 @@ class ApplicationTest {
         this.attemptToDeletePuzzle(
             client,
             this.successfulPuzzleId,
-            DeletePuzzleResponse.Success::class.simpleName!!
+            DeletePuzzleResponse.Success.typeName()
         )
         this.attemptToDeletePuzzle(
             client,
             this.invalidPuzzleId,
-            DeletePuzzleResponse.FailedToFind::class.simpleName!!
+            DeletePuzzleResponse.FailedToFind.typeName()
         )
     }
 
@@ -418,7 +461,11 @@ class ApplicationTest {
         expectedResponse: String
     ) {
         client.delete(Endpoints.DELETE_PUZZLE) {
-            this@ApplicationTest.setJwtHeaders(this, XRequestIds.DELETE_PUZZLE, this@ApplicationTest.successfulUsername)
+            this@ApplicationTest.setJwtHeaders(
+                this,
+                XRequestIds.DELETE_PUZZLE,
+                this@ApplicationTest.successfulUsername
+            )
 
             val requestBody = DeletePuzzleRequest(puzzleId)
 
@@ -426,7 +473,7 @@ class ApplicationTest {
         }.also { response ->
             assertEquals(HttpStatusCode.OK, response.status)
 
-            val actualResponse = response.body<DeletePuzzleResponse>()::class.simpleName!!
+            val actualResponse = response.body<DeletePuzzleResponse>().typeName()
             assertEquals(expectedResponse, actualResponse)
         }
     }
@@ -435,12 +482,12 @@ class ApplicationTest {
         this.attemptToDeleteUser(
             client,
             this.successfulUserId,
-            DeleteUserResponse.Success::class.simpleName!!
+            DeleteUserResponse.Success.typeName()
         )
         this.attemptToDeleteUser(
             client,
             this.invalidUserId,
-            DeleteUserResponse.FailedToFind::class.simpleName!!
+            DeleteUserResponse.FailedToFind.typeName()
         )
     }
 
@@ -450,7 +497,11 @@ class ApplicationTest {
         expectedResponse: String
     ) {
         client.delete(Endpoints.DELETE_USER) {
-            this@ApplicationTest.setJwtHeaders(this, XRequestIds.DELETE_USER, this@ApplicationTest.successfulEmail)
+            this@ApplicationTest.setJwtHeaders(
+                this,
+                XRequestIds.DELETE_USER,
+                this@ApplicationTest.successfulEmail
+            )
 
             val requestBody = DeleteUserRequest(userId)
 
@@ -458,7 +509,7 @@ class ApplicationTest {
         }.also { response ->
             assertEquals(HttpStatusCode.OK, response.status)
 
-            val actualResponse = response.body<DeleteUserResponse>()::class.simpleName!!
+            val actualResponse = response.body<DeleteUserResponse>().typeName()
             assertEquals(expectedResponse, actualResponse)
         }
     }

@@ -4,31 +4,27 @@ import com.alexh.utils.Position
 import com.alexh.utils.get2d
 import com.alexh.utils.up
 
-internal fun buildBoard(info: MakeSudokuCommand): Pair<List<SudokuNode>, Set<Box>> {
-    val length = info.dimension.length
+internal fun buildBoard(dimension: Dimension, games: Set<Game>): SudokuGraph {
+    val neighborhoods = initializeNeighborhoods(dimension, games)
+    val graph = SudokuGraph(neighborhoods, dimension.length)
 
-    val neighborhoods = ArrayList<SudokuNode>(length * length)
-    initializeNeighborhoods(info, length, neighborhoods)
-
-    val boxes = HashSet<Box>(length * 2)
-    initializeBoxes(neighborhoods, length, boxes)
-
-    return Pair(neighborhoods, boxes)
+    return graph
 }
 
-private fun initializeNeighborhoods(
-    info: MakeSudokuCommand,
-    length: Int,
-    neighborhoods: MutableList<SudokuNode>
-) {
-    val boxRows = info.dimension.boxRows
-    val boxCols = info.dimension.boxCols
+private fun initializeNeighborhoods(dimension: Dimension, games: Set<Game>): List<SudokuNode> {
+    val length = dimension.length
+    val neighborhoods = ArrayList<SudokuNode>(length * length)
+
+    val boxRows = dimension.boxRows
+    val boxCols = dimension.boxCols
 
     makeRegularNeighborhoods(neighborhoods, length, boxRows, boxCols)
 
-    if (Game.HYPER in info.games) {
+    if (Game.HYPER in games) {
         makeRegularHyperNeighborhoods(neighborhoods, length, boxRows, boxCols)
     }
+
+    return neighborhoods
 }
 
 private fun makeRegularNeighborhoods(
@@ -117,10 +113,14 @@ private fun includeBox(
 ) {
     val startRowIndex = findStartOfBox(currentRowIndex, range, boxRows)
     val startColIndex = findStartOfBox(currentColIndex, range, boxCols)
+
+    val rows = startRowIndex up boxRows
+    val cols = startColIndex up boxCols
+
     val current = neighborhoods.get2d(currentRowIndex, currentColIndex, length)
 
-    for (neighborRowIndex in startRowIndex up boxRows) {
-        for (neighborColIndex in startColIndex up boxCols) {
+    for (neighborRowIndex in rows) {
+        for (neighborColIndex in cols) {
             val other = neighborhoods.get2d(neighborRowIndex, neighborColIndex, length)
 
             if (other !== current) {
@@ -150,8 +150,10 @@ private fun makeRegularHyperNeighborhoods(
     boxRows: Int,
     boxCols: Int
 ) {
-    val rowStartPoints = 1 until (length - 1) step (boxRows + 1)
-    val colStartPoints = 1 until (length - 1) step (boxCols + 1)
+    val endIndex = length - 1
+
+    val rowStartPoints = 1 until endIndex step (boxRows + 1)
+    val colStartPoints = 1 until endIndex step (boxCols + 1)
 
     for (startRowIndex in rowStartPoints) {
         for (startColIndex in colStartPoints) {
@@ -194,58 +196,4 @@ private fun makeIndividualHyperBox(
             }
         }
     }
-}
-
-private fun initializeBoxes(neighborhoods: List<SudokuNode>, length: Int, boxSet: MutableSet<Box>) {
-    val seen = HashSet<SudokuNode>(2 * length * length)
-
-    for (node in neighborhoods) {
-        val box = makeBox(node, length, seen)
-
-        box?.let {
-            boxSet.add(it)
-        }
-    }
-
-    seen.clear()
-
-    for (node in neighborhoods) {
-        val hyperBox = makeHyperBox(node, length, seen)
-
-        hyperBox?.let {
-            boxSet.add(it)
-        }
-    }
-}
-
-private fun makeBox(node: SudokuNode, length: Int, seen: MutableSet<SudokuNode>): Box? {
-    if (node in seen) {
-        return null
-    }
-
-    val positions = HashSet<Position>(length)
-
-    for (neighbor in node.box) {
-        positions.add(neighbor.place)
-    }
-
-    positions.add(node.place)
-
-    return Box(false, positions)
-}
-
-private fun makeHyperBox(node: SudokuNode, length: Int, seen: MutableSet<SudokuNode>): Box? {
-    if (node in seen || !node.hyper.any()) {
-        return null
-    }
-
-    val positions = HashSet<Position>(length)
-
-    for (neighbor in node.hyper) {
-        positions.add(neighbor.place)
-    }
-
-    positions.add(node.place)
-
-    return Box(true, positions)
 }
