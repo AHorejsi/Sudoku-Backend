@@ -10,7 +10,7 @@ internal fun initializeValues(graph: SudokuGraph, dimension: Dimension, games: S
     initializeValuesHelper1(graph, dimension, rand, legal, games)
 
     val unassigned = retrieveNodesWithNullValues(graph)
-    val legalMap = shuffleValues(graph, length, rand, legal)
+    val legalMap = shuffleValues(graph, rand, legal)
 
     initializeValuesHelper2(unassigned, legalMap)
 }
@@ -61,7 +61,7 @@ private fun fillBox(
     legal: IntRange,
     rand: Random
 ) {
-    val shuffledValues = shuffleLegalValues(legal, rand).iterator()
+    val shuffledValues = shuffleLegalValues(legal, graph.length, rand).iterator()
 
     for (rowIndex in rows) {
         for (colIndex in cols) {
@@ -86,10 +86,11 @@ private fun retrieveNodesWithNullValues(graph: SudokuGraph): MutableList<SudokuN
 
 private fun shuffleValues(
     graph: SudokuGraph,
-    length: Int,
     rand: Random,
     legal: IntRange
 ): Map<SudokuNode, List<Int>> {
+    val length = graph.length
+
     val range = 0 until length
     val legalMap = HashMap<SudokuNode, List<Int>>(length * length)
 
@@ -98,7 +99,7 @@ private fun shuffleValues(
             val node = graph.get(rowIndex, colIndex)
 
             if (null === node.value) {
-                legalMap[node] = shuffleLegalValues(legal, rand)
+                legalMap[node] = shuffleLegalValues(legal, length, rand)
             }
         }
     }
@@ -106,9 +107,18 @@ private fun shuffleValues(
     return legalMap
 }
 
-private fun shuffleLegalValues(legal: IntRange, rand: Random): List<Int> {
+private fun shuffleLegalValues(legal: IntRange, length: Int, rand: Random): List<Int> {
     val list = legal.toMutableList()
-    list.shuffle(rand)
+
+    for (index in (length - 1) downTo 1) {
+        val randomIndex = rand.nextInt(index + 1)
+
+        if (index != randomIndex) {
+            val temp = list[index]
+            list[index] = list[randomIndex]
+            list[randomIndex] = temp
+        }
+    }
 
     return list
 }

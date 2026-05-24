@@ -11,10 +11,10 @@ fun createUser(dbConn: Connection, request: CreateUserRequest): CreateUserRespon
     val password = request.password
     val email = request.email.trim()
 
-    val valid = checkCreateForValidity(username, password, email)
+    val invalid = checkCreateForValidity(username, password, email)
 
-    if (null !== valid) {
-        return valid
+    if (null !== invalid) {
+        return invalid
     }
 
     dbConn.prepareStatement(SqlStrings.CREATE_USER, Statement.RETURN_GENERATED_KEYS)!!.use { stmt ->
@@ -43,7 +43,8 @@ fun doUserCreation(stmt: PreparedStatement): CreateUserResponse {
     try {
         stmt.executeUpdate()
     } catch (ex: SQLException) {
-        val duplicateFound = ex.message?.startsWith("Unique") ?: false
+        val message = ex.message ?: ""
+        val duplicateFound = message.startsWith("Unique")
 
         if (duplicateFound) {
             return CreateUserResponse.DuplicateFound
@@ -164,10 +165,10 @@ fun updateUser(dbConn: Connection, request: UpdateUserRequest): UpdateUserRespon
     val newUsername = request.newUsername.trim()
     val newEmail = request.newEmail.trim()
 
-    val valid = checkUpdateForValidity(newUsername, newEmail)
+    val invalid = checkUpdateForValidity(newUsername, newEmail)
 
-    if (null !== valid) {
-        return valid
+    if (null !== invalid) {
+        return invalid
     }
 
     dbConn.prepareStatement(SqlStrings.UPDATE_USER)!!.use { stmt ->

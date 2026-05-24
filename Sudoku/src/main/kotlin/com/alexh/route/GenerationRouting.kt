@@ -23,32 +23,32 @@ fun configureEndpointsForGeneratingPuzzles(app: Application) {
 
 private fun urls(route: Route) {
     route.authenticate(Auths.JWT) {
-        this.post(Endpoints.GENERATE) { generateSudoku(this.call) }
+        this.post(Endpoints.GENERATE) {
+            val response = generateSudoku(this.call)
+
+            handleResponse(response, call, GENERATION_LOGGER, Endpoints.GENERATE)
+        }
     }
 }
 
-private suspend fun generateSudoku(call: ApplicationCall) {
+private suspend fun generateSudoku(call: ApplicationCall): GenerateResponse {
     val request = call.receive(GenerateRequest::class)
 
     val dimensionName = request.dimension
     val difficultyName = request.difficulty
 
-    val result: GenerateResponse
-
     if (dimensionName.isEmpty() || difficultyName.isEmpty()) {
-        result = GenerateResponse.UnfilledFields
-    } else {
-        val gameNames = request.games
-
-        val dimension = Dimension.valueOf(dimensionName)
-        val difficulty = Difficulty.valueOf(difficultyName)
-        val games = gameNames.map{ Game.valueOf(it) }.toSortedSet()
-        val info = MakeSudokuCommand(dimension, difficulty, games)
-
-        val sudoku = makeSudoku(info)
-
-        result = GenerateResponse.Success(sudoku)
+        return GenerateResponse.UnfilledFields
     }
 
-    handleResponse(result, call, GENERATION_LOGGER, Endpoints.GENERATE)
+    val gameNames = request.games
+
+    val dimension = Dimension.valueOf(dimensionName)
+    val difficulty = Difficulty.valueOf(difficultyName)
+    val games = gameNames.map{ Game.valueOf(it) }.toSortedSet()
+    val info = MakeSudokuCommand(dimension, difficulty, games)
+
+    val sudoku = makeSudoku(info)
+
+    return GenerateResponse.Success(sudoku)
 }
