@@ -1,6 +1,5 @@
 package com.alexh.game
 
-import com.alexh.utils.Position
 import com.alexh.utils.get2d
 import com.alexh.utils.up
 
@@ -42,8 +41,7 @@ private fun makeRegularNeighborhoods(
 private fun makeNodes(neighborhoods: MutableList<SudokuNode>, range: IntRange) {
     for (rowIndex in range) {
         for (colIndex in range) {
-            val place = Position(rowIndex, colIndex)
-            val newNode = SudokuNode(place)
+            val newNode = SudokuNode()
 
             neighborhoods.add(newNode)
         }

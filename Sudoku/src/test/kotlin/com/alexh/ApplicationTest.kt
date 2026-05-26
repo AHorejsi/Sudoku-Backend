@@ -7,6 +7,7 @@ import com.alexh.models.*
 import com.alexh.route.createJwtToken
 import com.alexh.utils.Endpoints
 import com.alexh.utils.XRequestIds
+import com.alexh.utils.subsets
 import com.alexh.utils.typeName
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -18,9 +19,6 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.testing.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import kotlin.test.*
 
@@ -39,7 +37,7 @@ class ApplicationTest {
     private val updatedEmail = "jt27@try.org"
 
     @Test
-    fun testHealthChecks() = testApplication {
+    fun testHealthChecks(): Unit = testApplication {
         this.createClient {
             this@ApplicationTest.installJson(this)
             this@ApplicationTest.installLogging(this)
@@ -51,72 +49,39 @@ class ApplicationTest {
     }
 
     @Test
-    fun testGenerate() = testApplication {
+    fun testGenerate(): Unit = testApplication {
         this.createClient {
             this@ApplicationTest.installJson(this)
             this@ApplicationTest.installLogging(this)
             this@ApplicationTest.installCompression(this)
         }.use { client ->
-            val mutex = Mutex()
-
-            this@ApplicationTest.testGenerateHelper0(client, mutex)
+            this@ApplicationTest.testGenerateHelper0(client)
             this@ApplicationTest.testUnfilledFieldsOnGenerate(client)
         }
     }
 
-    private fun testGenerateHelper0(client: HttpClient, mutex: Mutex) = runBlocking(Dispatchers.IO) {
-        val job = this.launch { this@ApplicationTest.testGenerateHelper1(client, this, mutex) }
+    private suspend fun testGenerateHelper0(client: HttpClient) {
+        val dimensionArray = Dimension.values()
+        val difficultyArray = Difficulty.values()
+        val gameSubsets = Game.values().subsets()
 
-        setJobAsserts(job)
-    }
-
-    private fun testGenerateHelper1(client: HttpClient, scope: CoroutineScope, mutex: Mutex) {
-        for (dimension in Dimension.values()) {
-            for (difficulty in Difficulty.values()) {
-                this@ApplicationTest.testGenerateHelper2(client, dimension, difficulty, scope, mutex)
-            }
-        }
-    }
-
-    private fun testGenerateHelper2(
-        client: HttpClient,
-        dimension: Dimension,
-        difficulty: Difficulty,
-        scope: CoroutineScope,
-        mutex: Mutex
-    ) {
-        val games = Game.values()
-
-        for (startIndex in games.indices) {
-            for (endIndex in startIndex .. games.size) {
-                val selectedGames =
-                    games.sliceArray(startIndex until endIndex).toSortedSet()
-
-                val job = scope.launch {
-                    this@ApplicationTest.testGenerateHelper3(mutex, client, dimension, difficulty, selectedGames)
+        for (dimension in dimensionArray) {
+            for (difficulty in difficultyArray) {
+                for (games in gameSubsets) {
+                    this.testGenerateHelper1(client, dimension, difficulty, games)
                 }
-
-                setJobAsserts(job)
             }
         }
     }
 
-    private fun setJobAsserts(job: Job) {
-        job.invokeOnCompletion { ex ->
-            assertNull(ex)
-
-            assertTrue(job.isCompleted)
-            assertFalse(job.isCancelled)
-        }
-    }
-
-    private suspend fun testGenerateHelper3(
-        mutex: Mutex,
+    private suspend fun testGenerateHelper1(
         client: HttpClient,
         dimension: Dimension,
         difficulty: Difficulty,
-        games: Set<Game>
+        games: Array<Game>
     ) {
+        val gameSet = games.toSortedSet()
+
         client.post(Endpoints.GENERATE) {
             this@ApplicationTest.setJwtHeaders(
                 this,
@@ -132,17 +97,16 @@ class ApplicationTest {
 
             this.setBody(requestBody)
         }.also { response ->
-            this.testGenerateResponse(mutex, response, dimension, difficulty, games)
+            this.testGenerateHelper2(response, dimension, difficulty, gameSet)
         }
     }
 
-    private suspend fun testGenerateResponse(
-        mutex: Mutex,
+    private suspend fun testGenerateHelper2(
         response: HttpResponse,
         dimension: Dimension,
         difficulty: Difficulty,
         games: Set<Game>,
-    ) = mutex.withLock {
+    ) {
         assertEquals(HttpStatusCode.OK, response.status)
 
         val responseBody = response.body<GenerateResponse>()
@@ -178,7 +142,7 @@ class ApplicationTest {
     }
 
     @Test
-    fun testUserCrud() = testApplication {
+    fun testUserCrud(): Unit = testApplication {
         this.createClient {
             this@ApplicationTest.installJson(this)
             this@ApplicationTest.installLogging(this)

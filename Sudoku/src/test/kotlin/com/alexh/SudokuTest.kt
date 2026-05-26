@@ -2,6 +2,8 @@ package com.alexh
 
 import com.alexh.asserts.assertLess
 import com.alexh.game.*
+import com.alexh.utils.SyncRandom
+import com.alexh.utils.subsets
 import com.alexh.utils.typeName
 import kotlinx.coroutines.*
 import kotlin.random.Random
@@ -10,42 +12,42 @@ import kotlin.test.*
 class SudokuTest {
     @Test
     fun testMakeSudoku() {
-        val rand = Random(0)
-        val name = rand.typeName()
+        val seed = 0L
+        val rngSet = listOf(Random(seed), SyncRandom(seed))
 
-        runBlocking(Dispatchers.IO) {
-            val testCount = 10
+        for (rand in rngSet) {
+            runBlocking(Dispatchers.IO) {
+                val rngName = rand.typeName()
+                val rngJob = this.launch { this@SudokuTest.initializeTest(rand, rngName, this) }
 
-            repeat(testCount) { count ->
-                val testJob = this.launch { this@SudokuTest.runTest(rand, this) }
-
-                setJobAsserts(testJob, "TEST $count of $name")
+                this@SudokuTest.setJobAsserts(rngJob, "Completed all tests for $rngName\n\n")
             }
         }
     }
 
-    private fun runTest(rand: Random, scope: CoroutineScope) {
-        for (dimension in Dimension.values()) {
-            for (difficulty in Difficulty.values()) {
-                this@SudokuTest.testMakeSudokuHelper0(scope, dimension, difficulty, rand)
-            }
+    private fun initializeTest(rand: Random, rngName: String, scope: CoroutineScope) {
+        val testCount = 10
+
+        repeat(testCount) { count ->
+            val testCounter = count + 1
+            val testJob = scope.launch { this@SudokuTest.runTest(rand, this, testCounter, rngName) }
+
+            this@SudokuTest.setJobAsserts(testJob, "Finished TEST $testCounter of $rngName")
         }
     }
 
-    private fun testMakeSudokuHelper0(
-        scope: CoroutineScope,
-        dimension: Dimension,
-        difficulty: Difficulty,
-        rand: Random
-    ) {
-        val games = Game.values()
+    private fun runTest(rand: Random, scope: CoroutineScope, testCounter: Int, rngName: String) {
+        val dimensionArray = Dimension.values()
+        val difficultyArray = Difficulty.values()
+        val gameSubsets = Game.values().subsets()
 
-        for (startIndex in games.indices) {
-            for (endIndex in startIndex .. games.size) {
-                val selectedGames =
-                    games.sliceArray(startIndex until endIndex).toSortedSet()
+        for (dimension in dimensionArray) {
+            for (difficulty in difficultyArray) {
+                for (games in gameSubsets) {
+                    val gameSet = games.toSortedSet()
 
-                executeJob(scope, dimension, difficulty, selectedGames, rand)
+                    this.executeJob(scope, dimension, difficulty, gameSet, rand, testCounter, rngName)
+                }
             }
         }
     }
@@ -55,7 +57,9 @@ class SudokuTest {
         dimension: Dimension,
         difficulty: Difficulty,
         games: Set<Game>,
-        rand: Random
+        rand: Random,
+        testCounter: Int,
+        rngName: String
     ) {
         val sudokuJob = scope.launch {
             val info = MakeSudokuCommand(dimension, difficulty, games, rand)
@@ -64,7 +68,9 @@ class SudokuTest {
             this@SudokuTest.testSudokuProperties(result)
         }
 
-        setJobAsserts(sudokuJob, "SUDOKU ($dimension, $difficulty, $games)")
+        this.setJobAsserts(
+            sudokuJob, "TEST $testCounter of $rngName: Rules ($dimension, $difficulty, $games) GENERATED"
+        )
     }
 
     private fun testSudokuProperties(sudoku: SudokuJson) {
@@ -175,15 +181,15 @@ class SudokuTest {
 
         assertEquals(actualCellCount, cellCountFromCages)
     }
-}
 
-private fun setJobAsserts(job: Job, message: String) {
-    job.invokeOnCompletion { ex ->
-        println("Finished: $message")
+    private fun setJobAsserts(job: Job, message: String) {
+        job.invokeOnCompletion { ex ->
+            println(message)
 
-        assertNull(ex)
+            assertNull(ex)
 
-        assertTrue(job.isCompleted)
-        assertFalse(job.isCancelled)
+            assertTrue(job.isCompleted)
+            assertFalse(job.isCancelled)
+        }
     }
 }

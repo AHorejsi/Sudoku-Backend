@@ -59,19 +59,6 @@ private fun configureCors(app: Application) {
         this.allowHeader(HttpHeaders.UserAgent)
         this.allowHeader(HttpHeaders.Vary)
         this.allowHeader(HttpHeaders.XRequestId)
-        this.allowHeader(":authority")
-        this.allowHeader(":method")
-        this.allowHeader(":path")
-        this.allowHeader(":scheme")
-        this.allowHeader("Priority")
-        this.allowHeader("Referer")
-        this.allowHeader("Sec-Ch-Ua")
-        this.allowHeader("Sec-Ch-Ua-Mobile")
-        this.allowHeader("Sec-Ch-Ua-Platform")
-        this.allowHeader("Sec-Fetch-Site")
-        this.allowHeader("Sec-Fetch-Dist")
-        this.allowHeader("Sec-Fetch-Mode")
-        this.allowHeader("Upgrade-Insecure-Requests")
 
         this.allowCredentials = true
         this.allowSameOrigin = true

@@ -38,7 +38,7 @@ class MakeSudokuCommand(
     @Transient val random: Random = Random.Default
 )
 
-internal class SudokuNode(val place: Position) {
+internal class SudokuNode {
     private val _row = hashSetOf<SudokuNode>()
     private val _column = hashSetOf<SudokuNode>()
     private val _box = hashSetOf<SudokuNode>()
@@ -110,8 +110,11 @@ internal class SudokuGraph(
         node.value = value
     }
 
-    fun <TType> save(converter: (SudokuNode) -> TType): List<List<TType>> {
-        val table = ArrayList<List<TType>>(this.length)
+    fun set(pos: Position, value: Int) =
+        this.set(pos.rowIndex, pos.colIndex, value)
+
+    inline fun <TType> save(converter: (SudokuNode) -> TType): List<MutableList<TType>> {
+        val table = ArrayList<MutableList<TType>>(this.length)
         val nodeIter = this.iterator()
 
         while (nodeIter.hasNext()) {
@@ -171,17 +174,20 @@ fun makeSudoku(info: MakeSudokuCommand): SudokuJson {
     // Fill entire table with values
     initializeValues(graph, info.dimension, info.games, info.random)
 
-    // Shuffle values around in such a way that the chosen rules are still adhered to
-    shuffleValues(graph, info.dimension, info.games, info.random)
-
     // Save solved state of the sudoku for solution checking
     val solved = graph.save{ it.value!! }
 
-    // Generate cages if killer sudoku is being played
-    val cages = makeCages(graph, info)
+    // Shuffle values around in such a way that the chosen rules are still adhered to
+    shuffleBoard(graph, solved, info.dimension, info.games, info.random)
 
     // Remove values from the sudoku in such a way that ensures there is only one solution
     adjustForDifficulty(graph, info)
+
+    // Shuffle values around in such a way that the chosen rules are still adhered to
+    shuffleBoard(graph, solved, info.dimension, info.games, info.random)
+
+    // Generate cages if killer sudoku is being played
+    val cages = formCages(solved, info)
 
     // Save unsolved state of the sudoku for gameplay
     val board = graph.save{ Cell(it.value) }

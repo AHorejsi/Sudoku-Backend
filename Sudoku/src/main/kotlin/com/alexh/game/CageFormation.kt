@@ -5,15 +5,18 @@ import com.alexh.utils.outOfBounds
 import kotlin.collections.HashSet
 import kotlin.random.Random
 
-internal fun makeCages(graph: SudokuGraph, info: MakeSudokuCommand): Set<Cage>? {
+internal fun formCages(solved: List<List<Int>>, info: MakeSudokuCommand): Set<Cage>? {
     if (Game.KILLER !in info.games) {
         return null
     }
 
-    val cageSizeRange = retrieveCageSizeRange(info, graph.length)
-    val cages = HashSet<Cage>(graph.size)
+    val length = info.dimension.length
+    val cellCount = length * length
 
-    makeCagesHelper(cages, graph, info.random, cageSizeRange)
+    val cageSizeRange = retrieveCageSizeRange(info, length)
+    val cages = HashSet<Cage>(cellCount)
+
+    makeCagesHelper(cages, solved, length, info.random, cageSizeRange)
 
     return cages
 }
@@ -29,11 +32,12 @@ private fun retrieveCageSizeRange(info: MakeSudokuCommand, length: Int): IntRang
 
 private fun makeCagesHelper(
     cages: MutableSet<Cage>,
-    graph: SudokuGraph,
+    solved: List<List<Int>>,
+    length: Int,
     rand: Random,
     cageSizeRange: IntRange
 ) {
-    val available = retrievePositions(graph)
+    val available = retrievePositions(length)
 
     while (available.isNotEmpty()) {
         val cageSize = rand.nextInt(cageSizeRange.first, cageSizeRange.last)
@@ -45,7 +49,7 @@ private fun makeCagesHelper(
             cagePos.add(pos)
             available.remove(pos)
 
-            val adjacent = findAdjacentPositions(pos, graph.length, available)
+            val adjacent = findAdjacentPositions(pos, length, available)
 
             if (adjacent.isEmpty()) {
                 break
@@ -54,18 +58,23 @@ private fun makeCagesHelper(
             pos = selectPositionRandomly(adjacent, rand)
         }
 
-        val sum = getSumForCage(cagePos, graph)
+        val sum = getSumForCage(cagePos, solved)
         val newCage = Cage(sum, cagePos)
 
         cages.add(newCage)
     }
 }
 
-private fun retrievePositions(graph: SudokuGraph): MutableList<Position> {
-    val positions = ArrayList<Position>(graph.size)
+private fun retrievePositions(length: Int): MutableList<Position> {
+    val positions = mutableListOf<Position>()
+    val range = 0 until length
 
-    for (node in graph) {
-        positions.add(node.place)
+    for (rowIndex in range) {
+        for (colIndex in range) {
+            val newPos = Position(rowIndex, colIndex)
+
+            positions.add(newPos)
+        }
     }
 
     return positions
@@ -94,13 +103,13 @@ private fun checkPosition(pos: Position, length: Int, available: List<Position>,
     }
 }
 
-private fun getSumForCage(cagePos: Set<Position>, graph: SudokuGraph): Int {
+private fun getSumForCage(cagePos: Set<Position>, solved: List<List<Int>>): Int {
     var sum = 0
 
     for (pos in cagePos) {
-        val node = graph.get(pos)
+        val value = solved[pos.rowIndex][pos.colIndex]
 
-        sum += node.value!!
+        sum += value
     }
 
     return sum
