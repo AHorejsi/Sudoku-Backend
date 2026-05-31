@@ -16,7 +16,6 @@ class EnvironmentVariables private constructor() {
         val JWT_AUDIENCE = System.getenv("JWT_AUDIENCE")!!
 
         val CLIENT_HOST = System.getenv("CLIENT_HOST")!!
-        val CLIENT_PORT = System.getenv("CLIENT_PORT")!!
     }
 }
 
@@ -38,6 +37,16 @@ class Endpoints private constructor() {
         const val TOKEN_LOGIN = "/tokenLogin"
         const val RENEW_TOKEN = "/renewToken"
         const val SHUTDOWN = "/shutdown"
+    }
+}
+
+class StatusMessages private constructor() {
+    init {
+        noInstances(StatusMessages::class)
+    }
+
+    companion object {
+        const val HEALTH_CHECK = "Successful Health Check"
     }
 }
 

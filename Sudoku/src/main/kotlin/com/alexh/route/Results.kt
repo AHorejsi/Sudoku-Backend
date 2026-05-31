@@ -10,24 +10,23 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import java.util.*
 
-inline fun <reified TType : Any> handleResponse(
+suspend inline fun <reified TType : Any> handleResponse(
     result: TType,
     call: ApplicationCall,
     logger: Logger,
     endpoint: String
-): Unit = runBlocking(Dispatchers.IO) {
-    this.launch { call.respond(HttpStatusCode.OK, result) }
+): Unit = withContext(Dispatchers.IO) {
+    call.respond(HttpStatusCode.OK, result)
 
     logger.info("Successful call to $endpoint")
     handleRateLimitLogging(call, logger)
 }
 
 fun createJwtToken(usernameOrEmail: String): String {
-    val weekLongExpirationDate = future(604800000L) // One week in milliseconds
+    val weekLongExpirationDate = future(604_800_000L) // One week in milliseconds
     val algorithm = Algorithm.HMAC256(EnvironmentVariables.JWT_SECRET)!!
 
     return JWT

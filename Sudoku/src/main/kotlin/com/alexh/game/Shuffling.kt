@@ -1,6 +1,8 @@
 package com.alexh.game
 
 import com.alexh.utils.Position
+import com.alexh.utils.pair
+import com.alexh.utils.thru
 import com.alexh.utils.up
 import kotlin.random.Random
 
@@ -11,122 +13,123 @@ internal fun shuffleBoard(
     games: Set<Game>,
     rand: Random
 ) {
-    flipShuffle(graph, board, dimension, rand)
-    transposeShuffle(graph, board, dimension, rand)
-    rotateShuffle(graph, board, dimension, rand)
-    swapShuffle(graph, board, dimension, rand)
+    val length = dimension.length
+    val range = 0 until length
+    val positions = range.pair(range)
+
+    flipShuffle(graph, board, length, positions, rand)
+    transposeShuffle(graph, board, positions, rand)
+    rotateShuffle(graph, board, length, positions, rand)
+    swapShuffle(graph, board, length, positions, rand)
 
     if (Game.HYPER !in games) {
-        boxShuffle(graph, board, dimension, rand)
-        innerBoxShuffle(graph, board, dimension, rand)
+        boxShuffle(graph, board, range, dimension, rand)
+        innerBoxShuffle(graph, board, range, dimension, rand)
     }
 }
 
 private fun flipShuffle(
     graph: SudokuGraph,
     board: List<MutableList<Int>>,
-    dimension: Dimension,
+    length: Int,
+    positions: Iterable<Position>,
     rand: Random
 ) {
-    val length = dimension.length
-    val range = 0 until length
-
     if (rand.nextBoolean()) {
-        verticalFlip(graph, board, length, range)
+        verticalFlip(graph, board, length, positions)
     }
 
     if (rand.nextBoolean()) {
-        horizontalFlip(graph, board, length, range)
+        horizontalFlip(graph, board, length, positions)
     }
 }
 
-private fun verticalFlip(graph: SudokuGraph, board: List<MutableList<Int>>, length: Int, range: IntRange) {
-    for (rowIndex1 in range) {
-        for (colIndex in range) {
-            val rowIndex2 = length - rowIndex1 - 1
+private fun verticalFlip(
+    graph: SudokuGraph,
+    board: List<MutableList<Int>>,
+    length: Int,
+    positions: Iterable<Position>
+) {
+    for (pos1 in positions) {
+        val rowIndex2 = length - pos1.rowIndex - 1
+        val pos2 = Position(rowIndex2, pos1.colIndex)
 
-            val pos1 = Position(rowIndex1, colIndex)
-            val pos2 = Position(rowIndex2, colIndex)
-
-            swapGraphValues(graph, pos1, pos2)
-            swapBoardValues(board, pos1, pos2)
-        }
+        swapGraphValues(graph, pos1, pos2)
+        swapBoardValues(board, pos1, pos2)
     }
 }
 
-private fun horizontalFlip(graph: SudokuGraph, board: List<MutableList<Int>>, length: Int, range: IntRange) {
-    for (colIndex1 in range) {
-        for (rowIndex in range) {
-            val colIndex2 = length - colIndex1 - 1
+private fun horizontalFlip(
+    graph: SudokuGraph,
+    board: List<MutableList<Int>>,
+    length: Int,
+    positions: Iterable<Position>
+) {
+    for (pos1 in positions) {
+        val colIndex2 = length - pos1.colIndex - 1
+        val pos2 = Position(pos1.rowIndex, colIndex2)
 
-            val pos1 = Position(rowIndex, colIndex1)
-            val pos2 = Position(rowIndex, colIndex2)
-
-            swapGraphValues(graph, pos1, pos2)
-            swapBoardValues(board, pos1, pos2)
-        }
+        swapGraphValues(graph, pos1, pos2)
+        swapBoardValues(board, pos1, pos2)
     }
 }
 
 private fun transposeShuffle(
     graph: SudokuGraph,
     board: List<MutableList<Int>>,
-    dimension: Dimension,
+    positions: Iterable<Position>,
     rand: Random
 ) {
     if (rand.nextBoolean()) {
-        doTranspose(graph, board, dimension.length)
+        doTranspose(graph, board, positions)
     }
 }
 
-private fun doTranspose(graph: SudokuGraph, board: List<MutableList<Int>>, length: Int) {
-    val range = 0 until length
+private fun doTranspose(graph: SudokuGraph, board: List<MutableList<Int>>, positions: Iterable<Position>) {
+    for ((rowIndex, colIndex) in positions) {
+        val pos1 = Position(rowIndex, colIndex)
+        val pos2 = Position(colIndex, rowIndex)
 
-    for (rowIndex in range) {
-        for (colIndex in range) {
-            val pos1 = Position(rowIndex, colIndex)
-            val pos2 = Position(colIndex, rowIndex)
-
-            swapGraphValues(graph, pos1, pos2)
-            swapBoardValues(board, pos1, pos2)
-        }
+        swapGraphValues(graph, pos1, pos2)
+        swapBoardValues(board, pos1, pos2)
     }
 }
 
 private fun rotateShuffle(
     graph: SudokuGraph,
     board: List<MutableList<Int>>,
-    dimension: Dimension,
+    length: Int,
+    positions: Iterable<Position>,
     rand: Random
 ) {
     val amountOfRotations = rand.nextInt(4)
-    val length = dimension.length
 
     repeat(amountOfRotations) { _ ->
-        rotate90(graph, board, length)
+        rotate90(graph, board, length, positions)
     }
 }
 
-private fun rotate90(graph: SudokuGraph, board: List<MutableList<Int>>, length: Int) {
-    horizontalFlip(graph, board, length, 0 until length)
-    doTranspose(graph, board, length)
+private fun rotate90(graph: SudokuGraph, board: List<MutableList<Int>>, length: Int, positions: Iterable<Position>) {
+    horizontalFlip(graph, board, length, positions)
+    doTranspose(graph, board, positions)
 }
 
 private fun swapShuffle(
     graph: SudokuGraph,
     board: List<MutableList<Int>>,
-    dimension: Dimension,
+    length: Int,
+    positions: Iterable<Position>,
     rand: Random
 ) {
-    val shuffledMapping = createShuffledMapping(dimension.length, rand)
-    val associations = groupCellsByValue(board, dimension.length)
+    val shuffledMapping = createShuffledMapping(length, rand)
+    val associations = groupCellsByValue(board, length, positions)
 
     for ((value, newValue) in shuffledMapping) {
-        val positions = associations.getValue(value)
+        val associatedPositions = associations.getValue(value)
 
-        for (pos in positions) {
-            if (null !== graph.get(pos).value) {
-                graph.set(pos, newValue)
+        for (pos in associatedPositions) {
+            if (null !== graph.at(pos).value) {
+                graph.setAt(pos, newValue)
             }
 
             board[pos.rowIndex][pos.colIndex] = newValue
@@ -150,17 +153,17 @@ private fun createShuffledMapping(length: Int, rand: Random): Map<Int, Int> {
     return map
 }
 
-private fun groupCellsByValue(board: List<List<Int>>, length: Int): Map<Int, List<Position>> {
+private fun groupCellsByValue(
+    board: List<List<Int>>,
+    length: Int,
+    positions: Iterable<Position>
+): Map<Int, List<Position>> {
     val map = initializeSwapMap(length)
-    val range = 0 until length
 
-    for (rowIndex in range) {
-        for (colIndex in range) {
-            val value = board[rowIndex][colIndex]
-            val pos = Position(rowIndex, colIndex)
+    for (pos in positions) {
+        val value = board[pos.rowIndex][pos.colIndex]
 
-            map.getValue(value).add(pos)
-        }
+        map.getValue(value).add(pos)
     }
 
     return map
@@ -179,19 +182,28 @@ private fun initializeSwapMap(length: Int): HashMap<Int, MutableList<Position>> 
 private fun boxShuffle(
     graph: SudokuGraph,
     board: List<MutableList<Int>>,
+    range: IntRange,
     dimension: Dimension,
     rand: Random
 ) {
-    swapBoxesByRow(graph, board, dimension, rand)
-    swapBoxesByCol(graph, board, dimension, rand)
+    swapBoxesByRow(graph, board, range, dimension, rand)
+    swapBoxesByCol(graph, board, range, dimension, rand)
 }
 
-private fun swapBoxesByRow(graph: SudokuGraph, board: List<MutableList<Int>>, dimension: Dimension, rand: Random) {
+private fun swapBoxesByRow(
+    graph: SudokuGraph,
+    board: List<MutableList<Int>>,
+    range: IntRange,
+    dimension: Dimension,
+    rand: Random
+) {
+    @Suppress("UnnecessaryVariable", "RedundantSuppression")
+    val colRange = range
+
     val length = dimension.length
     val rowSize = dimension.boxRows
-    val colRange = 0 until length
 
-    for (startRowIndex1 in 0 until length step rowSize) {
+    for (startRowIndex1 in range step rowSize) {
         val endRowIndex1 = startRowIndex1 + rowSize
         val rowRange1 = startRowIndex1 until endRowIndex1
 
@@ -215,7 +227,7 @@ private fun swapBoxesByRowHelper(
     rowRange2: IntRange,
     colRange: IntRange
 ) {
-    for ((rowIndex1, rowIndex2) in rowRange1.zip(rowRange2)) {
+    for ((rowIndex1, rowIndex2) in rowRange1.thru(rowRange2)) {
         for (colIndex in colRange) {
             val pos1 = Position(rowIndex1, colIndex)
             val pos2 = Position(rowIndex2, colIndex)
@@ -226,12 +238,20 @@ private fun swapBoxesByRowHelper(
     }
 }
 
-private fun swapBoxesByCol(graph: SudokuGraph, board: List<MutableList<Int>>, dimension: Dimension, rand: Random) {
+private fun swapBoxesByCol(
+    graph: SudokuGraph,
+    board: List<MutableList<Int>>,
+    range: IntRange,
+    dimension: Dimension,
+    rand: Random
+) {
+    @Suppress("UnnecessaryVariable", "RedundantSuppression")
+    val rowRange = range
+
     val length = dimension.length
     val colSize = dimension.boxCols
-    val rowRange = 0 until length
 
-    for (startColIndex1 in 0 until length step colSize) {
+    for (startColIndex1 in range step colSize) {
         val endColIndex1 = startColIndex1 + colSize
         val colRange1 = startColIndex1 until endColIndex1
 
@@ -255,7 +275,7 @@ private fun swapBoxesByColHelper(
     colRange1: IntRange,
     colRange2: IntRange
 ) {
-    for ((colIndex1, colIndex2) in colRange1.zip(colRange2)) {
+    for ((colIndex1, colIndex2) in colRange1.thru(colRange2)) {
         for (rowIndex in rowRange) {
             val pos1 = Position(rowIndex, colIndex1)
             val pos2 = Position(rowIndex, colIndex2)
@@ -269,19 +289,25 @@ private fun swapBoxesByColHelper(
 private fun innerBoxShuffle(
     graph: SudokuGraph,
     board: List<MutableList<Int>>,
+    range: IntRange,
     dimension: Dimension,
     rand: Random
 ) {
-    swapInnerBoxesByRow(graph, board, dimension, rand)
-    swapInnerBoxesByCol(graph, board, dimension, rand)
+    swapInnerBoxesByRow(graph, board, range, dimension.boxRows, rand)
+    swapInnerBoxesByCol(graph, board, range, dimension.boxCols, rand)
 }
 
-private fun swapInnerBoxesByRow(graph: SudokuGraph, board: List<MutableList<Int>>, dimension: Dimension, rand: Random) {
-    val length = dimension.length
-    val rowSize = dimension.boxRows
-    val colRange = 0 until length
+private fun swapInnerBoxesByRow(
+    graph: SudokuGraph,
+    board: List<MutableList<Int>>,
+    range: IntRange,
+    rowSize: Int,
+    rand: Random
+) {
+    @Suppress("UnnecessaryVariable", "RedundantSuppression")
+    val colRange = range
 
-    for (rowIndex1 in 0 until length step rowSize) {
+    for (rowIndex1 in range step rowSize) {
         val rowRange = (rowIndex1 + 1) up (rowSize - 1)
 
         for (rowIndex2 in rowRange) {
@@ -310,12 +336,17 @@ private fun swapInnerBoxesByRowHelper(
     }
 }
 
-private fun swapInnerBoxesByCol(graph: SudokuGraph, board: List<MutableList<Int>>, dimension: Dimension, rand: Random) {
-    val length = dimension.length
-    val colSize = dimension.boxCols
-    val rowRange = 0 until length
+private fun swapInnerBoxesByCol(
+    graph: SudokuGraph,
+    board: List<MutableList<Int>>,
+    range: IntRange,
+    colSize: Int,
+    rand: Random
+) {
+    @Suppress("UnnecessaryVariable", "RedundantSuppression")
+    val rowRange = range
 
-    for (colIndex1 in 0 until length step colSize) {
+    for (colIndex1 in range step colSize) {
         val colRange = (colIndex1 + 1) up (colSize - 1)
 
         for (colIndex2 in colRange) {
@@ -345,8 +376,8 @@ private fun swapInnerBoxesByColHelper(
 }
 
 private fun swapGraphValues(graph: SudokuGraph, pos1: Position, pos2: Position) {
-    val node1 = graph.get(pos1)
-    val node2 = graph.get(pos2)
+    val node1 = graph.at(pos1)
+    val node2 = graph.at(pos2)
 
     val temp = node1.value
     node1.value = node2.value

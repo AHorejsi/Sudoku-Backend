@@ -43,7 +43,7 @@ private fun makeCagesHelper(
         val cageSize = rand.nextInt(cageSizeRange.first, cageSizeRange.last)
 
         val cagePos = HashSet<Position>(cageSize)
-        var pos = selectPositionRandomly(available, rand)
+        var pos = available.random(rand)
 
         while (cagePos.size < cageSize) {
             cagePos.add(pos)
@@ -55,7 +55,7 @@ private fun makeCagesHelper(
                 break
             }
 
-            pos = selectPositionRandomly(adjacent, rand)
+            pos = adjacent.random(rand)
         }
 
         val sum = getSumForCage(cagePos, solved)
@@ -78,12 +78,6 @@ private fun retrievePositions(length: Int): MutableList<Position> {
     }
 
     return positions
-}
-
-private fun selectPositionRandomly(list: List<Position>, rand: Random): Position {
-    val randomIndex = rand.nextInt(list.size)
-
-    return list[randomIndex]
 }
 
 private fun findAdjacentPositions(pos: Position, length: Int, available: List<Position>): List<Position> {

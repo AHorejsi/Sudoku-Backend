@@ -1,52 +1,47 @@
 package com.alexh
 
-import com.alexh.asserts.assertLess
+import com.alexh.asserts.assertGreater
 import com.alexh.game.*
-import com.alexh.utils.SyncRandom
-import com.alexh.utils.subsets
-import com.alexh.utils.typeName
+import com.alexh.utils.*
 import kotlinx.coroutines.*
+import kotlin.collections.HashSet
 import kotlin.random.Random
 import kotlin.test.*
 
 class SudokuTest {
     @Test
     fun testMakeSudoku() {
-        val seed = 0L
+        val seed = Random(0).nextLong()
         val rngSet = listOf(Random(seed), SyncRandom(seed))
 
         for (rand in rngSet) {
             runBlocking(Dispatchers.IO) {
-                val rngName = rand.typeName()
-                val rngJob = this.launch { this@SudokuTest.initializeTest(rand, rngName, this) }
+                val rngJob = this.async { this@SudokuTest.initializeTest(rand, this) }
 
-                this@SudokuTest.setJobAsserts(rngJob, "Completed all tests for $rngName\n\n")
+                this@SudokuTest.setJobAsserts(rngJob, "Completed all tests for ${rand.typeName()}\n\n")
             }
         }
     }
 
-    private fun initializeTest(rand: Random, rngName: String, scope: CoroutineScope) {
+    private fun initializeTest(rand: Random, scope: CoroutineScope) {
         val testCount = 10
 
         repeat(testCount) { count ->
-            val testCounter = count + 1
-            val testJob = scope.launch { this@SudokuTest.runTest(rand, this, testCounter, rngName) }
+            val testJob = scope.launch { this@SudokuTest.runTest(rand, this, count) }
 
-            this@SudokuTest.setJobAsserts(testJob, "Finished TEST $testCounter of $rngName")
+            this@SudokuTest.setJobAsserts(testJob, "FINISHED TEST $count of ${rand.typeName()}")
         }
     }
 
-    private fun runTest(rand: Random, scope: CoroutineScope, testCounter: Int, rngName: String) {
+    private fun runTest(rand: Random, scope: CoroutineScope, testCounter: Int) {
         val dimensionArray = Dimension.values()
         val difficultyArray = Difficulty.values()
-        val gameSubsets = Game.values().subsets()
+        val gameSubsets = Game.subsets()
 
         for (dimension in dimensionArray) {
             for (difficulty in difficultyArray) {
                 for (games in gameSubsets) {
-                    val gameSet = games.toSortedSet()
-
-                    this.executeJob(scope, dimension, difficulty, gameSet, rand, testCounter, rngName)
+                    this.executeJob(scope, dimension, difficulty, games, rand, testCounter)
                 }
             }
         }
@@ -58,8 +53,7 @@ class SudokuTest {
         difficulty: Difficulty,
         games: Set<Game>,
         rand: Random,
-        testCounter: Int,
-        rngName: String
+        testCounter: Int
     ) {
         val sudokuJob = scope.launch {
             val info = MakeSudokuCommand(dimension, difficulty, games, rand)
@@ -69,7 +63,7 @@ class SudokuTest {
         }
 
         this.setJobAsserts(
-            sudokuJob, "TEST $testCounter of $rngName: Rules ($dimension, $difficulty, $games) GENERATED"
+            sudokuJob, "TEST $testCounter of ${rand.typeName()}: RULES ($dimension, $difficulty, $games) GENERATED"
         )
     }
 
@@ -92,23 +86,23 @@ class SudokuTest {
         val range = 0 until length
         var nullCount = 0
 
-        for (rowIndex in range) {
-            for (colIndex in range) {
-                val cell = sudoku.board[rowIndex][colIndex]
-                val value = sudoku.solved[rowIndex][colIndex]
+        for ((rowIndex, colIndex) in range.pair(range)) {
+            val cell = sudoku.board[rowIndex][colIndex]
+            val value = sudoku.solved[rowIndex][colIndex]
 
-                if (null === cell.value) {
-                    assertTrue(cell.editable)
-                    ++nullCount
-                } else {
-                    assertFalse(cell.editable)
-                    assertEquals(value, cell.value)
-                }
-                assertEquals(0, cell.notes)
+            if (null === cell.value) {
+                assertTrue(cell.editable)
+                ++nullCount
+            } else {
+                assertFalse(cell.editable)
+                assertEquals(value, cell.value)
             }
+
+            val noNotes = cell.notes.isEmpty()
+            assertTrue(noNotes)
         }
 
-        assertLess(0, nullCount)
+        assertGreater(nullCount, 0)
     }
 
     private fun checkIfValuesAreValid(sudoku: SudokuJson, length: Int) {
@@ -133,10 +127,10 @@ class SudokuTest {
         for (colIndex in range) {
             val value = sudoku.solved[rowIndex][colIndex]
 
-            set.add(value)
-        }
+            val notDuplicate = set.add(value)
 
-        assertEquals(length, set.size)
+            assertTrue(notDuplicate)
+        }
     }
 
     private fun checkIfColumnIsValid(sudoku: SudokuJson, colIndex: Int, range: IntRange, length: Int) {
@@ -145,10 +139,10 @@ class SudokuTest {
         for (rowIndex in range) {
             val value = sudoku.solved[rowIndex][colIndex]
 
-            set.add(value)
-        }
+            val notDuplicate = set.add(value)
 
-        assertEquals(length, set.size)
+            assertTrue(notDuplicate)
+        }
     }
 
     private fun checkIfBoxIsValid(sudoku: SudokuJson, box: Box, length: Int) {
@@ -157,10 +151,10 @@ class SudokuTest {
         for (pos in box.positions) {
             val value = sudoku.solved[pos.rowIndex][pos.colIndex]
 
-            set.add(value)
-        }
+            val notDuplicate = set.add(value)
 
-        assertEquals(length, set.size)
+            assertTrue(notDuplicate)
+        }
     }
 
     private fun checkIfCagesAreValid(sudoku: SudokuJson, length: Int) {

@@ -1,13 +1,16 @@
 package com.alexh.game
 
 internal fun hasUniqueSolution(graph: SudokuGraph, length: Int): Boolean {
-    val unassigned = findNodesWithNullValues(graph, length)
+    val unassigned = findNodesWithNullValues(graph)
     val values = 1 .. length
 
-    return 1 == countSolutions(unassigned, values)
+    val solutionCount = countSolutions(unassigned, values)
+    check(0 != solutionCount) { "Solution count is zero" }
+
+    return 1 == solutionCount
 }
 
-private fun findNodesWithNullValues(graph: SudokuGraph, length: Int): MutableList<SudokuNode> {
+private fun findNodesWithNullValues(graph: SudokuGraph): MutableList<SudokuNode> {
     val unassigned = ArrayList<SudokuNode>(graph.size)
 
     for (node in graph) {
@@ -34,7 +37,7 @@ private fun countSolutions(unassigned: MutableList<SudokuNode>, valueRange: IntR
         found += countSolutions(unassigned, valueRange)
         node.value = null
 
-        if (found > 1) {
+        if (found > 1) { // Means there is more than one solution. Therefore, searching for more is not needed
             break
         }
     }

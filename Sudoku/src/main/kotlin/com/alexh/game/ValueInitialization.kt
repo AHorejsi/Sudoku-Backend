@@ -1,6 +1,8 @@
 package com.alexh.game
 
+import com.alexh.utils.pair
 import com.alexh.utils.up
+import com.alexh.utils.thru
 import kotlin.random.Random
 
 internal fun initializeValues(graph: SudokuGraph, dimension: Dimension, games: Set<Game>, rand: Random) {
@@ -10,7 +12,7 @@ internal fun initializeValues(graph: SudokuGraph, dimension: Dimension, games: S
     initializeValuesHelper1(graph, dimension, rand, legal, games)
 
     val unassigned = retrieveNodesWithNullValues(graph)
-    val legalMap = shuffleValues(graph, rand, legal)
+    val legalMap = shuffleValues(graph, length, rand, legal)
 
     initializeValuesHelper2(unassigned, legalMap)
 }
@@ -26,7 +28,7 @@ private fun initializeValuesHelper1(
         val hyperRows = 1 up dimension.boxRows
         val hyperCols = 1 up dimension.boxCols
 
-        fillBox(graph, hyperRows, hyperCols, legal, rand)
+        fillBox(graph, dimension.length, hyperRows, hyperCols, legal, rand)
     }
     else {
         fillRegularDiagonal(graph, dimension, rand, legal)
@@ -43,31 +45,33 @@ private fun fillRegularDiagonal(
     val boxRows = dimension.boxRows
     val boxCols = dimension.boxCols
 
-    val rowRange = 0 until length step boxRows
-    val colRange = 0 until length step boxCols
+    val range = 0 until length
+    val rowIndices = range step boxRows
+    val colIndices = range step boxCols
 
-    for ((startRowIndex, startColIndex) in rowRange.zip(colRange)) {
+    for ((startRowIndex, startColIndex) in rowIndices.thru(colIndices)) {
         val rows = startRowIndex up boxRows
         val cols = startColIndex up boxCols
 
-        fillBox(graph, rows, cols, legal, rand)
+        fillBox(graph, length, rows, cols, legal, rand)
     }
 }
 
 private fun fillBox(
     graph: SudokuGraph,
+    length: Int,
     rows: IntRange,
     cols: IntRange,
     legal: IntRange,
     rand: Random
 ) {
-    val shuffledValues = shuffleLegalValues(legal, graph.length, rand).iterator()
+    val shuffledValues = shuffleLegalValues(legal, length, rand).iterator()
 
     for (rowIndex in rows) {
         for (colIndex in cols) {
             val value = shuffledValues.next()
 
-            graph.set(rowIndex, colIndex, value)
+            graph.setAt(rowIndex, colIndex, value)
         }
     }
 }
@@ -86,21 +90,18 @@ private fun retrieveNodesWithNullValues(graph: SudokuGraph): MutableList<SudokuN
 
 private fun shuffleValues(
     graph: SudokuGraph,
+    length: Int,
     rand: Random,
     legal: IntRange
 ): Map<SudokuNode, List<Int>> {
-    val length = graph.length
-
     val range = 0 until length
     val legalMap = HashMap<SudokuNode, List<Int>>(length * length)
 
-    for (rowIndex in range) {
-        for (colIndex in range) {
-            val node = graph.get(rowIndex, colIndex)
+    for ((rowIndex, colIndex) in range.pair(range)) {
+        val node = graph.at(rowIndex, colIndex)
 
-            if (null === node.value) {
-                legalMap[node] = shuffleLegalValues(legal, length, rand)
-            }
+        if (null === node.value) {
+            legalMap[node] = shuffleLegalValues(legal, length, rand)
         }
     }
 
@@ -111,7 +112,7 @@ private fun shuffleLegalValues(legal: IntRange, length: Int, rand: Random): List
     val list = legal.toMutableList()
 
     for (index in (length - 1) downTo 1) {
-        val randomIndex = rand.nextInt(index + 1)
+        val randomIndex = rand.nextInt().mod(index + 1)
 
         if (index != randomIndex) {
             val temp = list[index]

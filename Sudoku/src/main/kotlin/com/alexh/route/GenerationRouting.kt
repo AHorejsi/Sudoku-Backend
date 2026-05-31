@@ -45,7 +45,7 @@ private suspend fun generateSudoku(call: ApplicationCall): GenerateResponse {
 
     val dimension = Dimension.valueOf(dimensionName)
     val difficulty = Difficulty.valueOf(difficultyName)
-    val games = gameNames.map{ Game.valueOf(it) }.toSortedSet()
+    val games = gameNames.map(Game::valueOf).toSet()
     val info = MakeSudokuCommand(dimension, difficulty, games)
 
     val sudoku = makeSudoku(info)

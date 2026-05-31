@@ -3,7 +3,7 @@ package com.alexh.game
 import com.alexh.utils.Position
 import com.alexh.utils.up
 
-internal fun createBoxSet(dimension: Dimension, games: Set<Game>): Set<Box> {
+internal fun constructBoxSet(dimension: Dimension, games: Set<Game>): Set<Box> {
     val boxSet = HashSet<Box>(dimension.length)
 
     makeRegularBoxes(dimension, boxSet)

@@ -1,14 +1,10 @@
 package com.alexh
 
-import com.alexh.game.Difficulty
-import com.alexh.game.Dimension
-import com.alexh.game.Game
+import com.alexh.asserts.assertGreater
+import com.alexh.game.*
 import com.alexh.models.*
 import com.alexh.route.createJwtToken
-import com.alexh.utils.Endpoints
-import com.alexh.utils.XRequestIds
-import com.alexh.utils.subsets
-import com.alexh.utils.typeName
+import com.alexh.utils.*
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.compression.*
@@ -19,6 +15,8 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.testing.*
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.test.*
 
@@ -44,6 +42,9 @@ class ApplicationTest {
         }.use { client ->
             client.get(Endpoints.PING).also { response ->
                 assertEquals(HttpStatusCode.OK, response.status)
+
+                val message = response.bodyAsText()
+                assertEquals(StatusMessages.HEALTH_CHECK, message)
             }
         }
     }
@@ -63,7 +64,7 @@ class ApplicationTest {
     private suspend fun testGenerateHelper0(client: HttpClient) {
         val dimensionArray = Dimension.values()
         val difficultyArray = Difficulty.values()
-        val gameSubsets = Game.values().subsets()
+        val gameSubsets = Game.subsets()
 
         for (dimension in dimensionArray) {
             for (difficulty in difficultyArray) {
@@ -78,10 +79,8 @@ class ApplicationTest {
         client: HttpClient,
         dimension: Dimension,
         difficulty: Difficulty,
-        games: Array<Game>
+        games: Set<Game>
     ) {
-        val gameSet = games.toSortedSet()
-
         client.post(Endpoints.GENERATE) {
             this@ApplicationTest.setJwtHeaders(
                 this,
@@ -91,13 +90,13 @@ class ApplicationTest {
 
             val dimensionName = dimension.name
             val difficultyName = difficulty.name
-            val gameNames = games.map(Game::name).toSortedSet()
+            val gameNames = games.map(Game::name).toSet()
 
             val requestBody = GenerateRequest(dimensionName, difficultyName, gameNames)
 
             this.setBody(requestBody)
         }.also { response ->
-            this.testGenerateHelper2(response, dimension, difficulty, gameSet)
+            this.testGenerateHelper2(response, dimension, difficulty, games)
         }
     }
 
@@ -145,6 +144,7 @@ class ApplicationTest {
     fun testUserCrud(): Unit = testApplication {
         this.createClient {
             this@ApplicationTest.installJson(this)
+            this@ApplicationTest.installCompression(this)
             this@ApplicationTest.installLogging(this)
         }.use { client ->
             this@ApplicationTest.testCreateUser(client)
@@ -347,6 +347,10 @@ class ApplicationTest {
     }
 
     private suspend fun testCreatePuzzle(client: HttpClient) {
+        val defaultDimension = Dimension.NINE
+        val defaultDifficulty = Difficulty.BEGINNER
+        val defaultGames = emptySet<Game>()
+
         client.put(Endpoints.CREATE_PUZZLE) {
             this@ApplicationTest.setJwtHeaders(
                 this,
@@ -354,7 +358,11 @@ class ApplicationTest {
                 this@ApplicationTest.successfulUsername
             )
 
-            val requestBody = CreatePuzzleRequest("{}", this@ApplicationTest.successfulUserId)
+            val info = MakeSudokuCommand(defaultDimension, defaultDifficulty, defaultGames)
+            val sudoku = makeSudoku(info)
+            val json = Json.encodeToString(sudoku)
+
+            val requestBody = CreatePuzzleRequest(json, this@ApplicationTest.successfulUserId)
 
             this.setBody(requestBody)
         }.also { response ->
@@ -362,22 +370,41 @@ class ApplicationTest {
 
             val responseBody = response.body<CreatePuzzleResponse>()
             assertIs<CreatePuzzleResponse.Success>(responseBody)
+
+            val puzzle = responseBody.puzzle
+            val json = Json.decodeFromString<SudokuJson>(puzzle.json)
+
+            assertGreater(puzzle.id, 0)
+
+            val description = json.description
+
+            assertEquals(defaultDimension, description.dimension)
+            assertEquals(defaultDifficulty, description.difficulty)
+            assertEquals(defaultGames, description.games)
+
+            assertNull(json.cages)
+            assertFalse(json.boxes.any(Box::isHyper))
         }
     }
 
     private suspend fun testUpdatePuzzle(client: HttpClient) {
-        val fakeJson = "{\"puzzle\": {}}"
-
+        var info = MakeSudokuCommand(Dimension.NINE, Difficulty.MASTER, Game.values().toSet())
+        var sudoku = makeSudoku(info)
+        var json = Json.encodeToString(sudoku)
         this.attemptToUpdatePuzzle(
             client,
             this.successfulPuzzleId,
-            fakeJson,
+            json,
             UpdatePuzzleResponse.Success.typeName()
         )
+
+        info = MakeSudokuCommand(Dimension.NINE, Difficulty.MEDIUM, setOf(Game.KILLER))
+        sudoku = makeSudoku(info)
+        json = Json.encodeToString(sudoku)
         this.attemptToUpdatePuzzle(
             client,
             this.invalidPuzzleId,
-            fakeJson,
+            json,
             UpdatePuzzleResponse.FailedToFind.typeName()
         )
     }

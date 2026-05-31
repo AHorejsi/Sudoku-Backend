@@ -2,11 +2,34 @@ package com.alexh.game
 
 import com.alexh.utils.Position
 import com.alexh.utils.get2d
+import java.util.EnumSet
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlin.collections.ArrayList
+import kotlin.collections.HashSet
+import kotlin.math.pow
 import kotlin.random.Random
 
-enum class Game { HYPER, KILLER }
+enum class Game {
+    HYPER, KILLER;
+
+    @Suppress("RemoveRedundantQualifierName")
+    companion object {
+        private val setAmount = Game.values().size
+        private val subsetAmount = 2.0.pow(Game.setAmount).toInt()
+
+        fun subsets(): Set<Set<Game>> {
+            val subsets = HashSet<Set<Game>>(Game.subsetAmount)
+
+            subsets.add(emptySet())
+            subsets.add(setOf(Game.HYPER))
+            subsets.add(setOf(Game.KILLER))
+            subsets.add(EnumSet.allOf(Game::class.java))
+
+            return subsets
+        }
+    }
+}
 
 enum class Dimension(
     val length: Int,
@@ -36,7 +59,27 @@ class MakeSudokuCommand(
     val difficulty: Difficulty,
     val games: Set<Game>,
     @Transient val random: Random = Random.Default
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (other !is MakeSudokuCommand) {
+            return false
+        }
+
+        return this.dimension == other.dimension &&
+                this.difficulty == other.difficulty &&
+                this.games == other.games
+    }
+
+    override fun hashCode(): Int {
+        var hashValue = 0
+        hashValue += this.dimension.hashCode()
+        hashValue += this.difficulty.hashCode()
+        hashValue += this.games.hashCode()
+        hashValue *= 31
+
+        return hashValue
+    }
+}
 
 internal class SudokuNode {
     private val _row = hashSetOf<SudokuNode>()
@@ -83,7 +126,9 @@ internal class SudokuNode {
         this.insertNode(other, this._hyper)
 
     private fun insertNode(other: SudokuNode, nodeSet: MutableSet<SudokuNode>): Boolean {
-        require(this !== other) { "A SudokuNode cannot be connected to itself" }
+        if (this === other) {
+            throw IllegalArgumentException("A SudokuNode cannot be connected to itself")
+        }
 
         this.changed = nodeSet.add(other)
 
@@ -93,25 +138,25 @@ internal class SudokuNode {
 
 internal class SudokuGraph(
     private val neighborhoods: List<SudokuNode>,
-    val length: Int
+    private val length: Int
 ) : Iterable<SudokuNode> {
     val size: Int
         get() = this.neighborhoods.size
 
-    fun get(rowIndex: Int, colIndex: Int): SudokuNode =
+    fun at(rowIndex: Int, colIndex: Int): SudokuNode =
         this.neighborhoods.get2d(rowIndex, colIndex, this.length)
 
-    fun get(pos: Position): SudokuNode =
-        this.get(pos.rowIndex, pos.colIndex)
+    fun at(pos: Position): SudokuNode =
+        this.at(pos.rowIndex, pos.colIndex)
 
-    fun set(rowIndex: Int, colIndex: Int, value: Int) {
-        val node = this.get(rowIndex, colIndex)
+    fun setAt(rowIndex: Int, colIndex: Int, value: Int) {
+        val node = this.at(rowIndex, colIndex)
 
         node.value = value
     }
 
-    fun set(pos: Position, value: Int) =
-        this.set(pos.rowIndex, pos.colIndex, value)
+    fun setAt(pos: Position, value: Int) =
+        this.setAt(pos.rowIndex, pos.colIndex, value)
 
     inline fun <TType> save(converter: (SudokuNode) -> TType): List<MutableList<TType>> {
         val table = ArrayList<MutableList<TType>>(this.length)
@@ -151,7 +196,7 @@ class Box internal constructor(
 
 @Serializable
 class Cell internal constructor(val value: Int?) {
-    val notes = 0
+    val notes = mutableListOf<Int>()
     val editable = null === this.value
 }
 
@@ -166,10 +211,10 @@ class SudokuJson internal constructor(
 
 fun makeSudoku(info: MakeSudokuCommand): SudokuJson {
     // Build table representing the sudoku and connect each cell in a graph
-    val graph = buildBoard(info.dimension, info.games)
+    val graph = buildGraph(info.dimension, info.games)
 
     // Create boxes within the larger puzzle
-    val boxes = createBoxSet(info.dimension, info.games)
+    val boxes = constructBoxSet(info.dimension, info.games)
 
     // Fill entire table with values
     initializeValues(graph, info.dimension, info.games, info.random)

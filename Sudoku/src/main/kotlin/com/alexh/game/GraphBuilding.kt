@@ -1,9 +1,10 @@
 package com.alexh.game
 
 import com.alexh.utils.get2d
+import com.alexh.utils.pair
 import com.alexh.utils.up
 
-internal fun buildBoard(dimension: Dimension, games: Set<Game>): SudokuGraph {
+internal fun buildGraph(dimension: Dimension, games: Set<Game>): SudokuGraph {
     val neighborhoods = initializeNeighborhoods(dimension, games)
     val graph = SudokuGraph(neighborhoods, dimension.length)
 
@@ -12,13 +13,12 @@ internal fun buildBoard(dimension: Dimension, games: Set<Game>): SudokuGraph {
 
 private fun initializeNeighborhoods(dimension: Dimension, games: Set<Game>): List<SudokuNode> {
     val length = dimension.length
-    val neighborhoods = ArrayList<SudokuNode>(length * length)
+    val neighborhoods = MutableList(length * length) { _ -> SudokuNode() }
 
     val boxRows = dimension.boxRows
     val boxCols = dimension.boxCols
 
     makeRegularNeighborhoods(neighborhoods, length, boxRows, boxCols)
-
     if (Game.HYPER in games) {
         makeRegularHyperNeighborhoods(neighborhoods, length, boxRows, boxCols)
     }
@@ -34,33 +34,10 @@ private fun makeRegularNeighborhoods(
 ) {
     val range = 0 until length
 
-    makeNodes(neighborhoods, range)
-    makeRegularConnections(neighborhoods, range, length, boxRows, boxCols)
-}
-
-private fun makeNodes(neighborhoods: MutableList<SudokuNode>, range: IntRange) {
-    for (rowIndex in range) {
-        for (colIndex in range) {
-            val newNode = SudokuNode()
-
-            neighborhoods.add(newNode)
-        }
-    }
-}
-
-private fun makeRegularConnections(
-    neighborhoods: List<SudokuNode>,
-    range: IntRange,
-    length: Int,
-    boxRows: Int,
-    boxCols: Int
-) {
-    for (rowIndex in range) {
-        for (colIndex in range) {
-            includeRow(rowIndex, colIndex, range, neighborhoods, length)
-            includeCol(rowIndex, colIndex, range, neighborhoods, length)
-            includeBox(rowIndex, colIndex, range, neighborhoods, length, boxRows, boxCols)
-        }
+    for ((rowIndex, colIndex) in range.pair(range)) {
+        includeRow(rowIndex, colIndex, range, neighborhoods, length)
+        includeColumn(rowIndex, colIndex, range, neighborhoods, length)
+        includeBox(rowIndex, colIndex, range, neighborhoods, length, boxRows, boxCols)
     }
 }
 
@@ -82,7 +59,7 @@ private fun includeRow(
     }
 }
 
-private fun includeCol(
+private fun includeColumn(
     currentRowIndex: Int,
     currentColIndex: Int,
     range: IntRange,
@@ -117,13 +94,11 @@ private fun includeBox(
 
     val current = neighborhoods.get2d(currentRowIndex, currentColIndex, length)
 
-    for (neighborRowIndex in rows) {
-        for (neighborColIndex in cols) {
-            val other = neighborhoods.get2d(neighborRowIndex, neighborColIndex, length)
+    for ((neighborRowIndex, neighborColIndex) in rows.pair(cols)) {
+        val other = neighborhoods.get2d(neighborRowIndex, neighborColIndex, length)
 
-            if (other !== current) {
-                current.addToBox(other)
-            }
+        if (other !== current) {
+            current.addToBox(other)
         }
     }
 }
@@ -153,32 +128,19 @@ private fun makeRegularHyperNeighborhoods(
     val rowStartPoints = 1 until endIndex step (boxRows + 1)
     val colStartPoints = 1 until endIndex step (boxCols + 1)
 
-    for (startRowIndex in rowStartPoints) {
-        for (startColIndex in colStartPoints) {
-            val rows = startRowIndex up boxRows
-            val cols = startColIndex up boxCols
+    for ((startRowIndex, startColIndex) in rowStartPoints.pair(colStartPoints)) {
+        val rows = startRowIndex up boxRows
+        val cols = startColIndex up boxCols
 
-            makeHyperBoxes(neighborhoods, length, rows, cols)
-        }
-    }
-}
-
-private fun makeHyperBoxes(
-    neighborhoods: List<SudokuNode>,
-    length: Int,
-    rowRange: IntRange,
-    colRange: IntRange
-) {
-    for (rowIndex in rowRange) {
-        for (colIndex in colRange) {
+        for ((rowIndex, colIndex) in rows.pair(cols)) {
             val node = neighborhoods.get2d(rowIndex, colIndex, length)
 
-            makeIndividualHyperBox(node, neighborhoods, length, rowRange, colRange)
+            makeHyperBox(node, neighborhoods, length, rows, cols)
         }
     }
 }
 
-private fun makeIndividualHyperBox(
+private fun makeHyperBox(
     current: SudokuNode,
     neighborhoods: List<SudokuNode>,
     length: Int,
