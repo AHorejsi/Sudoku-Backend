@@ -75,10 +75,6 @@ private fun configureCors(app: Application) {
 
 private fun configureAuthentication(app: Application, logger: Logger) {
     app.install(Authentication) {
-        this.digest(Auths.DIGEST) {
-            // TODO
-        }
-
         this.jwt(Auths.JWT) {
             this.realm = EnvironmentVariables.JWT_REALM
 

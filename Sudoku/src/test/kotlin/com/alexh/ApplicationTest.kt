@@ -35,7 +35,7 @@ class ApplicationTest {
     private val updatedEmail = "jt27@try.org"
 
     @Test
-    fun testHealthChecks(): Unit = testApplication {
+    fun testHealthCheck(): Unit = testApplication {
         this.createClient {
             this@ApplicationTest.installJson(this)
             this@ApplicationTest.installLogging(this)
@@ -62,9 +62,9 @@ class ApplicationTest {
     }
 
     private suspend fun testGenerateHelper0(client: HttpClient) {
-        val dimensionArray = Dimension.values()
-        val difficultyArray = Difficulty.values()
-        val gameSubsets = Game.subsets()
+        val dimensionArray = Dimension.states
+        val difficultyArray = Difficulty.states
+        val gameSubsets = Game.subsets
 
         for (dimension in dimensionArray) {
             for (difficulty in difficultyArray) {
@@ -96,25 +96,16 @@ class ApplicationTest {
 
             this.setBody(requestBody)
         }.also { response ->
-            this.testGenerateHelper2(response, dimension, difficulty, games)
+            assertEquals(HttpStatusCode.OK, response.status)
+
+            val responseBody = response.body<GenerateResponse>()
+            assertIs<GenerateResponse.Success>(responseBody)
+
+            val info = responseBody.sudoku.description
+            assertEquals(dimension, info.dimension)
+            assertEquals(difficulty, info.difficulty)
+            assertEquals(games, info.games)
         }
-    }
-
-    private suspend fun testGenerateHelper2(
-        response: HttpResponse,
-        dimension: Dimension,
-        difficulty: Difficulty,
-        games: Set<Game>,
-    ) {
-        assertEquals(HttpStatusCode.OK, response.status)
-
-        val responseBody = response.body<GenerateResponse>()
-        assertIs<GenerateResponse.Success>(responseBody)
-
-        val info = responseBody.sudoku.description
-        assertEquals(dimension, info.dimension)
-        assertEquals(difficulty, info.difficulty)
-        assertEquals(games, info.games)
     }
 
     private suspend fun testUnfilledFieldsOnGenerate(client: HttpClient) {
@@ -137,6 +128,55 @@ class ApplicationTest {
 
             val responseBody = response.body<GenerateResponse>()
             assertIs<GenerateResponse.UnfilledFields>(responseBody)
+        }
+    }
+
+    @Test
+    fun testDailySudoku(): Unit = testApplication {
+        this.createClient {
+            this@ApplicationTest.installJson(this)
+            this@ApplicationTest.installLogging(this)
+            this@ApplicationTest.installCompression(this)
+        }.use { client ->
+            this@ApplicationTest.testGetDaily(client)
+        }
+    }
+
+    private suspend fun testGetDaily(client: HttpClient) {
+        for (dimension in Dimension.states) {
+            for (difficulty in Difficulty.states) {
+                for (games in Game.subsets) {
+                    this.testGetDailySudokuWithSettings(client, dimension, difficulty, games)
+                }
+            }
+        }
+    }
+
+    private suspend fun testGetDailySudokuWithSettings(
+        client: HttpClient,
+        dimension: Dimension,
+        difficulty: Difficulty,
+        games: Set<Game>
+    ) {
+        client.post(Endpoints.DAILY) {
+            this@ApplicationTest.setJwtHeaders(
+                this,
+                XRequestIds.DAILY,
+                this@ApplicationTest.successfulUsername
+            )
+
+            val dimensionName = dimension.name
+            val difficultyName = difficulty.name
+            val gameNames = games.map(Game::name).toSet()
+
+            val requestBody = GenerateRequest(dimensionName, difficultyName, gameNames)
+
+            this.setBody(requestBody)
+        }.also { response ->
+            assertEquals(HttpStatusCode.OK, response.status)
+
+            val responseBody = response.body<GenerateResponse>()
+            assertIs<GenerateResponse.Success>(responseBody)
         }
     }
 
@@ -388,23 +428,23 @@ class ApplicationTest {
     }
 
     private suspend fun testUpdatePuzzle(client: HttpClient) {
-        var info = MakeSudokuCommand(Dimension.NINE, Difficulty.MASTER, Game.values().toSet())
-        var sudoku = makeSudoku(info)
-        var json = Json.encodeToString(sudoku)
+        val successInfo = MakeSudokuCommand(Dimension.NINE, Difficulty.MASTER, Game.states.toSet())
+        val successSudoku = makeSudoku(successInfo)
+        val successJson = Json.encodeToString(successSudoku)
         this.attemptToUpdatePuzzle(
             client,
             this.successfulPuzzleId,
-            json,
+            successJson,
             UpdatePuzzleResponse.Success.typeName()
         )
 
-        info = MakeSudokuCommand(Dimension.NINE, Difficulty.MEDIUM, setOf(Game.KILLER))
-        sudoku = makeSudoku(info)
-        json = Json.encodeToString(sudoku)
+        val failureInfo = MakeSudokuCommand(Dimension.NINE, Difficulty.MEDIUM, setOf(Game.KILLER))
+        val failureSudoku = makeSudoku(failureInfo)
+        val failureJson = Json.encodeToString(failureSudoku)
         this.attemptToUpdatePuzzle(
             client,
             this.invalidPuzzleId,
-            json,
+            failureJson,
             UpdatePuzzleResponse.FailedToFind.typeName()
         )
     }

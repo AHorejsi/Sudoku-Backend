@@ -9,8 +9,6 @@ import org.slf4j.Logger
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.util.*
 
 suspend inline fun <reified TType : Any> handleResponse(
@@ -18,7 +16,7 @@ suspend inline fun <reified TType : Any> handleResponse(
     call: ApplicationCall,
     logger: Logger,
     endpoint: String
-): Unit = withContext(Dispatchers.IO) {
+) {
     call.respond(HttpStatusCode.OK, result)
 
     logger.info("Successful call to $endpoint")

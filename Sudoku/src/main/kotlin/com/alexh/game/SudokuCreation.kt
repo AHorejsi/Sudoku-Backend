@@ -13,18 +13,21 @@ import kotlin.random.Random
 enum class Game {
     HYPER, KILLER;
 
-    @Suppress("RemoveRedundantQualifierName")
     companion object {
-        private val setAmount = Game.values().size
-        private val subsetAmount = 2.0.pow(Game.setAmount).toInt()
+        private val THREAD_SAFETY = LazyThreadSafetyMode.PUBLICATION
 
-        fun subsets(): Set<Set<Game>> {
-            val subsets = HashSet<Set<Game>>(Game.subsetAmount)
+        val states: Set<Game> by lazy(THREAD_SAFETY) { EnumSet.allOf(Game::class.java) }
+        val subsets: Set<Set<Game>> by lazy(THREAD_SAFETY) { Game.makeSubsets() }
+
+        private fun makeSubsets(): Set<Set<Game>> {
+            val subsetAmount = 2.0.pow(Game.states.size).toInt()
+
+            val subsets = LinkedHashSet<Set<Game>>(subsetAmount)
 
             subsets.add(emptySet())
-            subsets.add(setOf(Game.HYPER))
-            subsets.add(setOf(Game.KILLER))
-            subsets.add(EnumSet.allOf(Game::class.java))
+            subsets.add(EnumSet.of(HYPER))
+            subsets.add(EnumSet.of(KILLER))
+            subsets.add(EnumSet.of(HYPER, KILLER))
 
             return subsets
         }
@@ -36,7 +39,12 @@ enum class Dimension(
     val boxRows: Int,
     val boxCols: Int
 ) {
-    NINE(9, 3, 3)
+    NINE(9, 3, 3);
+
+    companion object {
+        val states: Set<Dimension> =
+            setOf(NINE)
+    }
 }
 
 enum class Difficulty(
@@ -50,7 +58,12 @@ enum class Difficulty(
     EASY(0.44f, 0.57f, 0.44f, 0.44f, 0.55f),
     MEDIUM(0.40f, 0.43f, 0.33f, 0.55f, 0.66f),
     HARD(0.35f, 0.38f, 0.22f, 0.66f, 0.77f),
-    MASTER(0.21f, 0.33f, 0.0f, 0.77f, 0.88f)
+    MASTER(0.21f, 0.33f, 0.0f, 0.77f, 0.88f);
+
+    companion object {
+        val states: Set<Difficulty> =
+            EnumSet.allOf(Difficulty::class.java)
+    }
 }
 
 @Serializable
@@ -81,14 +94,12 @@ class MakeSudokuCommand(
     }
 }
 
-internal class SudokuNode {
+internal class SudokuNode(val place: Position) {
     private val _row = hashSetOf<SudokuNode>()
     private val _column = hashSetOf<SudokuNode>()
     private val _box = hashSetOf<SudokuNode>()
     private val _hyper = hashSetOf<SudokuNode>()
-    private var _all = emptySet<SudokuNode>()
 
-    private var changed = false
     var value: Int? = null
 
     val row: Set<SudokuNode>
@@ -103,15 +114,16 @@ internal class SudokuNode {
     val hyper: Set<SudokuNode>
         get() = this._hyper
 
-    val all: Set<SudokuNode>
-        get() {
-            if (this.changed) {
-                this._all = this._row union this._column union this._box union this._hyper
-                this.changed = false
-            }
+    val all: Set<SudokuNode> by lazy(LazyThreadSafetyMode.NONE) {
+        val unionSet = HashSet<SudokuNode>(4 * this._row.size)
 
-            return this._all
-        }
+        unionSet.addAll(this._row)
+        unionSet.addAll(this._column)
+        unionSet.addAll(this._box)
+        unionSet.addAll(this._hyper)
+
+        return@lazy unionSet
+    }
 
     fun addToRow(other: SudokuNode): Boolean =
         this.insertNode(other, this._row)
@@ -125,57 +137,91 @@ internal class SudokuNode {
     fun addToHyper(other: SudokuNode): Boolean =
         this.insertNode(other, this._hyper)
 
-    private fun insertNode(other: SudokuNode, nodeSet: MutableSet<SudokuNode>): Boolean {
-        if (this === other) {
+    private fun insertNode(otherNode: SudokuNode, nodeSet: MutableSet<SudokuNode>): Boolean {
+        if (this === otherNode) {
             throw IllegalArgumentException("A SudokuNode cannot be connected to itself")
         }
 
-        this.changed = nodeSet.add(other)
-
-        return this.changed
+        return nodeSet.add(otherNode)
     }
 }
 
 internal class SudokuGraph(
     private val neighborhoods: List<SudokuNode>,
-    private val length: Int
+    val length: Int
 ) : Iterable<SudokuNode> {
     val size: Int
         get() = this.neighborhoods.size
 
-    fun at(rowIndex: Int, colIndex: Int): SudokuNode =
+    operator fun get(rowIndex: Int, colIndex: Int): SudokuNode =
         this.neighborhoods.get2d(rowIndex, colIndex, this.length)
 
-    fun at(pos: Position): SudokuNode =
-        this.at(pos.rowIndex, pos.colIndex)
+    operator fun get(pos: Position): SudokuNode =
+        this[pos.rowIndex, pos.colIndex]
 
-    fun setAt(rowIndex: Int, colIndex: Int, value: Int) {
-        val node = this.at(rowIndex, colIndex)
+    operator fun set(rowIndex: Int, colIndex: Int, value: Int) {
+        val node = this[rowIndex, colIndex]
 
         node.value = value
     }
 
-    fun setAt(pos: Position, value: Int) =
-        this.setAt(pos.rowIndex, pos.colIndex, value)
+    operator fun set(pos: Position, value: Int) {
+        this[pos.rowIndex, pos.colIndex] = value
+    }
 
-    inline fun <TType> save(converter: (SudokuNode) -> TType): List<MutableList<TType>> {
-        val table = ArrayList<MutableList<TType>>(this.length)
-        val nodeIter = this.iterator()
+    fun saveInSolvedState(): List<MutableList<Int>> {
+        val iter = this.iterator()
+        val table = ArrayList<MutableList<Int>>(this.length)
 
-        while (nodeIter.hasNext()) {
-            val row = ArrayList<TType>(this.length)
-
-            repeat(this.length) { _ ->
-                val node = nodeIter.next()
-                val item = converter(node)
-
-                row.add(item)
-            }
+        repeat(this.length) {
+            val row = this.makeSolvedRow(iter)
 
             table.add(row)
         }
 
         return table
+    }
+
+    private fun makeSolvedRow(iter: Iterator<SudokuNode>): MutableList<Int> {
+        val row = ArrayList<Int>(this.length)
+
+        repeat(this.length) { _ ->
+            val node = iter.next()
+
+            node.value?.let {
+                row.add(it)
+            } ?: run {
+                throw IllegalStateException("Incomplete Sudoku")
+            }
+        }
+
+        return row
+    }
+
+    fun saveInUnsolvedState(): List<List<Cell>> {
+        val iter = this.iterator()
+        val cells = ArrayList<List<Cell>>(this.length)
+
+        repeat(this.length) { _ ->
+            val row = this.makeUnsolvedRow(iter)
+
+            cells.add(row)
+        }
+
+        return cells
+    }
+
+    private fun makeUnsolvedRow(iter: Iterator<SudokuNode>): List<Cell> {
+        val row = ArrayList<Cell>(this.length)
+
+        repeat(this.length) { _ ->
+            val node = iter.next()
+            val cell = Cell(node.value)
+
+            row.add(cell)
+        }
+
+        return row
     }
 
     override fun iterator(): Iterator<SudokuNode> =
@@ -211,16 +257,16 @@ class SudokuJson internal constructor(
 
 fun makeSudoku(info: MakeSudokuCommand): SudokuJson {
     // Build table representing the sudoku and connect each cell in a graph
-    val graph = buildGraph(info.dimension, info.games)
+    val graph = buildGraph(info.dimension, info.games, info.random)
 
     // Create boxes within the larger puzzle
-    val boxes = constructBoxSet(info.dimension, info.games)
+    val boxes = constructBoxSet(graph, info.games)
 
     // Fill entire table with values
     initializeValues(graph, info.dimension, info.games, info.random)
 
     // Save solved state of the sudoku for solution checking
-    val solved = graph.save{ it.value!! }
+    val solved = graph.saveInSolvedState()
 
     // Shuffle values around in such a way that the chosen rules are still adhered to
     shuffleBoard(graph, solved, info.dimension, info.games, info.random)
@@ -235,7 +281,7 @@ fun makeSudoku(info: MakeSudokuCommand): SudokuJson {
     val cages = formCages(solved, info)
 
     // Save unsolved state of the sudoku for gameplay
-    val board = graph.save{ Cell(it.value) }
+    val board = graph.saveInUnsolvedState()
 
     // Save all of the above information as JSON
     return SudokuJson(board, solved, cages, boxes, info)

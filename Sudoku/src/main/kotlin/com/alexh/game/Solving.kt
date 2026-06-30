@@ -1,13 +1,16 @@
 package com.alexh.game
 
-internal fun hasUniqueSolution(graph: SudokuGraph, length: Int): Boolean {
+internal fun hasOneSolution(graph: SudokuGraph, length: Int): Boolean {
     val unassigned = findNodesWithNullValues(graph)
     val values = 1 .. length
 
     val solutionCount = countSolutions(unassigned, values)
-    check(0 != solutionCount) { "Solution count is zero" }
 
-    return 1 == solutionCount
+    if (0 == solutionCount) {
+        throw IllegalStateException("Failed to find any solutions")
+    } else {
+        return 1 == solutionCount
+    }
 }
 
 private fun findNodesWithNullValues(graph: SudokuGraph): MutableList<SudokuNode> {
@@ -48,13 +51,18 @@ private fun countSolutions(unassigned: MutableList<SudokuNode>, valueRange: IntR
 }
 
 private fun findValidValues(node: SudokuNode, valueRange: IntRange): Set<Int> {
-    val valid = valueRange.toHashSet()
+    /*val valid = valueRange.toHashSet()
 
     for (neighbor in node.all) {
         neighbor.value?.let {
             valid.remove(it)
         }
     }
+
+    return valid*/
+
+    val values = node.all.asSequence().mapNotNull{ it.value }.toHashSet()
+    val valid = valueRange.asSequence().filter{ it !in values }.toHashSet()
 
     return valid
 }

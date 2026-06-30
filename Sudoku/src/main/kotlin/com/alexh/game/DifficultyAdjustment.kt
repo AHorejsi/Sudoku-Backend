@@ -13,8 +13,8 @@ internal fun adjustForDifficulty(graph: SudokuGraph, info: MakeSudokuCommand) {
     var givenCount = length * length
 
     for (node in graph.shuffled(rand)) {
-        if (checkLowerBound(node, lowerBound) && tryRemove(graph, length, node)) {
-            --givenCount
+        if (checkLowerBound(node, lowerBound)) {
+            givenCount = attemptToRemoveValueFromNode(graph, node, length, givenCount)
 
             if (givenCount <= targetGivenCount) {
                 break
@@ -44,12 +44,27 @@ private fun checkLowerBound(node: SudokuNode, lowerBound: Int): Boolean {
     return result
 }
 
-private fun tryRemove(graph: SudokuGraph, length: Int, node: SudokuNode): Boolean {
+private fun attemptToRemoveValueFromNode(
+    graph: SudokuGraph,
+    node: SudokuNode,
+    length: Int,
+    currentGivenCount: Int
+): Int {
+    var newGivenCount = currentGivenCount
+
+    if (removeValueIfStillOneSolution(graph, length, node)) {
+        --newGivenCount
+    }
+
+    return newGivenCount
+}
+
+private fun removeValueIfStillOneSolution(graph: SudokuGraph, length: Int, node: SudokuNode): Boolean {
     val temp = node.value!!
 
     node.value = null
 
-    if (hasUniqueSolution(graph, length)) {
+    if (hasOneSolution(graph, length)) {
         return true
     }
 

@@ -7,6 +7,7 @@ class XRequestIds private constructor() {
 
     companion object {
         const val GENERATE = "Generate-Sudoku"
+        const val DAILY = "Daily-Sudoku"
         const val CREATE_USER = "Create-User"
         const val READ_USER = "Read-User"
         const val UPDATE_USER = "Update-User"

@@ -5,3 +5,6 @@ fun <TElement> List<TElement>.get2d(rowIndex: Int, colIndex: Int, cols: Int): TE
 
     return this[actualIndex]
 }
+
+fun <TElement> List<TElement>.get2d(pos: Position, cols: Int): TElement =
+    this.get2d(pos.rowIndex, pos.colIndex, cols)

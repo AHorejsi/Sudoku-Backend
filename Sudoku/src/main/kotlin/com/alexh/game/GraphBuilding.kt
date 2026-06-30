@@ -1,26 +1,43 @@
 package com.alexh.game
 
-import com.alexh.utils.get2d
-import com.alexh.utils.pair
-import com.alexh.utils.up
+import com.alexh.utils.*
+import kotlin.random.Random
 
-internal fun buildGraph(dimension: Dimension, games: Set<Game>): SudokuGraph {
-    val neighborhoods = initializeNeighborhoods(dimension, games)
+internal fun buildGraph(dimension: Dimension, games: Set<Game>, rand: Random): SudokuGraph {
+    val neighborhoods = initializeNeighborhoods(dimension, games, rand)
     val graph = SudokuGraph(neighborhoods, dimension.length)
 
     return graph
 }
 
-private fun initializeNeighborhoods(dimension: Dimension, games: Set<Game>): List<SudokuNode> {
+private fun initializeNeighborhoods(dimension: Dimension, games: Set<Game>, rand: Random): List<SudokuNode> {
     val length = dimension.length
-    val neighborhoods = MutableList(length * length) { _ -> SudokuNode() }
+    val neighborhoods = makeNeighborhoodNodes(length)
 
     val boxRows = dimension.boxRows
     val boxCols = dimension.boxCols
 
     makeRegularNeighborhoods(neighborhoods, length, boxRows, boxCols)
+
     if (Game.HYPER in games) {
         makeRegularHyperNeighborhoods(neighborhoods, length, boxRows, boxCols)
+    }
+
+    return neighborhoods
+}
+
+private fun makeNeighborhoodNodes(length: Int): MutableList<SudokuNode> {
+    val neighborhoods = ArrayList<SudokuNode>(length * length)
+
+    val range = 0 until length
+
+    for (rowIndex in range) {
+        for (colIndex in range) {
+            val pos = Position(rowIndex, colIndex)
+            val newNode = SudokuNode(pos)
+
+            neighborhoods.add(newNode)
+        }
     }
 
     return neighborhoods
@@ -37,7 +54,7 @@ private fun makeRegularNeighborhoods(
     for ((rowIndex, colIndex) in range.pair(range)) {
         includeRow(rowIndex, colIndex, range, neighborhoods, length)
         includeColumn(rowIndex, colIndex, range, neighborhoods, length)
-        includeBox(rowIndex, colIndex, range, neighborhoods, length, boxRows, boxCols)
+        includeRegularBox(rowIndex, colIndex, range, neighborhoods, length, boxRows, boxCols)
     }
 }
 
@@ -77,7 +94,7 @@ private fun includeColumn(
     }
 }
 
-private fun includeBox(
+private fun includeRegularBox(
     currentRowIndex: Int,
     currentColIndex: Int,
     range: IntRange,
@@ -125,10 +142,10 @@ private fun makeRegularHyperNeighborhoods(
 ) {
     val endIndex = length - 1
 
-    val rowStartPoints = 1 until endIndex step (boxRows + 1)
-    val colStartPoints = 1 until endIndex step (boxCols + 1)
+    val rowStartingIndices = 1 until endIndex step (boxRows + 1)
+    val colStartingIndices = 1 until endIndex step (boxCols + 1)
 
-    for ((startRowIndex, startColIndex) in rowStartPoints.pair(colStartPoints)) {
+    for ((startRowIndex, startColIndex) in rowStartingIndices.pair(colStartingIndices)) {
         val rows = startRowIndex up boxRows
         val cols = startColIndex up boxCols
 

@@ -1,7 +1,7 @@
 package com.alexh
 
-import com.alexh.asserts.assertGreater
 import com.alexh.game.*
+import com.alexh.asserts.assertGreater
 import com.alexh.utils.*
 import kotlinx.coroutines.*
 import kotlin.collections.HashSet
@@ -11,32 +11,43 @@ import kotlin.test.*
 class SudokuTest {
     @Test
     fun testMakeSudoku() {
-        val seed = Random(0).nextLong()
-        val rngSet = listOf(Random(seed), SyncRandom(seed))
+        val rngSet = this.makeRngSet()
 
         for (rand in rngSet) {
             runBlocking(Dispatchers.IO) {
-                val rngJob = this.async { this@SudokuTest.initializeTest(rand, this) }
-
-                this@SudokuTest.setJobAsserts(rngJob, "Completed all tests for ${rand.typeName()}\n\n")
+                this.launch {
+                    this@SudokuTest.initializeTest(rand, this)
+                }.also { rngJob ->
+                    this@SudokuTest.setJobAsserts(rngJob, "Completed all tests for ${rand.typeName()}\n\n")
+                }
             }
         }
+    }
+
+    private fun makeRngSet(): List<Random> {
+        val rand1 = Random(0)
+        val rand2 = SyncRandom(0)
+        val rand3 = Random.Default
+
+        return listOf(rand1, rand2, rand3)
     }
 
     private fun initializeTest(rand: Random, scope: CoroutineScope) {
         val testCount = 10
 
         repeat(testCount) { count ->
-            val testJob = scope.launch { this@SudokuTest.runTest(rand, this, count) }
-
-            this@SudokuTest.setJobAsserts(testJob, "FINISHED TEST $count of ${rand.typeName()}")
+            scope.launch {
+                this@SudokuTest.runTest(rand, this, count)
+            }.also { testJob ->
+                this@SudokuTest.setJobAsserts(testJob, "FINISHED TEST $count of ${rand.typeName()}")
+            }
         }
     }
 
     private fun runTest(rand: Random, scope: CoroutineScope, testCounter: Int) {
-        val dimensionArray = Dimension.values()
-        val difficultyArray = Difficulty.values()
-        val gameSubsets = Game.subsets()
+        val dimensionArray = Dimension.states
+        val difficultyArray = Difficulty.states
+        val gameSubsets = Game.subsets
 
         for (dimension in dimensionArray) {
             for (difficulty in difficultyArray) {
@@ -55,27 +66,27 @@ class SudokuTest {
         rand: Random,
         testCounter: Int
     ) {
-        val sudokuJob = scope.launch {
+        scope.launch {
             val info = MakeSudokuCommand(dimension, difficulty, games, rand)
             val result = makeSudoku(info)
 
-            this@SudokuTest.testSudokuProperties(result)
-        }
+            this@SudokuTest.testSudokuProperties(result, info)
+        }.also { sudokuJob ->
+            val message = "TEST $testCounter of ${rand.typeName()}: RULES ($dimension, $difficulty, $games) GENERATED"
 
-        this.setJobAsserts(
-            sudokuJob, "TEST $testCounter of ${rand.typeName()}: RULES ($dimension, $difficulty, $games) GENERATED"
-        )
+            this.setJobAsserts(sudokuJob, message)
+        }
     }
 
-    private fun testSudokuProperties(sudoku: SudokuJson) {
-        val description = sudoku.description
-        val length = description.dimension.length
+    private fun testSudokuProperties(sudoku: SudokuJson, info: MakeSudokuCommand) {
+        assertEquals(info, sudoku.description)
 
+        val length = info.dimension.length
         this.checkIfCellsAreValid(sudoku, length)
         this.checkIfValuesAreValid(sudoku, length)
         this.checkIfCagesAreValid(sudoku, length)
 
-        if (Game.HYPER in description.games) {
+        if (Game.HYPER in info.games) {
             val hyperBoxesPresent = sudoku.boxes.any(Box::isHyper)
 
             assertTrue(hyperBoxesPresent)

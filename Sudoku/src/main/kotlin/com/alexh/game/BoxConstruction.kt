@@ -1,70 +1,61 @@
 package com.alexh.game
 
 import com.alexh.utils.Position
-import com.alexh.utils.up
 
-internal fun constructBoxSet(dimension: Dimension, games: Set<Game>): Set<Box> {
-    val boxSet = HashSet<Box>(dimension.length)
+internal fun constructBoxSet(graph: SudokuGraph, games: Set<Game>): Set<Box> {
+    val boxSet = HashSet<Box>(graph.length)
 
-    makeRegularBoxes(dimension, boxSet)
+    makeRegularBoxes(graph, boxSet)
+
     if (Game.HYPER in games) {
-        makeHyperBoxes(dimension, boxSet)
+        makeHyperBoxes(graph, boxSet)
     }
 
     return boxSet
 }
 
-private fun makeRegularBoxes(dimension: Dimension, boxSet: MutableSet<Box>) {
-    val length = dimension.length
-    val rowSize = dimension.boxRows
-    val colSize = dimension.boxCols
+private fun makeRegularBoxes(graph: SudokuGraph, boxSet: MutableSet<Box>) {
+    val length = graph.length
+    val seen = HashSet<Position>(length * length)
 
-    val range = 0 until length
-
-    for (startRowIndex in range step rowSize) {
-        val rowRange = startRowIndex up rowSize
-
-        for (startColIndex in range step colSize) {
-            val colRange = startColIndex up colSize
-            val newBox = makeNewBox(rowRange, colRange, length, false)
-
-            boxSet.add(newBox)
+    for (node in graph) {
+        if (node.place in seen) {
+            continue
         }
+
+        val positionsInBox = HashSet<Position>(length)
+
+        for (neighborNode in node.box + node) {
+            positionsInBox.add(neighborNode.place)
+
+            seen.add(neighborNode.place)
+        }
+
+        val newBox = Box(false, positionsInBox)
+
+        boxSet.add(newBox)
     }
 }
 
-private fun makeHyperBoxes(dimension: Dimension, boxSet: MutableSet<Box>) {
-    val length = dimension.length
-    val rowSize = dimension.boxRows
-    val colSize = dimension.boxCols
+private fun makeHyperBoxes(graph: SudokuGraph, boxSet: MutableSet<Box>) {
+    val length = graph.length
+    val seen = HashSet<Position>(length * length)
 
-    val stepRow = rowSize + 1
-    val stepCol = colSize + 1
-
-    val range = 1 until (length - 1)
-
-    for (startRowIndex in range step stepRow) {
-        val rowRange = startRowIndex up rowSize
-
-        for (startColIndex in range step stepCol) {
-            val colRange = startColIndex up colSize
-            val newBox = makeNewBox(rowRange, colRange, length, true)
-
-            boxSet.add(newBox)
+    for (node in graph) {
+        if (node.place in seen || node.hyper.isEmpty()) {
+            continue
         }
-    }
-}
 
-private fun makeNewBox(rowRange: IntRange, colRange: IntRange, length: Int, isHyper: Boolean): Box {
-    val positionSet = HashSet<Position>(length)
+        val positionsInBox = HashSet<Position>(length)
 
-    for (rowIndex in rowRange) {
-        for (colIndex in colRange) {
-            val newPos = Position(rowIndex, colIndex)
+        for (neighborNode in node.hyper + node) {
+            positionsInBox.add(neighborNode.place)
 
-            positionSet.add(newPos)
+            seen.add(neighborNode.place)
         }
-    }
 
-    return Box(isHyper, positionSet)
+        val newBox = Box(true, positionsInBox)
+
+        boxSet.add(newBox)
+    }
 }

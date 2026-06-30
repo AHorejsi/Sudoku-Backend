@@ -25,12 +25,8 @@ private fun initializeValuesHelper1(
     games: Set<Game>
 ) {
     if (Game.HYPER in games) {
-        val hyperRows = 1 up dimension.boxRows
-        val hyperCols = 1 up dimension.boxCols
-
-        fillBox(graph, dimension.length, hyperRows, hyperCols, legal, rand)
-    }
-    else {
+        fillBox(graph, dimension.length, 1 up dimension.boxRows, 1 up dimension.boxCols, legal, rand)
+    } else {
         fillRegularDiagonal(graph, dimension, rand, legal)
     }
 }
@@ -71,7 +67,7 @@ private fun fillBox(
         for (colIndex in cols) {
             val value = shuffledValues.next()
 
-            graph.setAt(rowIndex, colIndex, value)
+            graph[rowIndex, colIndex] = value
         }
     }
 }
@@ -98,7 +94,7 @@ private fun shuffleValues(
     val legalMap = HashMap<SudokuNode, List<Int>>(length * length)
 
     for ((rowIndex, colIndex) in range.pair(range)) {
-        val node = graph.at(rowIndex, colIndex)
+        val node = graph[rowIndex, colIndex]
 
         if (null === node.value) {
             legalMap[node] = shuffleLegalValues(legal, length, rand)

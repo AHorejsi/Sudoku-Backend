@@ -246,12 +246,12 @@ fun updatePuzzle(dbConn: Connection, request: UpdatePuzzleRequest): UpdatePuzzle
         stmt.setString(1, json)
         stmt.setInt(2, puzzleId)
 
-        val amountOfRowsChanged = stmt.executeUpdate()
+        val amountOfRowsUpdated = stmt.executeUpdate()
 
-        return when (amountOfRowsChanged) {
+        return when (amountOfRowsUpdated) {
             0 -> UpdatePuzzleResponse.FailedToFind
             1 -> UpdatePuzzleResponse.Success
-            else -> failedDatabaseChange(amountOfRowsChanged, "Update")
+            else -> failedDatabaseChange(amountOfRowsUpdated, "Update")
         }
     }
 }
