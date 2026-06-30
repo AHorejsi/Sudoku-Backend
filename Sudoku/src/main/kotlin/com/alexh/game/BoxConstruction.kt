@@ -16,7 +16,7 @@ internal fun constructBoxSet(graph: SudokuGraph, games: Set<Game>): Set<Box> {
 
 private fun makeRegularBoxes(graph: SudokuGraph, boxSet: MutableSet<Box>) {
     val length = graph.length
-    val seen = HashSet<Position>(length * length)
+    val seen = HashSet<Position>(graph.size)
 
     for (node in graph) {
         if (node.place in seen) {
