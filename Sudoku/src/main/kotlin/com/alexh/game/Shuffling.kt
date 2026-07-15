@@ -13,7 +13,6 @@ internal fun shuffleBoard(
     games: Set<Game>,
     rand: Random
 ) {
-
     doShufflingForAll(graph, board, dimension, rand)
 
     if (Game.HYPER !in games) {
