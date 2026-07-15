@@ -1,6 +1,7 @@
 package com.alexh.utils
 
 import kotlinx.serialization.Serializable
+import kotlin.math.abs
 
 @Serializable
 data class Position(val rowIndex: Int, val colIndex: Int) : Comparable<Position> {
@@ -49,77 +50,78 @@ infix fun Int.up(amount: Int): IntRange =
     else
         this until (this + amount)
 
-fun IntProgression.thru(other: IntProgression): Iterable<Pair<Int, Int>> =
-    object : Iterable<Pair<Int, Int>> {
-        override fun iterator(): Iterator<Pair<Int, Int>> =
-            ZippedIterator(this@thru, other)
-    }
+fun IntProgression.thru(other: IntProgression): Iterable<Position> =
+    ZippedIterable(this, other)
 
-private class ZippedIterator(
-    left: IntProgression,
-    right: IntProgression
-) : Iterator<Pair<Int, Int>> {
-    private val leftIter = left.iterator()
-    private val rightIter = right.iterator()
+private class ZippedIterable(
+    private val left: IntProgression,
+    private val right: IntProgression
+) : Iterable<Position> {
+    override fun iterator(): Iterator<Position> = object : Iterator<Position> {
+        private val leftIter = this@ZippedIterable.left.iterator()
+        private val rightIter = this@ZippedIterable.right.iterator()
 
-    override fun hasNext(): Boolean =
-        this.leftIter.hasNext() && this.rightIter.hasNext()
+        override fun hasNext(): Boolean =
+            this.leftIter.hasNext() && this.rightIter.hasNext()
 
-    override fun next(): Pair<Int, Int> {
-        if (!this.hasNext()) {
-            throw NoSuchElementException("No more indices")
+        override fun next(): Position {
+            if (!this.hasNext()) {
+                throw NoSuchElementException("No more indices")
+            }
+
+            val leftElem = this.leftIter.nextInt()
+            val rightElem = this.rightIter.nextInt()
+
+            return Position(leftElem, rightElem)
         }
-
-        val leftElem = this.leftIter.next()
-        val rightElem = this.rightIter.next()
-
-        return Pair(leftElem, rightElem)
     }
 }
 
 fun IntProgression.pair(other: IntProgression): Iterable<Position> =
-    object : Iterable<Position> {
-        override fun iterator(): Iterator<Position> =
-            NestedIntProgressionIterator(this@pair, other)
-    }
+    NestedIntProgressionIterable(this, other)
 
-private class NestedIntProgressionIterator(
-    left: IntProgression,
+private class NestedIntProgressionIterable(
+    private val left: IntProgression,
     private val right: IntProgression
-) : Iterator<Position> {
-
-    private val actualLeft: IntIterator
-    private var currentLeftItem: Int
-    private var actualRight: IntIterator
-
-    init {
-        if (left.isEmpty() || this.right.isEmpty()) {
-            this.actualLeft = intArrayOf().iterator()
-            this.currentLeftItem = -1
-            this.actualRight = intArrayOf().iterator()
-        }
-        else {
-            this.actualLeft = left.iterator()
-            this.currentLeftItem = this.actualLeft.nextInt()
-            this.actualRight = this.right.iterator()
-        }
+) : Iterable<Position> {
+    private companion object {
+        val EMPTY = intArrayOf().iterator()
     }
 
-    override fun hasNext(): Boolean =
-        this.actualLeft.hasNext() || this.actualRight.hasNext()
+    override fun iterator(): Iterator<Position> = object : Iterator<Position> {
+        private val actualLeft: IntIterator
+        private var currentLeftItem: Int
+        private var actualRight: IntIterator
 
-    override fun next(): Position {
-        if (!this.hasNext()) {
-            throw NoSuchElementException("No more indices")
+        init {
+            @Suppress("RemoveRedundantQualifierName")
+            if (this@NestedIntProgressionIterable.left.isEmpty() || this@NestedIntProgressionIterable.right.isEmpty()) {
+                this.actualLeft = NestedIntProgressionIterable.EMPTY
+                this.currentLeftItem = -1
+                this.actualRight = NestedIntProgressionIterable.EMPTY
+            } else {
+                this.actualLeft = this@NestedIntProgressionIterable.left.iterator()
+                this.currentLeftItem = this.actualLeft.nextInt()
+                this.actualRight = this@NestedIntProgressionIterable.right.iterator()
+            }
         }
 
-        if (!this.actualRight.hasNext()) {
-            this.currentLeftItem = this.actualLeft.nextInt()
-            this.actualRight = this.right.iterator()
+        override fun hasNext(): Boolean =
+            this.actualLeft.hasNext() || this.actualRight.hasNext()
+
+        override fun next(): Position {
+            if (!this.hasNext()) {
+                throw NoSuchElementException("No more indices")
+            }
+
+            if (!this.actualRight.hasNext()) {
+                this.currentLeftItem = this.actualLeft.nextInt()
+                this.actualRight = this@NestedIntProgressionIterable.right.iterator()
+            }
+
+            val rightItem = this.actualRight.nextInt()
+
+            return Position(this.currentLeftItem, rightItem)
         }
-
-        val rightItem = this.actualRight.nextInt()
-
-        return Position(this.currentLeftItem, rightItem)
     }
 }

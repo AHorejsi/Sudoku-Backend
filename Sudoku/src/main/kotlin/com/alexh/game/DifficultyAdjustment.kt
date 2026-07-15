@@ -33,15 +33,21 @@ private fun determineAmountOfGivens(difficulty: Difficulty, length: Int, rand: R
 }
 
 private fun checkLowerBound(node: SudokuNode, lowerBound: Int): Boolean {
-    var result = node.row.count{ null !== it.value } >= lowerBound
-    result = result && node.column.count{ null !== it.value } >= lowerBound
-    result = result && node.box.count{ null !== it.value } >= lowerBound
+    var result = tooManyNonnulls(node.row, lowerBound)
+    result = result && tooManyNonnulls(node.column, lowerBound)
+    result = result && tooManyNonnulls(node.box, lowerBound)
 
     if (node.hyper.isNotEmpty()) {
-        result = result && node.hyper.count{ null !== it.value } >= lowerBound
+        result = result && tooManyNonnulls(node.hyper, lowerBound)
     }
 
     return result
+}
+
+private fun tooManyNonnulls(nodeSet: Set<SudokuNode>, lowerBound: Int): Boolean {
+    val nonnullCount = nodeSet.count { null !== it.value }
+
+    return nonnullCount >= lowerBound
 }
 
 private fun attemptToRemoveValueFromNode(
@@ -52,15 +58,15 @@ private fun attemptToRemoveValueFromNode(
 ): Int {
     var newGivenCount = currentGivenCount
 
-    if (removeValueIfStillOneSolution(graph, length, node)) {
+    if (removeValueIfOneSolution(graph, length, node)) {
         --newGivenCount
     }
 
     return newGivenCount
 }
 
-private fun removeValueIfStillOneSolution(graph: SudokuGraph, length: Int, node: SudokuNode): Boolean {
-    val temp = node.value!!
+private fun removeValueIfOneSolution(graph: SudokuGraph, length: Int, node: SudokuNode): Boolean {
+    val temp = node.value!! // null check intended to ensure "temp" value is never null
 
     node.value = null
 

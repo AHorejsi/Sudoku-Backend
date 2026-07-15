@@ -5,7 +5,7 @@ import com.alexh.utils.Position
 internal fun constructBoxSet(graph: SudokuGraph, games: Set<Game>): Set<Box> {
     val boxSet = HashSet<Box>(graph.length)
 
-    makeRegularBoxes(graph, boxSet)
+    makeBoxes(graph, boxSet)
 
     if (Game.HYPER in games) {
         makeHyperBoxes(graph, boxSet)
@@ -14,8 +14,7 @@ internal fun constructBoxSet(graph: SudokuGraph, games: Set<Game>): Set<Box> {
     return boxSet
 }
 
-private fun makeRegularBoxes(graph: SudokuGraph, boxSet: MutableSet<Box>) {
-    val length = graph.length
+private fun makeBoxes(graph: SudokuGraph, boxSet: MutableSet<Box>) {
     val seen = HashSet<Position>(graph.size)
 
     for (node in graph) {
@@ -23,12 +22,11 @@ private fun makeRegularBoxes(graph: SudokuGraph, boxSet: MutableSet<Box>) {
             continue
         }
 
-        val positionsInBox = HashSet<Position>(length)
+        val positionsInBox = HashSet<Position>(graph.length)
+        includeInBox(node, positionsInBox, seen)
 
-        for (neighborNode in node.box + node) {
-            positionsInBox.add(neighborNode.place)
-
-            seen.add(neighborNode.place)
+        for (neighborNode in node.box) {
+            includeInBox(neighborNode, positionsInBox, seen)
         }
 
         val newBox = Box(false, positionsInBox)
@@ -47,15 +45,19 @@ private fun makeHyperBoxes(graph: SudokuGraph, boxSet: MutableSet<Box>) {
         }
 
         val positionsInBox = HashSet<Position>(length)
+        includeInBox(node, positionsInBox, seen)
 
-        for (neighborNode in node.hyper + node) {
-            positionsInBox.add(neighborNode.place)
-
-            seen.add(neighborNode.place)
+        for (neighborNode in node.hyper) {
+            includeInBox(neighborNode, positionsInBox, seen)
         }
 
         val newBox = Box(true, positionsInBox)
 
         boxSet.add(newBox)
     }
+}
+
+private fun includeInBox(node: SudokuNode, boxPos: MutableSet<Position>, seen: MutableSet<Position>) {
+    boxPos.add(node.place)
+    seen.add(node.place)
 }

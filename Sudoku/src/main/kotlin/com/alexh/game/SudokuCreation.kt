@@ -257,7 +257,7 @@ class SudokuJson internal constructor(
 
 fun makeSudoku(info: MakeSudokuCommand): SudokuJson {
     // Build table representing the sudoku and connect each cell in a graph
-    val graph = buildGraph(info.dimension, info.games, info.random)
+    val graph = buildGraph(info.dimension, info.games)
 
     // Create boxes within the larger puzzle
     val boxes = constructBoxSet(graph, info.games)

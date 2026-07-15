@@ -1,16 +1,15 @@
 package com.alexh.game
 
 import com.alexh.utils.*
-import kotlin.random.Random
 
-internal fun buildGraph(dimension: Dimension, games: Set<Game>, rand: Random): SudokuGraph {
-    val neighborhoods = initializeNeighborhoods(dimension, games, rand)
+internal fun buildGraph(dimension: Dimension, games: Set<Game>): SudokuGraph {
+    val neighborhoods = initializeNeighborhoods(dimension, games)
     val graph = SudokuGraph(neighborhoods, dimension.length)
 
     return graph
 }
 
-private fun initializeNeighborhoods(dimension: Dimension, games: Set<Game>, rand: Random): List<SudokuNode> {
+private fun initializeNeighborhoods(dimension: Dimension, games: Set<Game>): List<SudokuNode> {
     val length = dimension.length
     val neighborhoods = makeNeighborhoodNodes(length)
 
@@ -20,7 +19,7 @@ private fun initializeNeighborhoods(dimension: Dimension, games: Set<Game>, rand
     makeRegularNeighborhoods(neighborhoods, length, boxRows, boxCols)
 
     if (Game.HYPER in games) {
-        makeRegularHyperNeighborhoods(neighborhoods, length, boxRows, boxCols)
+        makeHyperNeighborhoods(neighborhoods, length, boxRows, boxCols)
     }
 
     return neighborhoods
@@ -121,7 +120,7 @@ private fun includeRegularBox(
 }
 
 private fun findStartOfBox(currentIndex: Int, range: IntRange, boxLength: Int): Int {
-    var start = -1
+    var start = 0
 
     for (index in range step boxLength) {
         if (index > currentIndex) {
@@ -134,7 +133,7 @@ private fun findStartOfBox(currentIndex: Int, range: IntRange, boxLength: Int): 
     return start
 }
 
-private fun makeRegularHyperNeighborhoods(
+private fun makeHyperNeighborhoods(
     neighborhoods: List<SudokuNode>,
     length: Int,
     boxRows: Int,

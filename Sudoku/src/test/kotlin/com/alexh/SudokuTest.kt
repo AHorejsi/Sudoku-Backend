@@ -176,13 +176,13 @@ class SudokuTest {
         }
 
         for (cage in cageSet) {
-            val actualSum = cage.positions.sumOf{ pos -> sudoku.solved[pos.rowIndex][pos.colIndex] }
+            val actualSum = cage.positions.sumOf { sudoku.solved[it.rowIndex][it.colIndex] }
 
             assertEquals(cage.sum, actualSum)
         }
 
         val actualCellCount = length * length
-        val cellCountFromCages = cageSet.sumOf{ it.positions.size }
+        val cellCountFromCages = cageSet.sumOf { it.positions.size }
 
         assertEquals(actualCellCount, cellCountFromCages)
     }
